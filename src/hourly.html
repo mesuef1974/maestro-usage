@@ -360,7 +360,7 @@ function renderQuota(){
   var bar=mk("div",{class:"qbar",role:"img","aria-label":"المستهلك أسبوعيًّا "+(p.w==null?"غير معروف":num(p.w,1)+"%")}),i=mk("i");i.style.inlineSize=Math.max(0,Math.min(100,p.w||0))+"%";bar.appendChild(i);box.appendChild(bar);
   rows.forEach(function(r){var d=mk("div",{class:"qrow"});d.appendChild(mk("span",null,r[0]));d.appendChild(mk("b",null,r[1]));box.appendChild(d)});
   $("#qsum").textContent=num(n)+" لقطة";
-  var w=$("#qwarn");w.textContent=p.src==="cli_usage"?"اللقطات تُسجَّل آليًّا كل ساعة من أمر /usage بلا استهلاك توكنات (آخر مصدر: cli_usage). النسبة لحظية؛ الاتجاه يحتاج لقطات كافية ("+num(n)+" حاليًّا من كل المصادر).":"تنبيه: اللقطات قليلة ("+num(n)+" فقط) والمصدر الأخير ليس مهمة /usage الساعية؛ النسبة لحظية ولا تُبنى عليها اتجاهات.";
+  var w=$("#qwarn");w.textContent=p.src==="cli_usage"?"اللقطات تُسجَّل آليًّا كل 5 دقائق من أمر /usage بلا استهلاك توكنات (آخر مصدر: cli_usage). النسبة لحظية؛ الاتجاه يحتاج لقطات كافية ("+num(n)+" حاليًّا من كل المصادر).":"تنبيه: اللقطات قليلة ("+num(n)+" فقط) والمصدر الأخير ليس مهمة /usage الساعية؛ النسبة لحظية ولا تُبنى عليها اتجاهات.";
   var last=D.plan.slice(-6).reverse();
   drawTable($("#qtab"),[{k:"ts",l:"الوقت (الدوحة)",f:function(r){return dq(Date.parse(r.ts))}},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],last,null,null);
 }
