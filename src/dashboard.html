@@ -563,7 +563,7 @@ function initRefresh(){
   b.addEventListener("click",function(){
     saveView();
     if(location.protocol==="file:"){
-      msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8765 في المتصفح — الآن يُعاد تحميل الملف فقط.";
+      msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8790 في المتصفح — الآن يُعاد تحميل الملف فقط.";
       setTimeout(function(){location.reload()},2500);return}
     b.disabled=true;msg.textContent="جارٍ التحديث…";
     fetch("/refresh",{method:"POST"}).then(function(r){return r.json()}).then(function(j){

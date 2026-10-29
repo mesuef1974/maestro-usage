@@ -1,6 +1,6 @@
 """خادم محلي اختياري للّوحة: يقدّم reports\\index.html ويشغّل دورة تحميل فورية عند ضغط «تحديث فوري».
 
-يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8765]
+يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8790]
 المسارات: GET / (اللوحة)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
 """
 import argparse
@@ -77,7 +77,7 @@ def make_server(port, reports_dir=None, refresh_fn=None):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--port", type=int, default=8790)
     a = ap.parse_args(argv)
     srv = make_server(a.port)
     print("http://127.0.0.1:%d/  (Ctrl+C للإيقاف)" % a.port, flush=True)
