@@ -19,6 +19,9 @@ def render(template, data, parts):
     """يملأ قالبًا: __CSS__ و__LIB__ من الملفات المشتركة، و__DATA__ من data، وباقي العلامات من parts. كل علامة مرة واحدة."""
     css, lib = assets()
     page = (SRC / template).read_text(encoding="utf-8")
+    head = (SRC / "ui_theme_head.js").read_text(encoding="utf-8")  # يطبّق السمة المحفوظة قبل الرسم فلا وميض
+    assert "<head>" in page
+    page = page.replace("<head>", "<head><script>" + head.strip() + "</script>", 1)
     for token, value in (("__CSS__", css), ("__LIB__", lib), *parts.items(), ("__DATA__", embed_json(data))):
         assert token in page, token
         page = page.replace(token, value, 1)

@@ -236,3 +236,17 @@ function bindFilters(){
   $("#from").addEventListener("change",custom);$("#to").addEventListener("change",custom);
   $("#from").min=FIRST;$("#from").max=LAST;$("#to").min=FIRST;$("#to").max=LAST;
 }
+
+/* ---------- السمة (نهاري/ليلي/تلقائي): مشتركة بين كل الصفحات، تُحفظ في localStorage وتُطبَّق مبكرًا من ui_theme_head.js ---------- */
+(function(){
+  var KEY="mu_theme",ORDER=["auto","light","dark"],LBL={auto:"السمة: تلقائية",light:"السمة: نهارية",dark:"السمة: ليلية"},nav=document.querySelector(".nav");
+  if(!nav)return;
+  function get(){try{var t=localStorage.getItem(KEY);return t==="light"||t==="dark"?t:"auto"}catch(e){return "auto"}}
+  function apply(t){
+    if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
+    b.textContent=LBL[t];b.setAttribute("aria-label",LBL[t]+"؛ اضغط للتبديل");
+  }
+  var b=document.createElement("button");b.type="button";b.className="themebtn";
+  b.addEventListener("click",function(){var t=ORDER[(ORDER.indexOf(get())+1)%3];try{if(t==="auto")localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}apply(t)});
+  nav.appendChild(b);apply(get());
+})();

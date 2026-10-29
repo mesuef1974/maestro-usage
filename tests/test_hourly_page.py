@@ -87,6 +87,8 @@ class TestHourlyPage(unittest.TestCase):
         self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"'))
         for bad in ("<link", "@import", "XMLHttpRequest", "<script src"):
             self.assertNotIn(bad, html)
+        self.assertIn("themebtn", html)  # زر السمة المركزي
+        self.assertLess(html.index("mu_theme"), html.index("</head>"))  # السمة المحفوظة تُطبَّق في الرأس قبل الرسم
 
 
 if __name__ == "__main__":
