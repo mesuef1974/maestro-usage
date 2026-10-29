@@ -97,3 +97,6 @@ SELECT session_key, COUNT(*) AS turns, SUM(cache_read_tokens) AS cache_read_toke
        SUM(output_tokens) AS output_tokens,
        CASE WHEN SUM(output_tokens) > 0 THEN 1.0 * SUM(cache_read_tokens) / SUM(output_tokens) END AS read_per_output
 FROM usage_turns GROUP BY session_key;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_statusline_samples ON statusline_samples(ts, session_key);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_plan_snapshots ON plan_snapshots(ts, session_key, source);
