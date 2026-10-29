@@ -41,7 +41,9 @@ CREATE TABLE IF NOT EXISTS usage_turns (
     request_id            TEXT,
     source_path           TEXT NOT NULL,
     sid_rank              INTEGER,                   -- 0 إن كان اسم ملف المالك = sessionId السطر (الأصل)، وإلا 1؛ لإسناد حتمي للمكرّرات
-    turn_origin           TEXT                       -- human|peer|sdk|scheduled|task_notification (فئة من سطر user السابق؛ NULL للوكلاء الفرعيين)
+    turn_origin           TEXT,                      -- human|peer|sdk|scheduled|task_notification (فئة من سطر user السابق؛ NULL للوكلاء الفرعيين)
+    cc_1h                 INTEGER,                   -- من cache_creation_input_tokens ما كُتب بمدة صلاحية ساعة (NULL قبل الاستيعاب أو إن غاب الحقل)
+    cc_5m                 INTEGER                    -- وما كُتب بخمس دقائق (الوكلاء الفرعيون والضغط والعناوين)
 );
 CREATE INDEX IF NOT EXISTS ix_turns_session ON usage_turns(session_key, ts);
 CREATE INDEX IF NOT EXISTS ix_turns_ts ON usage_turns(ts);
@@ -54,9 +56,21 @@ CREATE TABLE IF NOT EXISTS plan_snapshots (
     five_hour_resets_at TEXT,
     seven_day_pct       REAL,
     seven_day_resets_at TEXT,
-    source              TEXT NOT NULL,       -- statusline | get_usage
-    plan                TEXT
+    source              TEXT NOT NULL,       -- statusline | get_usage | cli_usage
+    plan                TEXT,
+    fable_pct           REAL,                -- نافذة Fable الأسبوعية (cli_usage فقط)
+    fable_resets_at     TEXT
 );
+
+-- عدّاد الطلبات والجلسات على الجهاز كما يقرؤه claude -p "/usage" (للمطابقة مع قاعدتنا)
+CREATE TABLE IF NOT EXISTS cli_usage_counts (
+    id        INTEGER PRIMARY KEY,
+    ts        TEXT NOT NULL,
+    window    TEXT NOT NULL,             -- 24h | 7d
+    requests  INTEGER NOT NULL,
+    sessions  INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cli_usage_counts ON cli_usage_counts(ts, window);
 
 CREATE TABLE IF NOT EXISTS statusline_samples (
     id                    INTEGER PRIMARY KEY,

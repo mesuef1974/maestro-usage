@@ -6,7 +6,7 @@ from pathlib import Path
 
 DB_PATH = Path(os.environ.get("MAESTRO_USAGE_DB", r"C:\Users\mesue\.maestro\flow_usage.sqlite3"))
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema" / "schema.sql"
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # بذور config_changes (قرارات المالك في 2026-10-29)؛ الوقت اليوم فقط لأن الساعة غير معروفة.
 CONFIG_SEEDS = [
@@ -33,9 +33,11 @@ def connect(path=None):
 
 
 def _migrate_v2(con):
-    """الإصدارات 2-3: turn_origin وsid_rank في usage_turns وlast_origin في ingest_state (لقواعد أُنشئت بالإصدار 1)."""
+    """الإصدارات 2-4: turn_origin وsid_rank وcc_1h وcc_5m في usage_turns وlast_origin في ingest_state وfable في plan_snapshots (لقواعد أُنشئت قبلها)."""
     for table, col, ctype in (("usage_turns", "turn_origin", "TEXT"), ("ingest_state", "last_origin", "TEXT"),
-                              ("usage_turns", "sid_rank", "INTEGER")):
+                              ("usage_turns", "sid_rank", "INTEGER"), ("usage_turns", "cc_1h", "INTEGER"),
+                              ("usage_turns", "cc_5m", "INTEGER"), ("plan_snapshots", "fable_pct", "REAL"),
+                              ("plan_snapshots", "fable_resets_at", "TEXT")):
         cols = [r[1] for r in con.execute("PRAGMA table_info(%s)" % table)]
         if cols and col not in cols:
             con.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, ctype))

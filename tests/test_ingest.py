@@ -169,6 +169,21 @@ class TestIngest(Base):
         got = dict(self.q("SELECT message_id, turn_origin FROM usage_turns"))
         self.assertEqual(got, {"m1": "human", "m2": "scheduled", "m3": "scheduled", "m4": "peer"})
 
+    def test_cache_creation_ttl_split_stored_and_null_when_absent(self):
+        p = os.path.join(self.root, "proj", "aaa.jsonl")
+        with_ttl = json.loads(a_line("m1", "2026-10-01T00:00:01Z", cc=300))
+        with_ttl["message"]["usage"]["cache_creation"] = {"ephemeral_1h_input_tokens": 200, "ephemeral_5m_input_tokens": 100}
+        broken = json.loads(a_line("m3", "2026-10-01T00:00:03Z"))
+        broken["message"]["usage"]["cache_creation"] = "غير قاموس"
+        def dump(d):
+            return json.dumps(d, ensure_ascii=False, separators=(",", ":"))
+        write(p, [dump(with_ttl), a_line("m2", "2026-10-01T00:00:02Z"), dump(broken)])
+        self.run_ingest()
+        got = {r[0]: (r[1], r[2]) for r in self.q("SELECT message_id, cc_1h, cc_5m FROM usage_turns")}
+        self.assertEqual(got, {"m1": (200, 100), "m2": (None, None), "m3": (None, None)})
+        self.run_ingest()
+        self.assertEqual(self.q("SELECT cc_1h, cc_5m FROM usage_turns WHERE message_id='m1'")[0], (200, 100))
+
     def test_mixed_session_id_group_is_stable_across_rereads(self):
         fa = os.path.join(self.root, "proj", "aaa.jsonl")
         fb = os.path.join(self.root, "proj", "bbb.jsonl")

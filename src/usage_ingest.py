@@ -96,7 +96,10 @@ def parse_lines(lines, origin=None):
             continue
         u = msg.get("usage") or {}
         det = u.get("output_tokens_details")
+        ttl = u.get("cache_creation")
+        ttl = ttl if isinstance(ttl, dict) else {}
         rec = dict(ts=ts, model=model, inp=u.get("input_tokens") or 0,
+                   cc1h=ttl.get("ephemeral_1h_input_tokens"), cc5m=ttl.get("ephemeral_5m_input_tokens"),
                    cc=u.get("cache_creation_input_tokens") or 0, cr=u.get("cache_read_input_tokens") or 0,
                    out=u.get("output_tokens") or 0,
                    think=(det.get("thinking_tokens") or 0) if isinstance(det, dict) else 0,
@@ -165,24 +168,25 @@ def upsert_turns(con, rel, key, first_ts, best, stats):
     for mid, r in best.items():
         ex = existing.get(mid)
         rank = 0 if key == r["sid"] else 1
-        vals = (key, r["ts"], r["model"], r["inp"], r["cc"], r["cr"], r["out"], r["think"], r["side"], r["req"], rel, r["origin"], rank, mid)
+        vals = (key, r["ts"], r["model"], r["inp"], r["cc"], r["cr"], r["out"], r["think"], r["side"], r["req"], rel, r["origin"], rank,
+                r["cc1h"], r["cc5m"], mid)
         if ex is None:
             con.execute("INSERT INTO usage_turns(session_key, ts, model, input_tokens, cache_creation_tokens, "
                         "cache_read_tokens, output_tokens, thinking_tokens, is_sidechain, request_id, source_path, "
-                        "turn_origin, sid_rank, message_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", vals)
+                        "turn_origin, sid_rank, cc_1h, cc_5m, message_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", vals)
             stats["turns_new"] += 1
         elif ex[0] == rel:
             if r["out"] > ex[1] or (ex[4] is None and r["origin"]) or ex[5] is None:
                 con.execute("UPDATE usage_turns SET output_tokens=MAX(output_tokens, ?), thinking_tokens=?, ts=?, "
-                            "turn_origin=COALESCE(?, turn_origin), sid_rank=? WHERE message_id=?",
-                            (r["out"], r["think"], r["ts"], r["origin"], rank, mid))
+                            "turn_origin=COALESCE(?, turn_origin), sid_rank=?, cc_1h=COALESCE(?, cc_1h), cc_5m=COALESCE(?, cc_5m) "
+                            "WHERE message_id=?", (r["out"], r["think"], r["ts"], r["origin"], rank, r["cc1h"], r["cc5m"], mid))
                 stats["turns_updated"] += 1
         elif (rank, first_ts or "", rel) < (1 if ex[5] is None else ex[5], ex[2], ex[0]):
             con.execute("UPDATE usage_turns SET session_key=?, ts=?, model=?, input_tokens=?, cache_creation_tokens=?, "
                         "cache_read_tokens=?, output_tokens=MAX(output_tokens, ?), thinking_tokens=?, is_sidechain=?, "
-                        "request_id=?, source_path=?, turn_origin=?, sid_rank=? WHERE message_id=?",
+                        "request_id=?, source_path=?, turn_origin=?, sid_rank=?, cc_1h=?, cc_5m=? WHERE message_id=?",
                         (key, r["ts"], r["model"], r["inp"], r["cc"], r["cr"], r["out"], r["think"], r["side"],
-                         r["req"], rel, r["origin"], rank, mid))
+                         r["req"], rel, r["origin"], rank, r["cc1h"], r["cc5m"], mid))
             stats["turns_reassigned"] += 1
         else:
             stats["turns_dup_skipped"] += 1
