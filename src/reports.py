@@ -1,10 +1,11 @@
 """تقارير الاستهلاك: CSV لكل تقرير وصفحة HTML ساكنة (RTL، عربية، بلا مكتبات). كل رقم محسوب من القاعدة.
 
-المنجز الآن: التقارير 1 و2 و3. (4 و5 في دفعة لاحقة.)
+التقارير 1-5. التقرير 4 فارغ حتى تصل عيّنات statusLine؛ التقرير 5 مبني على turn_origin (فئة يسجّلها Claude Code نفسه).
 """
 import csv
 import html
 import os
+import statistics
 import sys
 from datetime import date, datetime, timedelta, timezone
 
@@ -99,6 +100,57 @@ def report3(con, today=None):
         out.append(dict(id=cid, ts=ts, key=key, old=old, new=new, note=note, before_range=(b0, b1), after_range=(a0, a1),
                         before=before, after=after, after_days_available=full_after_days))
     return out
+
+
+def report4(con):
+    """نسبة الحصة الأسبوعية (وخمس الساعات) حسب اليوم من plan_snapshots؛ أعلى قيمة في اليوم."""
+    rows = con.execute("""
+        SELECT substr(ts, 1, 10) AS day, source, COUNT(*), MAX(seven_day_pct), MAX(five_hour_pct)
+        FROM plan_snapshots GROUP BY substr(ts, 1, 10), source ORDER BY day""").fetchall()
+    return ["day", "source", "samples", "max_seven_day_pct", "max_five_hour_pct"], rows
+
+
+def _ts(s):
+    return datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S").timestamp()
+
+
+def report5(con):
+    """كلفة الدورة الدورية (turn_origin='scheduled') في جلسات 0101 مقابل كل الاستهلاك، وتوزيع الأصول.
+
+    التمييز: الحقل turnOrigin يسجّله Claude Code على سطر المستخدم الذي بدأ الدور؛ والردود اللاحقة تأخذ آخر قيمة.
+    الحدود: 'scheduled' تشمل كل ما جدولته الجلسة (الدورة كل 5 دقائق وغيرها) فلا يُفصل 5 دقائق عن غيرها بالحقل وحده؛
+    ولذا يُعرض توزيع فواصل بدايات الدورات كدليل مستقل. الوكلاء الفرعيون بلا أصل (NULL).
+    """
+    origins = con.execute("""
+        SELECT COALESCE(turn_origin, 'unknown'), COUNT(*), SUM(input_tokens), SUM(cache_creation_tokens),
+               SUM(cache_read_tokens), SUM(output_tokens)
+        FROM usage_turns GROUP BY 1 ORDER BY 5 DESC""").fetchall()
+    total_cr = sum(r[4] for r in origins) or 1
+    sched = con.execute("""
+        SELECT s.session_key, t.ts, t.cache_read_tokens, t.cache_creation_tokens, t.output_tokens
+        FROM usage_turns t JOIN sessions s ON s.session_key = t.session_key
+        WHERE s.number = '0101' AND t.turn_origin = 'scheduled' ORDER BY s.session_key, t.ts""").fetchall()
+    per_day = {}
+    runs, prev, last, gaps = 0, {}, {}, []
+    for key, ts, cr, cc, out in sched:
+        d = per_day.setdefault(ts[:10], [0, 0, 0, 0])
+        d[0] += 1; d[1] += cr; d[2] += cc; d[3] += out
+        t = _ts(ts)
+        if key not in prev or t - prev[key] > 120:  # دور جديد (الردود المتلاحقة ضمن دور واحد)
+            runs += 1
+            if key in last and 0 < t - last[key] < 3600:
+                gaps.append(t - last[key])
+            last[key] = t
+        prev[key] = t
+    all_cr = con.execute("SELECT SUM(cache_read_tokens) FROM usage_turns").fetchone()[0] or 1
+    s_cr = sum(r[2] for r in sched)
+    gap_info = None
+    if len(gaps) >= 8:
+        q = statistics.quantiles(gaps, n=4)
+        gap_info = dict(n=len(gaps), q1=q[0], median=q[1], q3=q[2], near5=sum(1 for g in gaps if 240 <= g <= 360) / len(gaps))
+    return dict(origins=origins, total_cr=total_cr, per_day=sorted(per_day.items()), turns=len(sched), runs=runs,
+                cache_read=s_cr, share_of_all=s_cr / all_cr, gap=gap_info,
+                sessions=len({r[0] for r in sched}))
 
 
 # ---------------- الإخراج ----------------
@@ -197,6 +249,38 @@ def build(con, out_dir=REPORTS_DIR):
         parts.append('<div class="wrap">%s</div>' % table(
             ["الفترة", "أيام فعّالة", "جلسات", "ردود", "إجمالي توكن", "توكن لكل يوم فعّال", "متوسط السياق للردّ", "قراءة ÷ مخرجات"], rws))
     parts.append(source("جداول usage_turns وconfig_changes", stamp))
+
+    h4, rows4 = report4(con)
+    write_csv(os.path.join(out_dir, "report4_weekly_quota_by_day.csv"), h4, rows4)
+    parts.append("<h2>4. نسبة الحصة الأسبوعية حسب اليوم</h2>")
+    if rows4:
+        parts.append('<div class="wrap">%s</div>' % table(["اليوم", "المصدر", "عيّنات", "أعلى نسبة أسبوعية %", "أعلى نسبة 5 ساعات %"],
+                                                          [(d, sr, fmt(n), fmt(w, 1), fmt(f, 1)) for d, sr, n, w, f in rows4]))
+    else:
+        parts.append('<p class="warn">لا عيّنات حصة بعد: تصل من statusLine بعد أول ردّ في جلسة جديدة منذ التثبيت. السجلات القديمة لا تحمل نسبة الحصة، فلا تاريخ قبل التثبيت.</p>')
+    parts.append(source("جدول plan_snapshots", stamp))
+
+    r5 = report5(con)
+    write_csv(os.path.join(out_dir, "report5_scheduled_cycle.csv"), ["day", "turns", "cache_read", "cache_creation", "output"],
+              [[d] + v for d, v in r5["per_day"]])
+    write_csv(os.path.join(out_dir, "report5_origins.csv"), ["turn_origin", "turns", "input", "cache_creation", "cache_read", "output"],
+              [list(r) for r in r5["origins"]])
+    parts.append("<h2>5. كلفة الدورة الدورية في جلسات 0101</h2>")
+    parts.append("<p>أصل الدور (من حقل يسجّله Claude Code): من بدأ الدور؟ إنسان، أم جلسة أخرى (peer)، أم مجدول، أم إشعار مهمة، أم SDK.</p>")
+    parts.append('<div class="wrap">%s</div>' % table(
+        ["أصل الدور", "ردود", "كتابة ذاكرة", "قراءة ذاكرة", "حصة من قراءة الذاكرة %", "مخرجات"],
+        [(o, fmt(n), fmt(cc), fmt(cr), fmt(100 * cr / r5["total_cr"], 1), fmt(out)) for o, n, _i, cc, cr, out in r5["origins"]]))
+    parts.append('<p>الدورات المجدولة في جلسات 0101: <b>%s</b> ردًّا في %s دورة وفي %s جلسة، قراءة ذاكرتها %s أي <b>%s%%</b> من كل قراءة الذاكرة في القاعدة.</p>' % (
+        fmt(r5["turns"]), fmt(r5["runs"]), fmt(r5["sessions"]), fmt(r5["cache_read"]), fmt(100 * r5["share_of_all"], 2)))
+    if r5["gap"]:
+        g = r5["gap"]
+        parts.append('<p>فواصل بدايات الدورات (ثوانٍ، %s فاصلًا أقل من ساعة): الربع الأول %s، الوسيط %s، الربع الثالث %s؛ ونسبة الفواصل بين 240 و360 ثانية %s%%.</p>' % (
+            fmt(g["n"]), fmt(g["q1"]), fmt(g["median"]), fmt(g["q3"]), fmt(100 * g["near5"], 0)))
+    parts.append('<p class="note">درجة الثقة وحدودها: (أ) عالية في أن الردود موسومة «مجدولة» لأن Claude Code نفسه يسجّل الحقل، لا تخمين زمني. '
+                 '(ب) متوسطة في أن كلها «الدورة كل 5 دقائق»: الحقل يشمل كل المجدول، والفواصل المقيسة لا تتركّز عند 5 دقائق (تتأخر الدورة حين تكون الجلسة مشغولة). '
+                 '(ج) الكلفة تُقاس كحصة من قراءة الذاكرة لا كدولار. (د) الردود التالية في الدور نفسه تُنسب لأصله، فالدورة التي تستدعي أدوات تظهر بعدة ردود. '
+                 '(هـ) الوكلاء الفرعيون بلا أصل فلا يدخلون هذا العدّ.</p>')
+    parts.append(source("جدول usage_turns (العمود turn_origin) وربط الأرقام من sessions.number", stamp))
 
     page = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>تقارير استهلاك Claude Code</title><style>%s</style></head><body><h1>تقارير استهلاك Claude Code</h1>'

@@ -22,6 +22,7 @@ PROJECTS = os.path.join(os.path.expanduser("~"), ".claude", "projects")
 APP_SESSIONS = os.path.join(os.environ.get("APPDATA", ""), "Claude", "claude-code-sessions")
 NUM_RE = re.compile(r"^\s*(\d{4})\b")
 SYNTHETIC = "<synthetic>"
+ORIGIN_RE = re.compile(r'"turnOrigin":"([a-z_]{1,30})"')
 
 
 def iter_logs(root):
@@ -63,10 +64,15 @@ def first_timestamp(lines):
     return None
 
 
-def parse_lines(lines):
+def parse_lines(lines, origin=None):
     """يلخّص السطور الجديدة: أفضل سطر لكل message_id وآخر رقم عنوان. بلا نصوص."""
     best, number, synthetic, bad = {}, None, 0, 0
     for line in lines:
+        if '"type":"user"' in line:
+            m = ORIGIN_RE.search(line)
+            if m:
+                origin = m.group(1)
+            continue
         if '"type":"assistant"' not in line and '"type":"custom-title"' not in line:
             continue
         try:
@@ -95,16 +101,16 @@ def parse_lines(lines):
                    out=u.get("output_tokens") or 0,
                    think=(det.get("thinking_tokens") or 0) if isinstance(det, dict) else 0,
                    side=1 if o.get("isSidechain") else 0, req=o.get("requestId"),
-                   cwd=o.get("cwd"), branch=o.get("gitBranch"), sid=o.get("sessionId"))
+                   cwd=o.get("cwd"), branch=o.get("gitBranch"), sid=o.get("sessionId"), origin=origin)
         if mid not in best or rec["out"] >= best[mid]["out"]:
             best[mid] = rec
-    return best, number, synthetic, bad
+    return best, number, synthetic, bad, origin
 
 
 def ingest_file(con, root, path, stats):
     rel = os.path.relpath(path, root)
     st = os.stat(path)
-    row = con.execute("SELECT offset_bytes, first_ts FROM ingest_state WHERE source_path=?", (rel,)).fetchone()
+    row = con.execute("SELECT offset_bytes, first_ts, last_origin FROM ingest_state WHERE source_path=?", (rel,)).fetchone()
     offset = row[0] if row else 0
     if row and st.st_size == offset:
         stats["files_unchanged"] += 1
@@ -117,17 +123,17 @@ def ingest_file(con, root, path, stats):
     first_ts = row[1] if (row and offset > 0) else first_timestamp(lines)
     if first_ts is None and row:
         first_ts = row[1]
-    best, number, synthetic, bad = parse_lines(lines)
+    best, number, synthetic, bad, last_origin = parse_lines(lines, row[2] if (row and offset > 0) else None)
     stats["synthetic"] += synthetic
     stats["bad_lines"] += bad
     stats["lines_read"] += len(lines)
     with con:
         con.execute(
-            "INSERT INTO ingest_state(source_path, offset_bytes, size_bytes, mtime, updated_at, first_ts, session_key) "
-            "VALUES (?,?,?,?,?,?,?) ON CONFLICT(source_path) DO UPDATE SET offset_bytes=excluded.offset_bytes, "
+            "INSERT INTO ingest_state(source_path, offset_bytes, size_bytes, mtime, updated_at, first_ts, session_key, last_origin) "
+            "VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(source_path) DO UPDATE SET offset_bytes=excluded.offset_bytes, "
             "size_bytes=excluded.size_bytes, mtime=excluded.mtime, updated_at=excluded.updated_at, "
-            "first_ts=excluded.first_ts, session_key=excluded.session_key",
-            (rel, new_off, st.st_size, st.st_mtime, usage_db.now_iso(), first_ts, key))
+            "first_ts=excluded.first_ts, session_key=excluded.session_key, last_origin=excluded.last_origin",
+            (rel, new_off, st.st_size, st.st_mtime, usage_db.now_iso(), first_ts, key, last_origin))
         if best:
             upsert_turns(con, rel, key, first_ts, best, stats)
         if number:
@@ -152,29 +158,31 @@ def upsert_turns(con, rel, key, first_ts, best, stats):
     existing = {}
     for i in range(0, len(ids), 500):
         chunk = ids[i:i + 500]
-        q = ("SELECT t.message_id, t.source_path, t.output_tokens, COALESCE(s.first_ts, ''), t.session_key FROM usage_turns t "
+        q = ("SELECT t.message_id, t.source_path, t.output_tokens, COALESCE(s.first_ts, ''), t.session_key, t.turn_origin, t.sid_rank FROM usage_turns t "
              "LEFT JOIN ingest_state s ON s.source_path = t.source_path WHERE t.message_id IN (%s)" % ",".join("?" * len(chunk)))
-        for mid, src, out, fts, skey in con.execute(q, chunk):
-            existing[mid] = (src, out, fts, skey)
+        for mid, src, out, fts, skey, org, rk in con.execute(q, chunk):
+            existing[mid] = (src, out, fts, skey, org, rk)
     for mid, r in best.items():
         ex = existing.get(mid)
-        vals = (key, r["ts"], r["model"], r["inp"], r["cc"], r["cr"], r["out"], r["think"], r["side"], r["req"], rel, mid)
+        rank = 0 if key == r["sid"] else 1
+        vals = (key, r["ts"], r["model"], r["inp"], r["cc"], r["cr"], r["out"], r["think"], r["side"], r["req"], rel, r["origin"], rank, mid)
         if ex is None:
             con.execute("INSERT INTO usage_turns(session_key, ts, model, input_tokens, cache_creation_tokens, "
                         "cache_read_tokens, output_tokens, thinking_tokens, is_sidechain, request_id, source_path, "
-                        "message_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", vals)
+                        "turn_origin, sid_rank, message_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", vals)
             stats["turns_new"] += 1
         elif ex[0] == rel:
-            if r["out"] > ex[1]:
-                con.execute("UPDATE usage_turns SET output_tokens=?, thinking_tokens=?, ts=? WHERE message_id=?",
-                            (r["out"], r["think"], r["ts"], mid))
+            if r["out"] > ex[1] or (ex[4] is None and r["origin"]) or ex[5] is None:
+                con.execute("UPDATE usage_turns SET output_tokens=MAX(output_tokens, ?), thinking_tokens=?, ts=?, "
+                            "turn_origin=COALESCE(?, turn_origin), sid_rank=? WHERE message_id=?",
+                            (r["out"], r["think"], r["ts"], r["origin"], rank, mid))
                 stats["turns_updated"] += 1
-        elif (0 if key == r["sid"] else 1, first_ts or "", rel) < (0 if ex[3] == r["sid"] else 1, ex[2], ex[0]):
+        elif (rank, first_ts or "", rel) < (1 if ex[5] is None else ex[5], ex[2], ex[0]):
             con.execute("UPDATE usage_turns SET session_key=?, ts=?, model=?, input_tokens=?, cache_creation_tokens=?, "
                         "cache_read_tokens=?, output_tokens=MAX(output_tokens, ?), thinking_tokens=?, is_sidechain=?, "
-                        "request_id=?, source_path=? WHERE message_id=?",
+                        "request_id=?, source_path=?, turn_origin=?, sid_rank=? WHERE message_id=?",
                         (key, r["ts"], r["model"], r["inp"], r["cc"], r["cr"], r["out"], r["think"], r["side"],
-                         r["req"], rel, mid))
+                         r["req"], rel, r["origin"], rank, mid))
             stats["turns_reassigned"] += 1
         else:
             stats["turns_dup_skipped"] += 1

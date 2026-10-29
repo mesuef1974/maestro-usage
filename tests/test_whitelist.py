@@ -28,6 +28,8 @@ WHITELIST = {
     ("usage_turns", "ts"): r"\d{4}-\d\d-\d\dT[\d:.]+Z",
     ("usage_turns", "model"): r"[A-Za-z0-9._\-]{1,60}",
     ("usage_turns", "request_id"): ID,
+    ("usage_turns", "turn_origin"): r"[a-z_]{1,30}",
+    ("ingest_state", "last_origin"): r"[a-z_]{1,30}",
     ("usage_turns", "source_path"): r"[^\r\n\t]{1,400}\.jsonl",
     ("ingest_state", "source_path"): r"[^\r\n\t]{1,400}\.jsonl",
     ("ingest_state", "updated_at"): r"\d{4}-\d\d-\d\dT[\d:]+Z",

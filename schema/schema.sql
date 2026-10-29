@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS ingest_state (
     mtime        REAL NOT NULL,
     updated_at   TEXT NOT NULL,
     first_ts     TEXT,                       -- أقدم timestamp في الملف (لإسناد المكرّرات)
-    session_key  TEXT                        -- الجلسة المالكة للملف (من اسمه/مجلده)
+    session_key  TEXT,                       -- الجلسة المالكة للملف (من اسمه/مجلده)
+    last_origin  TEXT                        -- آخر turnOrigin مرّ في الملف (لتحميل تزايدي)
 );
 
 CREATE TABLE IF NOT EXISTS usage_turns (
@@ -38,7 +39,9 @@ CREATE TABLE IF NOT EXISTS usage_turns (
     thinking_tokens       INTEGER NOT NULL DEFAULT 0,
     is_sidechain          INTEGER NOT NULL DEFAULT 0,
     request_id            TEXT,
-    source_path           TEXT NOT NULL
+    source_path           TEXT NOT NULL,
+    sid_rank              INTEGER,                   -- 0 إن كان اسم ملف المالك = sessionId السطر (الأصل)، وإلا 1؛ لإسناد حتمي للمكرّرات
+    turn_origin           TEXT                       -- human|peer|sdk|scheduled|task_notification (فئة من سطر user السابق؛ NULL للوكلاء الفرعيين)
 );
 CREATE INDEX IF NOT EXISTS ix_turns_session ON usage_turns(session_key, ts);
 CREATE INDEX IF NOT EXISTS ix_turns_ts ON usage_turns(ts);

@@ -157,6 +157,32 @@ class TestIngest(Base):
             self.assertEqual(con2.execute("SELECT session_key FROM usage_turns").fetchone()[0], "zzz-origin")
             con2.close()
 
+    def test_turn_origin_follows_last_user_line_across_increments(self):
+        p = os.path.join(self.root, "proj", "aaa.jsonl")
+        def user(o):
+            return json.dumps({"type": "user", "turnOrigin": o, "message": {"content": "نص لا يُحفظ"}},
+                              ensure_ascii=False, separators=(",", ":"))
+        write(p, [user("human"), a_line("m1", "2026-10-01T00:00:01Z"), user("scheduled"), a_line("m2", "2026-10-01T00:00:02Z")])
+        self.run_ingest()
+        append(p, [a_line("m3", "2026-10-01T00:00:03Z"), user("peer"), a_line("m4", "2026-10-01T00:00:04Z")])
+        self.run_ingest()
+        got = dict(self.q("SELECT message_id, turn_origin FROM usage_turns"))
+        self.assertEqual(got, {"m1": "human", "m2": "scheduled", "m3": "scheduled", "m4": "peer"})
+
+    def test_mixed_session_id_group_is_stable_across_rereads(self):
+        fa = os.path.join(self.root, "proj", "aaa.jsonl")
+        fb = os.path.join(self.root, "proj", "bbb.jsonl")
+        write(fa, [a_line("m1", "2026-10-01T00:00:01Z", sid="other")])
+        write(fb, [a_line("m1", "2026-10-01T00:00:01Z", sid="ccc")])
+        self.run_ingest()
+        first = self.q("SELECT session_key, sid_rank FROM usage_turns")
+        for _ in range(3):
+            self.con.execute("UPDATE ingest_state SET offset_bytes=0")
+            self.con.commit()
+            st = self.run_ingest()
+            self.assertEqual(st["turns_reassigned"], 0)
+        self.assertEqual(first, self.q("SELECT session_key, sid_rank FROM usage_turns"))
+
     def test_subagent_attributed_to_parent_session(self):
         p = os.path.join(self.root, "proj", "parent-id", "subagents", "agent-1.jsonl")
         write(p, [a_line("m1", "2026-10-01T00:00:01Z", side=True)])
