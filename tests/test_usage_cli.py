@@ -68,8 +68,9 @@ class TestUsageCli(unittest.TestCase):
         row = self.con.execute("SELECT five_hour_pct, seven_day_pct, fable_pct, source, plan FROM plan_snapshots").fetchone()
         self.assertEqual(tuple(row), (4.0, 7.0, 0.0, "cli_usage", None))
         self.assertEqual(self.con.execute("SELECT window, requests, sessions FROM cli_usage_counts ORDER BY window").fetchall()[0][1:], (4069, 85))
-        usage_cli.record(self.con, p, "2026-10-29T16:20:00Z")
+        self.assertEqual(usage_cli.record(self.con, p, "2026-10-29T16:20:00Z"), 0)
         self.assertEqual(self.con.execute("SELECT COUNT(*) FROM cli_usage_counts").fetchone()[0], 2)
+        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM plan_snapshots").fetchone()[0], 1)
 
     def test_main_from_text_file_and_exit_codes(self):
         f = os.path.join(self.tmp, "u.txt")

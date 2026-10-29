@@ -67,10 +67,13 @@ def is_stale(text):
 
 def record(con, p, ts=None):
     ts = ts or usage_db.now_iso()
+    # الفهرس الفريد لا يمنع التكرار مع session_key فارغ (NULL مختلف عن NULL)، فالتفريد بالفحص الصريح
     cur = con.execute(
-        "INSERT OR IGNORE INTO plan_snapshots(ts, session_key, five_hour_pct, five_hour_resets_at, seven_day_pct, "
-        "seven_day_resets_at, source, plan, fable_pct, fable_resets_at) VALUES (?,NULL,?,?,?,?, 'cli_usage', NULL, ?, ?)",
-        (ts, p.get("five"), p.get("five_resets"), p.get("seven"), p.get("seven_resets"), p.get("fable"), p.get("fable_resets")))
+        "INSERT INTO plan_snapshots(ts, session_key, five_hour_pct, five_hour_resets_at, seven_day_pct, "
+        "seven_day_resets_at, source, plan, fable_pct, fable_resets_at) "
+        "SELECT ?,NULL,?,?,?,?, 'cli_usage', NULL, ?, ? "
+        "WHERE NOT EXISTS (SELECT 1 FROM plan_snapshots WHERE ts=? AND source='cli_usage')",
+        (ts, p.get("five"), p.get("five_resets"), p.get("seven"), p.get("seven_resets"), p.get("fable"), p.get("fable_resets"), ts))
     for window, requests, sessions in p["counts"]:
         con.execute("INSERT OR IGNORE INTO cli_usage_counts(ts, window, requests, sessions) VALUES (?,?,?,?)",
                     (ts, window, requests, sessions))
