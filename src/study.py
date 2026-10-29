@@ -3,15 +3,23 @@
 كل صف يوم UTC. «مستوى الضغط» = وسيط سياق الردّ السابق عند هبوط السياق (تقدير الضغط التلقائي، ≥ 100 ألف): يكشف السقف الفعلي لليوم
 بلا حاجة لقراءة الإعدادات (أكتوبر 2026: ≈293 ألفًا مع override=30، ≈147 ألفًا مع 15، ≈1 مليون بلا override).
 متغيّرات ضابطة للبند 6: عدد الجلسات والأدوار الفعّالة، وردود الإنسان، وحصة peer.
-التشغيل: python src\\study.py [--from 2026-10-08] ؛ يكتب reports\\study_daily.csv ويطبع الجدول.
+التشغيل: python src\\study.py [--from 2026-10-08] ؛ يكتب reports\\study_daily.csv وreports\\study_wake_by_msgs.csv ويطبع الجدول.
+
+أعمدة الإنجاز (inbox #15): «الإنجاز» صنفان منفصلان لا يُجمعان: إيداعات git (مستودعا shschool_mvp وdelivery_manager_work، كل الفروع،
+بلا دمج، بتاريخ المُودِع UTC) وبطاقات الدفتر (أول انتقال للبطاقة إلى merged أو published أو closed). ومقاييسهما: cr_per_commit وcr_per_card.
+البند 2: تكلفة الإيقاظ (cc عند الردّ بعد فجوة > ساعة) مقابل رسائل صندوق الدور بين الردّين (study_wake_by_msgs.csv).
+البند 6: عمود event يحمل علامات تغيّر الإعدادات وتصفير عدّاد الرسائل، وsnap_* كلفة جلسات مهمة اللقطة الساعية (متغيّر ضابط).
 """
 import argparse
 import csv
+import json
 import os
+import subprocess
 import sys
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
-from datetime import datetime
-from statistics import median
+from datetime import datetime, timedelta, timezone
+from statistics import mean, median
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402
@@ -24,8 +32,23 @@ COLS = ["day", "replies", "main", "cr", "cc", "u", "cr_per_reply", "sessions", "
         "wake", "wake_cc", "drops", "level_med", "p99_ctx", "max_ctx"]
 
 
+EXTRA_COLS = ["commits_shschool", "commits_dmw", "cards_done", "cr_per_commit", "cr_per_card", "msgs", "wake_msgs",
+              "snap_sessions", "snap_tokens", "event"]
+DMW = "C:/Users/mesue/delivery_manager_work"
+SHSCHOOL = "D:/shschool_mvp"
+DONE_STATES = ("merged", "published", "closed")
+SNAP_MAX_REPLIES = 8
+SNAP_TAIL_SEC = 120
+BUCKETS = [("0", 0, 0), ("1", 1, 1), ("2-3", 2, 3), ("4+", 4, 10 ** 9)]
+DOHA = timezone(timedelta(hours=3))
+
+
 def _epoch(ts):
     return datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+
+
+def _utc_day(ts):
+    return datetime.fromtimestamp(_epoch(ts), timezone.utc).strftime("%Y-%m-%d")
 
 
 def daily(con, first=None):
@@ -80,21 +103,183 @@ def daily(con, first=None):
     return rows
 
 
+def git_commits(path):
+    """{يوم UTC: عدد} للإيداعات المميّزة في كل الفروع بلا دمج؛ {} إن تعذّر قراءة المستودع."""
+    try:
+        out = subprocess.run(["git", "-C", path, "log", "--branches", "--remotes", "--no-merges", "--format=%H %cI"],
+                             capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return {}
+    days = {}
+    for line in out.splitlines():
+        h, _, ts = line.partition(" ")
+        if h and ts:
+            days[h] = _utc_day(ts)
+    n = defaultdict(int)
+    for day in days.values():
+        n[day] += 1
+    return dict(n)
+
+
+def ledger_done(path):
+    """{يوم UTC: عدد البطاقات} التي بلغت merged أو published أو closed لأول مرة في ذلك اليوم."""
+    first = {}
+    try:
+        f = open(path, encoding="utf-8")
+    except OSError:
+        return {}
+    with f:
+        for line in f:
+            try:
+                e = json.loads(line)
+            except ValueError:
+                continue
+            if e.get("kind") != "state" or (e.get("data") or {}).get("state") not in DONE_STATES:
+                continue
+            if e["id"] not in first or _epoch(e["ts"]) < _epoch(first[e["id"]]):
+                first[e["id"]] = e["ts"]
+    n = defaultdict(int)
+    for ts in first.values():
+        n[_utc_day(ts)] += 1
+    return dict(n)
+
+
+def inbox_times(directory):
+    """{دور: أزمنة وصول رسائله (epoch) مرتّبة} من ملفات <الدور>.jsonl (سجلات k=msg)."""
+    out = {}
+    try:
+        names = os.listdir(directory)
+    except OSError:
+        return out
+    for name in names:
+        if not name.endswith(".jsonl") or not role_groups.is_project(name[:-6]):
+            continue
+        ts = []
+        with open(os.path.join(directory, name), encoding="utf-8") as f:
+            for line in f:
+                try:
+                    e = json.loads(line)
+                except ValueError:
+                    continue
+                if e.get("k") == "msg":
+                    ts.append(_epoch(e["ts"]))
+        out[name[:-6]] = sorted(ts)
+    return out
+
+
+def wake_events(con, inbox):
+    """إيقاظات الأدوار ذات الصندوق: لكل إيقاظ عدد الرسائل الواصلة بين الردّ السابق والإيقاظ وكلفته cc وcr."""
+    number = {k: n for k, n in con.execute("SELECT session_key, number FROM sessions") if n and n in inbox}
+    prev = {}
+    out = []
+    for key, ts, cc, cr in con.execute(
+            "SELECT session_key, ts, cache_creation_tokens, cache_read_tokens FROM usage_turns "
+            "WHERE is_sidechain=0 ORDER BY session_key, ts, message_id"):
+        e = _epoch(ts)
+        p = prev.get(key)
+        prev[key] = e
+        if p is None or e - p <= sessions_page.WAKE_GAP_SEC or key not in number:
+            continue
+        t = inbox[number[key]]
+        out.append(dict(day=ts[:10], role=number[key], cc=cc, cr=cr, msgs=bisect_right(t, e) - bisect_right(t, p)))
+    return out
+
+
+def wake_by_msgs(events, first_day):
+    rows = []
+    for label, lo, hi in BUCKETS:
+        xs = [w for w in events if w["day"] >= first_day and lo <= w["msgs"] <= hi]
+        rows.append(dict(bucket=label, wakes=len(xs), cc_mean=round(mean(w["cc"] for w in xs)) if xs else "",
+                         cc_median=round(median(w["cc"] for w in xs)) if xs else "",
+                         cr_mean=round(mean(w["cr"] for w in xs)) if xs else ""))
+    return rows
+
+
+def snapshot_cost(con):
+    """{يوم: (جلسات, توكنات)} لجلسات مهمة اللقطة الساعية: غير مرقّمة وقصيرة وسُجّلت لقطة get_usage أثناءها."""
+    snaps = sorted(_epoch(ts) for (ts,) in con.execute("SELECT ts FROM plan_snapshots WHERE source='get_usage'"))
+    out = defaultdict(lambda: [0, 0])
+    for lo, hi, tok in con.execute(
+            "SELECT MIN(t.ts), MAX(t.ts), SUM(t.input_tokens+t.cache_creation_tokens+t.cache_read_tokens+t.output_tokens) "
+            "FROM usage_turns t JOIN sessions s USING(session_key) WHERE s.number IS NULL "
+            "GROUP BY t.session_key HAVING COUNT(*) <= ?", (SNAP_MAX_REPLIES,)):
+        j = bisect_left(snaps, _epoch(lo) - 5)
+        if j < len(snaps) and snaps[j] <= _epoch(hi) + SNAP_TAIL_SEC:
+            out[lo[:10]][0] += 1
+            out[lo[:10]][1] += tok
+    return {d: tuple(v) for d, v in out.items()}
+
+
+def events(con, counter_path):
+    """{يوم: نص} علامات تغيّر الإعدادات (config_changes) وتصفير عدّاد الرسائل (since بعد بدء العدّ) بتاريخ UTC."""
+    ev = defaultdict(list)
+    for ts, key, old, new in con.execute("SELECT ts, key, old_value, new_value FROM config_changes ORDER BY ts, id"):
+        ev[ts[:10]].append(f"{key}: {old}→{new}")
+    try:
+        with open(counter_path, encoding="utf-8") as f:
+            c = json.load(f)
+    except (OSError, ValueError):
+        c = {}
+    for role, v in (c.get("sessions") or {}).items():
+        since = v.get("since")
+        if since and since != c.get("started"):
+            utc = datetime.strptime(since, "%Y-%m-%d %H:%M").replace(tzinfo=DOHA).astimezone(timezone.utc)
+            ev[utc.strftime("%Y-%m-%d")].append(f"تصفير عدّاد {role} {utc.strftime('%H:%M')}Z")
+    return {d: " | ".join(v) for d, v in ev.items()}
+
+
+def enrich(rows, commits, cards, inbox, wakes, snaps, ev):
+    msgs = defaultdict(int)
+    for t in (t for v in inbox.values() for t in v):
+        msgs[datetime.fromtimestamp(t, timezone.utc).strftime("%Y-%m-%d")] += 1
+    wake_msgs = defaultdict(int)
+    for w in wakes:
+        wake_msgs[w["day"]] += w["msgs"]
+    for r in rows:
+        d = r["day"]
+        c1, c2 = commits.get("shschool", {}).get(d, 0), commits.get("dmw", {}).get(d, 0)
+        k = cards.get(d, 0)
+        r.update(commits_shschool=c1, commits_dmw=c2, cards_done=k,
+                 cr_per_commit=round(r["cr"] / (c1 + c2)) if c1 + c2 else "", cr_per_card=round(r["cr"] / k) if k else "",
+                 msgs=msgs.get(d, 0), wake_msgs=wake_msgs.get(d, 0),
+                 snap_sessions=snaps.get(d, (0, 0))[0], snap_tokens=snaps.get(d, (0, 0))[1], event=ev.get(d, ""))
+    return rows
+
+
+def _write(path, cols, rows):
+    with open(path, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, cols)
+        w.writeheader()
+        w.writerows(rows)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--from", dest="first", default=None)
     ap.add_argument("--db")
+    ap.add_argument("--shschool", default=SHSCHOOL)
+    ap.add_argument("--dmw", default=DMW)
     a = ap.parse_args(argv)
-    rows = daily(usage_db.connect(a.db), a.first)
+    con = usage_db.connect(a.db)
+    inbox = inbox_times(os.path.join(a.dmw, "ledger", "inbox"))
+    wakes = wake_events(con, inbox)
+    rows = enrich(daily(con, a.first), {"shschool": git_commits(a.shschool), "dmw": git_commits(a.dmw)},
+                  ledger_done(os.path.join(a.dmw, "ledger", "events.jsonl")), inbox, wakes, snapshot_cost(con),
+                  events(con, os.path.join(a.dmw, "msg_counter.json")))
     os.makedirs(reports.REPORTS_DIR, exist_ok=True)
+    cols = COLS + EXTRA_COLS
     path = os.path.join(reports.REPORTS_DIR, "study_daily.csv")
-    with open(path, "w", encoding="utf-8-sig", newline="") as f:
-        w = csv.DictWriter(f, COLS)
-        w.writeheader()
-        w.writerows(rows)
-    print("\t".join(COLS))
+    _write(path, cols, rows)
+    first_inbox = min((datetime.fromtimestamp(t[0], timezone.utc).strftime("%Y-%m-%d") for t in inbox.values() if t), default="")
+    bcols = ["bucket", "wakes", "cc_mean", "cc_median", "cr_mean"]
+    buckets = wake_by_msgs(wakes, first_inbox)
+    _write(os.path.join(reports.REPORTS_DIR, "study_wake_by_msgs.csv"), bcols, buckets)
+    print("\t".join(cols))
     for r in rows:
-        print("\t".join(str(r[c]) for c in COLS))
+        print("\t".join(str(r[c]) for c in cols))
+    print(f"\nإيقاظ حسب عدد الرسائل (منذ {first_inbox}):")
+    for b in buckets:
+        print("\t".join(str(b[c]) for c in bcols))
     print(path)
 
 
