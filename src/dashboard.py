@@ -3,11 +3,12 @@
 الحمولة جدولان للحقائق: A = يوم × نموذج × أصل الدور، وB = جلسة × يوم × نموذج، إضافةً إلى لقطات الخطة وتغييرات الإعدادات.
 المرشِّحات (فترة، نماذج) تُحسب في المتصفح من هذين الجدولين، فتتّفق كل الأرقام.
 """
-import json
 import os
-from pathlib import Path
+import sys
 
-TEMPLATE = Path(__file__).resolve().parent / "dashboard.html"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ui  # noqa: E402
+
 THRESHOLD = 300_000  # يطابق reports.CTX_THRESHOLD
 
 # ترتيب ثابت: اللون يتبع النموذج لا رتبته. الباقي يُطوى في «أخرى».
@@ -72,17 +73,8 @@ def payload(con, label_fn, not_applied_mark, min_turns):
 
 
 def render(data, static_html, stamp):
-    """يملأ القالب. JSON يُهرَّب منه '</' كي لا يُغلق وسم script."""
-    blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
-    page = TEMPLATE.read_text(encoding="utf-8")
-    for token, value in (("__STAMP__", stamp), ("__STATIC__", static_html), ("__DATA__", blob)):
-        assert token in page, token
-        page = page.replace(token, value, 1)
-    return page
+    return ui.render("dashboard.html", data, {"__STAMP__": stamp, "__STATIC__": static_html})
 
 
 def write(path, data, static_html, stamp):
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(render(data, static_html, stamp))
-    os.replace(tmp, path)
+    ui.write(path, render(data, static_html, stamp))

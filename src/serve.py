@@ -1,7 +1,7 @@
 """خادم محلي اختياري للّوحة: يقدّم reports\\index.html ويشغّل دورة تحميل فورية عند ضغط «تحديث فوري».
 
 يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8790]
-المسارات: GET / (اللوحة)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
+المسارات: GET / (اللوحة) وGET /sessions.html (الأدوار والجلسات)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
 """
 import argparse
 import json
@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import reports  # noqa: E402
 import run_cycle  # noqa: E402
 
+PAGES = {"/": "index.html", "/index.html": "index.html", "/sessions.html": "sessions.html"}
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 
@@ -47,8 +48,10 @@ def make_server(port, reports_dir=None, refresh_fn=None):
 
         def do_GET(self):
             path = self.path.split("?", 1)[0]
-            if path in ("/", "/index.html"):
-                name, ctype = "index.html", "text/html; charset=utf-8"
+            if path == "/favicon.ico":  # يمنع خطأ 404 في وحدة تحكم المتصفح
+                return self._send(204, b"", "image/x-icon")
+            if path in PAGES:
+                name, ctype = PAGES[path], "text/html; charset=utf-8"
             else:
                 m = CSV_RE.match(path)
                 if not m:
@@ -72,7 +75,10 @@ def make_server(port, reports_dir=None, refresh_fn=None):
             body = json.dumps({"ok": rc == 0, "seconds": round(time.time() - t, 1)}).encode("utf-8")
             self._send(200, body, "application/json")
 
-    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    class Server(ThreadingHTTPServer):
+        allow_reuse_address = False  # في ويندوز يسمح SO_REUSEADDR بخادمين على المنفذ نفسه فيردّ أقدمهما بكود قديم
+
+    return Server(("127.0.0.1", port), Handler)
 
 
 def main(argv=None):

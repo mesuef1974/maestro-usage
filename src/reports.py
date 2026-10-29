@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402
+import sessions_page  # noqa: E402
 import usage_db  # noqa: E402
 
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
@@ -284,7 +285,9 @@ def build(con, out_dir=REPORTS_DIR):
 
     path = os.path.join(out_dir, "index.html")
     data = dashboard.payload(con, session_label, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY)
-    dashboard.write(path, data, "".join(parts), datetime.now().strftime("%Y-%m-%d %H:%M"))
+    gen = datetime.now().strftime("%Y-%m-%d %H:%M")
+    dashboard.write(path, data, "".join(parts), gen)
+    sessions_page.write(os.path.join(out_dir, "sessions.html"), sessions_page.payload(con), gen)
     return path
 
 

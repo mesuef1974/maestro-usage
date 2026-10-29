@@ -17,6 +17,8 @@ class TestServe(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         with open(os.path.join(self.tmp, "index.html"), "w", encoding="utf-8") as f:
             f.write("<p>لوحة</p>")
+        with open(os.path.join(self.tmp, "sessions.html"), "w", encoding="utf-8") as f:
+            f.write("<p>أدوار</p>")
         with open(os.path.join(self.tmp, "report1_x.csv"), "w", encoding="utf-8") as f:
             f.write("a,b\n1,2\n")
         with open(os.path.join(self.tmp, "secret.txt"), "w", encoding="utf-8") as f:
@@ -45,6 +47,7 @@ class TestServe(unittest.TestCase):
         self.assertEqual(self.req("GET", "/")[0], 200)
         self.assertIn("لوحة".encode(), self.req("GET", "/index.html")[1])
         self.assertEqual(self.req("GET", "/report1_x.csv")[0], 200)
+        self.assertIn("أدوار".encode(), self.req("GET", "/sessions.html")[1])
         for bad in ("/secret.txt", "/../x", "/report1_x.csv/../secret.txt", "/%2e%2e/secret.txt"):
             self.assertEqual(self.req("GET", bad)[0], 404, bad)
 
