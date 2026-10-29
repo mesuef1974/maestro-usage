@@ -35,6 +35,9 @@ h2{font-size:1.1rem;margin:0 0 .15rem;line-height:1.4;text-wrap:balance}
 .warn{color:var(--warn);font-size:.85rem;margin:.5rem 0 0}
 button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.live{display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;margin-block:.7rem 0}
+.refresh{border:1px solid var(--ink);background:var(--ink);color:var(--surface);border-radius:6px;padding:.3rem 1rem;cursor:pointer;font-weight:600}
+.refresh:disabled{opacity:.5;cursor:progress}
 .filters{padding-block:.6rem;margin-block:1rem 0;border-block-end:1px solid var(--line);display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
 .seg button{border:0;background:transparent;padding:.3rem .8rem;cursor:pointer;color:var(--ink2);border-inline-start:1px solid var(--line)}
@@ -104,7 +107,12 @@ summary{cursor:pointer;color:var(--ink2);font-size:.85rem}
 <body>
 <div class="page">
 <h1>استهلاك Claude Code</h1>
-<p class="sub">قياس بالتوكن لا بالدولار (الخطة اشتراك ثابت). أيام التقارير بالتوقيت العالمي. وُلّدت في __STAMP__ من القاعدة المحلية؛ أرقام فقط بلا نصوص محادثات.</p>
+<p class="sub">قياس بالتوكن لا بالدولار (الخطة اشتراك ثابت). أيام التقارير بالتوقيت العالمي. وُلّدت في <span id="gen">__STAMP__</span> من القاعدة المحلية؛ أرقام فقط بلا نصوص محادثات.</p>
+<div class="live">
+  <button type="button" id="refresh" class="refresh">تحديث فوري</button>
+  <span id="age" class="sub"></span>
+  <span id="rmsg" class="sub" role="status"></span>
+</div>
 
 <div class="filters" role="group" aria-label="المرشِّحات">
   <div class="seg" id="presets" role="group" aria-label="الفترة">
@@ -534,8 +542,38 @@ function render(){
   renderTiles();render1();render2();render3();render4();render5();
   requestAnimationFrame(function(){document.querySelectorAll(".chart").forEach(function(c){c.classList.remove("busy")})});
 }
+/* ---------- التحديث الفوري وعمر البيانات ---------- */
+function age(){
+  var g=new Date($("#gen").textContent.trim().replace(" ","T")).getTime(),a=$("#age");
+  if(isNaN(g)){a.textContent="";return}
+  var m=(Date.now()-g)/6e4;
+  a.textContent="عمر البيانات: "+(m<1?"أقل من دقيقة":Math.round(m)+" دقيقة")+(m>30?" — قديمة، اضغط تحديث فوري":"");
+  a.className=m>30?"warn":"sub";
+}
+function saveView(){try{sessionStorage.setItem("mu_view",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models)}))}catch(e){}}
+function loadView(){
+  try{var v=JSON.parse(sessionStorage.getItem("mu_view")||"null");if(!v)return;
+    sessionStorage.removeItem("mu_view");
+    if(v.p&&v.p!=="custom")setPreset(v.p);else if(v.f&&v.t){S.preset="custom";S.from=v.f;S.to=v.t;syncInputs()}
+    if(Array.isArray(v.m)&&v.m.length)S.models=new Set(v.m.filter(function(i){return i>=0&&i<D.models.length}));
+  }catch(e){}
+}
+function initRefresh(){
+  var b=$("#refresh"),msg=$("#rmsg");
+  b.addEventListener("click",function(){
+    saveView();
+    if(location.protocol==="file:"){
+      msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8765 في المتصفح — الآن يُعاد تحميل الملف فقط.";
+      setTimeout(function(){location.reload()},2500);return}
+    b.disabled=true;msg.textContent="جارٍ التحديث…";
+    fetch("/refresh",{method:"POST"}).then(function(r){return r.json()}).then(function(j){
+      if(j&&j.ok)location.reload();else{msg.textContent="فشلت الدورة؛ راجع data\\cycle.log";b.disabled=false}
+    }).catch(function(){msg.textContent="تعذّر الوصول إلى الخادم المحلي؛ شغّل python src\\serve.py";b.disabled=false});
+  });
+  age();setInterval(age,30000);
+}
 function init(){
-  setPreset("30");buildChips();
+  setPreset("30");loadView();buildChips();initRefresh();
   [].forEach.call($("#presets").children,function(b){b.addEventListener("click",function(){setPreset(b.dataset.p);render()})});
   function custom(){var f=$("#from").value,t=$("#to").value;if(!f||!t||f>t)return;S.from=f;S.to=t;S.preset="custom";syncInputs();render()}
   $("#from").addEventListener("change",custom);$("#to").addEventListener("change",custom);
