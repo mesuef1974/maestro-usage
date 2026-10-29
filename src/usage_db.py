@@ -10,8 +10,8 @@ SCHEMA_VERSION = 3
 
 # بذور config_changes (قرارات المالك في 2026-10-29)؛ الوقت اليوم فقط لأن الساعة غير معروفة.
 CONFIG_SEEDS = [
-    ("2026-10-29", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "9", "45", "عتبة الضغط التلقائي؛ التغيير الأول في اليوم"),
-    ("2026-10-29", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "45", "25", "عتبة الضغط التلقائي؛ التغيير الثاني في اليوم نفسه"),
+    ("2026-10-29", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "9", "45", "عتبة الضغط التلقائي؛ التغيير الأول في اليوم. لم تُطبَّق وفق get_usage (autoCompactsAtPercent=97)"),
+    ("2026-10-29", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "45", "25", "عتبة الضغط التلقائي؛ التغيير الثاني في اليوم نفسه. لم تُطبَّق وفق get_usage (autoCompactsAtPercent=97 في جلسة جديدة)"),
     ("2026-10-29", "statusLine", "none", "command", "ثبّتته 0101 بإذن المالك؛ يسري على الجلسات الجديدة"),
 ]
 
@@ -46,5 +46,6 @@ def init_schema(con):
     _migrate_v2(con)
     con.execute("INSERT OR IGNORE INTO schema_version(version, applied_at) VALUES (?, ?)", (SCHEMA_VERSION, now_iso()))
     con.executemany(
-        "INSERT OR IGNORE INTO config_changes(ts, key, old_value, new_value, note) VALUES (?,?,?,?,?)", CONFIG_SEEDS)
+        "INSERT INTO config_changes(ts, key, old_value, new_value, note) VALUES (?,?,?,?,?) "
+        "ON CONFLICT(ts, key, old_value, new_value) DO UPDATE SET note=excluded.note", CONFIG_SEEDS)
     con.commit()

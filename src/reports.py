@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import usage_db  # noqa: E402
 
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
+NOT_APPLIED_MARK = "لم تُطبَّق"  # علامة في note تُسقِط التغيير من مقارنة قبل/بعد (التقرير 3)
 MIN_TURNS_SUMMARY = 50  # جلسات أقل من هذا لا تدخل جدول الصفحة (تصدّرته جلسات من ردّ واحد)
 CTX_THRESHOLD = 300_000  # توكن؛ سياق الردّ = input + cache_creation + cache_read (SPEC §3-2)
 
@@ -134,7 +135,10 @@ def report5(con):
     runs, prev, last, gaps = 0, {}, {}, []
     for key, ts, cr, cc, out in sched:
         d = per_day.setdefault(ts[:10], [0, 0, 0, 0])
-        d[0] += 1; d[1] += cr; d[2] += cc; d[3] += out
+        d[0] += 1
+        d[1] += cr
+        d[2] += cc
+        d[3] += out
         t = _ts(ts)
         if key not in prev or t - prev[key] > 120:  # دور جديد (الردود المتلاحقة ضمن دور واحد)
             runs += 1
@@ -220,9 +224,14 @@ def build(con, out_dir=REPORTS_DIR):
         fmt(t2[1]), fmt(t2[0]), fmt(100 * t2[1] / t2[0] if t2[0] else None, 1), fmt(100 * share if share is not None else None, 1)))
     parts.append(source("جدول usage_turns", stamp))
 
-    r3 = report3(con)
+    r3_all = report3(con)
+    r3 = [c for c in r3_all if NOT_APPLIED_MARK not in (c["note"] or "")]
     rows3 = []
     parts.append("<h2>3. سبعة أيام قبل كل تغيير إعداد وسبعة بعده</h2>")
+    for c in r3_all:
+        if NOT_APPLIED_MARK in (c["note"] or ""):
+            parts.append('<p class="warn">أُسقط %s: %s ← %s (%s). التغيير لم يُطبَّق فعليًّا وفق get_usage، فلا تصحّ مقارنة قبل/بعد كأثر.</p>' % (
+                html.escape(c["key"]), html.escape(str(c["new"])), html.escape(str(c["old"])), html.escape(c["ts"])))
     parts.append('<p class="note">قبل = 7 أيام قبل يوم التغيير؛ بعد = من يوم التغيير حتى 7 أيام أو حتى اليوم الحالي. المقارنة لكل يوم فعّال (فيه ردود). '
                  'اليوم بالتوقيت العالمي. تغييران في اليوم نفسه (9→45→25) لا يمكن فصل أثرهما.</p>')
     for c in r3:
