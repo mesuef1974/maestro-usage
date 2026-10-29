@@ -44,7 +44,7 @@ WHITELIST = {
     ("statusline_samples", "session_key"): ID,
     # config_changes: مفتاح/قيمتان قصيرتان تكتبها 0101؛ الملاحظة نص بشري قصير من المالك لا من السجلات
     ("config_changes", "ts"): r"[\d\-T:.Z]+",
-    ("config_changes", "key"): r"[A-Z0-9_]{1,80}",
+    ("config_changes", "key"): r"[A-Za-z0-9_]{1,80}",
     ("config_changes", "old_value"): r"[^\r\n]{1,80}",
     ("config_changes", "new_value"): r"[^\r\n]{1,80}",
     ("config_changes", "note"): r".{0,200}",

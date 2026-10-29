@@ -184,11 +184,11 @@ class TestIngest(Base):
 
     def test_no_text_stored_anywhere(self):
         p = os.path.join(self.root, "proj", "aaa.jsonl")
-        write(p, [title_line("0101 · نص سري جدًا"), a_line("m1", "2026-10-01T00:00:01Z")])
+        write(p, [title_line("0101 · قطعة٧٧٧فريدة"), a_line("m1", "2026-10-01T00:00:01Z")])
         self.run_ingest()
         self.con.close()
         raw = open(self.db, "rb").read()
-        self.assertNotIn("سري".encode("utf-8"), raw)
+        self.assertNotIn("قطعة٧٧٧".encode("utf-8"), raw)
         self.con = usage_db.connect(self.db)
 
     def test_backup_integrity(self):
