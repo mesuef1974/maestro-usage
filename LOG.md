@@ -33,3 +33,8 @@
 - التقرير 3: يُسقط كل تغيير علامته «لم تُطبَّق» ويعرض تحذيرًا بدل الجدول (src/reports.py: NOT_APPLIED_MARK). الدالة report3 والاختبار كما هما.
 - التوثيق الرسمي (code.claude.com): CLAUDE_AUTOCOMPACT_PCT_OVERRIDE «نسبة من نافذة الضغط، لا يرفع العتبة بل يخفضها فقط»، وتطبيقه على سطح التطبيق غير مذكور. الآلية الموثّقة الأقوى هي نافذة بالتوكن: مفتاح autoCompactWindow (100K-1M) في settings.json، أو modelSettings.<model>.autoCompactWindow، أو الأمر /autocompact <size>، أو الراية --autocompact، أو CLAUDE_CODE_AUTO_COMPACT_WINDOW (الأعلى أسبقية). كما يوجد idleCompaction. لم يُتحقق منها عمليًّا في التطبيق.
 - مصادر: env-vars، model-config («Set the auto-compact window»)، settings-reference، settings، desktop.
+
+## 2026-10-29 — فحص autoCompactWindow=250000 (صندوق #8)
+- أضافته 0101 بإذن المالك. جلستي (بدأت قبله) تُظهر autoCompactsAtPercent=97 وcontextWindow=1000000؛ غير حاسم لأن المفتاح يُقرأ عند البدء.
+- لا أستطيع بدء جلسة جديدة من رسالة جلسة؛ اقترحت بطاقة window-probe (task_ffbca41c) وأبلغت 0101 (#255).
+- المعلّق: رقم autoCompactsAtPercent من جلسة جديدة. إن بقي 97 فالمفتاح غير مقروء في سطح المكتب ويُعاد الأمر للمالك. لا تغيير على أي إعداد.
