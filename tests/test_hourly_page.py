@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import hourly_page  # noqa: E402
+import role_groups  # noqa: E402
 import reports  # noqa: E402
 import usage_db  # noqa: E402
 
@@ -32,7 +33,7 @@ class TestHourlyPage(unittest.TestCase):
         t("4", "aaaaaaaa1", "2026-10-20T03:11:00Z", 20, 50_000)
         t("5", "aaaaaaaa1", "2026-10-20T03:12:00Z", 0, 900_000, side=1)
         t("6", "bbbbbbbb2", "2026-10-20T01:30:00Z", 0, 10_000, model="model-قديم")  # دور واحد لجلستين
-        t("7", "cccccccc3", "2026-10-20T01:00:00Z", 0, 20_000)  # بلا رقم: خارج المشروع
+        t("7", "cccccccc3", "2026-10-20T01:00:00Z", 0, 20_000)  # بلا رقم: فئة «أخرى»
         t("8", "dddddddd4", "2026-10-20T01:00:00Z", 0, 5_000)   # 8094: خارج المشروع
         c.commit()
         self.data = hourly_page.payload(c)
@@ -44,21 +45,21 @@ class TestHourlyPage(unittest.TestCase):
     def hour(self, hh):
         return int(__import__("datetime").datetime.fromisoformat("2026-10-20T%02d:00:00+00:00" % hh).timestamp() // 3600)
 
-    def test_only_project_roles(self):
-        self.assertEqual(self.data["roles"], ["0101"])
+    def test_project_flag_and_unnumbered_categories(self):
+        self.assertEqual(dict(zip(self.data["roles"], self.data["rp"])), {"0101": 1, "8094": 0, role_groups.OTHER: 0})
 
     def test_tokens_match_db(self):
         want = self.con.execute(
-            "SELECT SUM(input_tokens+cache_creation_tokens+cache_read_tokens+output_tokens) FROM usage_turns t JOIN sessions s USING(session_key) "
-            "WHERE s.number='0101'").fetchone()[0]
+            "SELECT SUM(input_tokens+cache_creation_tokens+cache_read_tokens+output_tokens) FROM usage_turns").fetchone()[0]
         self.assertEqual(sum(r["k"] for r in self.data["h"]), want)
 
     def test_hour_buckets_pressure_and_drops(self):
         other = len(self.data["models"]) - 1
-        h1 = [r for r in self.data["h"] if r["h"] == self.hour(1) and r["m"] != other]
+        r0 = self.data["roles"].index("0101")
+        h1 = [r for r in self.data["h"] if r["r"] == r0 and r["h"] == self.hour(1) and r["m"] != other]
         self.assertEqual(len(h1), 1)
         self.assertEqual(h1[0]["x"], 400_011)  # أكبر سياق في الساعة (1 + 10 + 400000)
-        h3 = [r for r in self.data["h"] if r["h"] == self.hour(3)]
+        h3 = [r for r in self.data["h"] if r["r"] == r0 and r["h"] == self.hour(3)]
         self.assertEqual(sum(r["d"] for r in h3), 1)
         self.assertEqual((h3[0]["df"], h3[0]["dt"]), (405_001, 50_021))
         self.assertEqual(h3[0]["x"], 405_001)  # الوكيل الفرعي (900 ألف) لا يرفع الضغط

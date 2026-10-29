@@ -7,19 +7,18 @@
   لا يسجّل Claude Code الضغط في السجلات التي نقرؤها، فالرقم استدلال لا عدّ.
 """
 import os
-import re
 import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402  (مجموعات النماذج والعتبة نفسها)
+import role_groups  # noqa: E402
 import ui  # noqa: E402
 
 WAKE_GAP_SEC = 3600
 DROP_RATIO = 0.5
 DROP_MIN_PREV = 100_000
-PROJECT_RE = re.compile(r"^0[1-8]\d\d$")  # أدوار المشروع 01xx..08xx
-UNNUMBERED = "غير مرقّمة"
+PROJECT_RE = role_groups.PROJECT_RE
 SUB = "sub"  # أصل صوري لردود الوكلاء الفرعيين (turn_origin فيها NULL)
 
 
@@ -44,8 +43,7 @@ def payload(con):
     meta = {k: (n or "", cwd or "") for k, n, cwd in con.execute("SELECT session_key, number, cwd FROM sessions")}
     roles, role_of = [], {}
 
-    def role_idx(number):
-        key = number if number else UNNUMBERED
+    def role_idx(key):
         if key not in role_of:
             role_of[key] = len(roles)
             roles.append(dict(n=key, p=bool(PROJECT_RE.match(key))))
@@ -61,7 +59,7 @@ def payload(con):
         if key not in sess_of:
             number, cwd = meta.get(key, ("", ""))
             sess_of[key] = len(sess)
-            sess.append(dict(k=key[:8], n=number, f=folder_label(cwd), r=role_idx(number)))
+            sess.append(dict(k=key[:8], n=number, f=folder_label(cwd), r=role_idx(role_groups.role_name(number, cwd))))
         ctx = i + cc + cr
         g = SUB if side else dashboard._origin(org)
         wk = wc = dr = 0

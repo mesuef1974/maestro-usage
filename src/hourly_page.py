@@ -1,6 +1,6 @@
 """صفحة «الجلسات بالساعة» الذاتية: لكل دور من أدوار المشروع منحنى توكنات تراكمي وضغط سياق % على محور زمني ساعي. أرقام فقط.
 
-جدول الحقائق H = دور × ساعة (UTC) × نموذج. الحقول:
+جدول الحقائق H = دور × ساعة (UTC) × نموذج؛ الأدوار: أرقام المشروع 01xx–08xx (rp=1) وأي رقم آخر وفئات الجلسات بلا رقم بحسب مجلد العمل (rp=0، مخفية افتراضًا في الصفحة). الحقول:
   k = توكنات الساعة (إدخال + كتابة ذاكرة + قراءة ذاكرة + مخرجات، كل الردود بما فيها الوكلاء الفرعيون)،
   x = أكبر سياق لردّ رئيس في الساعة (بلا الوكلاء الفرعيين)، d = عدد هبوطات السياق (تقدير الضغط/المسح) وأكبرها من df إلى dt.
 الضغط % = السياق ÷ نافذة افتراضية قدرها WINDOW توكن (افتراض يُعلَن في الصفحة، وليس قياسًا لنافذة النموذج الفعلية).
@@ -12,12 +12,12 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402
+import role_groups  # noqa: E402
 import sessions_page  # noqa: E402
 import ui  # noqa: E402
 
 WINDOW = 1_000_000
 ALERT_PCT = 80
-PROJECT_RE = sessions_page.PROJECT_RE
 
 
 def _epoch(ts):
@@ -25,7 +25,7 @@ def _epoch(ts):
 
 
 def payload(con):
-    number = {k: n for k, n in con.execute("SELECT session_key, number FROM sessions") if n and PROJECT_RE.match(n)}
+    role = {k: role_groups.role_name(n, cwd) for k, n, cwd in con.execute("SELECT session_key, number, cwd FROM sessions")}
     roles, role_of = [], {}
     facts = {}
     prev = {}  # session_key -> (epoch, ctx)
@@ -33,9 +33,7 @@ def payload(con):
         "SELECT session_key, ts, model, input_tokens, cache_creation_tokens, cache_read_tokens, output_tokens, is_sidechain "
         "FROM usage_turns ORDER BY session_key, ts, message_id")
     for key, ts, model, i, cc, cr, u, side in cur:
-        n = number.get(key)
-        if not n:
-            continue
+        n = role.get(key) or role_groups.OTHER
         if n not in role_of:
             role_of[n] = len(roles)
             roles.append(n)
@@ -62,7 +60,7 @@ def payload(con):
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in dashboard.MODEL_GROUPS] + [dashboard.OTHER_NAME], window=WINDOW, alert=ALERT_PCT,
                 drop_ratio=sessions_page.DROP_RATIO, drop_min=sessions_page.DROP_MIN_PREV,
-                first_day=first, last_day=last, roles=roles, h=rows, plan=plan)
+                first_day=first, last_day=last, roles=roles, rp=[int(role_groups.is_project(n)) for n in roles], h=rows, plan=plan)
 
 
 def render(data, stamp):

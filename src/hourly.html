@@ -58,6 +58,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <label class="dates">إلى <input type="date" id="to"></label>
   <div class="chips" id="chips" role="group" aria-label="النماذج"></div>
   <input type="search" class="search" id="q" placeholder="بحث في الأدوار (مثل 05)" aria-label="بحث في الأدوار">
+  <label class="tog"><input type="checkbox" id="unnum"> إظهار غير المرقّمة (فئات بحسب المجلد)</label>
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
 
@@ -114,6 +115,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
 <dt>ضغط السياق %</dt><dd>أكبر سياق لردّ في الخيط الرئيس خلال الساعة (أو اليوم عند التجميع باليوم)، مقسومًا على نافذة افتراضية قدرها <span id="win2"></span> توكن = 100%. النافذة الفعلية للنموذج قد تختلف، فالنسبة مؤشر مقارن لا نسبة فعلية. الفترات التي لا ردّ رئيسًا فيها بلا نقطة ضغط (الخط ينقطع). العتبة <span id="al"></span>%.</dd>
 <dt>عبور العتبة</dt><dd>أول فترة يبلغ فيها الضغط العتبة بعد فترة نشطة سابقة أقل منها (أو أول فترة نشطة).</dd>
 <dt>هبوط السياق (تقدير الضغط أو المسح)</dt><dd>ردّ سياقه أقل من نصف سياق الردّ السابق في الجلسة نفسها، وكان السابق <span id="dmin"></span> توكن فأكثر. لا يسجّل Claude Code الضغط في السجلات التي نقرؤها، فالعلامة استدلال لا عدّ؛ والمسح الكامل (/clear) يبدأ غالبًا جلسة جديدة فلا يظهر هنا.</dd>
+<dt>الجلسات بلا رقم</dt><dd>مخفية افتراضيًّا؛ مفتاح «إظهار غير المرقّمة» يضيفها كفئات بحسب مجلد العمل (مراقب، مستودع shschool_mvp، مدير التسليم، أشجار عمل git، أخرى) وأي رقم خارج 01xx–08xx. الفئة تجمع جلسات كثيرة، فهي ليست «دورًا» واحدًا.</dd>
 <dt>الفترات الخاملة</dt><dd>فترات بلا أي ردّ للدور (توكنات = 0). تظليلها اختياري.</dd>
 <dt>المقياس</dt><dd>«موحّد»: محور التوكنات واحد لكل رسوم الأدوار فتُقارَن الأحجام. «نسبي»: لكل دور محوره الخاص (النسبة من أعلى قيمة له) فيُقارَن الشكل.</dd>
 <dt>الحصة الأسبوعية</dt><dd>تُسجَّل لقطاتها يدويًّا من أداة get_usage؛ ولا يعمل statusLine في تطبيق سطح المكتب. اللقطات قليلة، فالنسبة لحظية ولا تصلح لاستنتاج اتجاه.</dd>
@@ -129,7 +131,7 @@ var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 
 var LAST=D.last_day,FIRST=D.first_day,WIN=D.window,AL=D.alert/100,MAXSEL=8,H1=36e5,WINS=[D.window,250000];
-var S={from:null,to:LAST,preset:"7",models:new Set(D.models.map(function(_,i){return i})),bk:"h",mode:"cum",scale:"abs",win:D.window,idle:true,q:"",sel:null,slots:{}};
+var S={from:null,to:LAST,preset:"7",models:new Set(D.models.map(function(_,i){return i})),unnum:false,bk:"h",mode:"cum",scale:"abs",win:D.window,idle:true,q:"",sel:null,slots:{}};
 function c2(v){return compact(v,2)}
 function p0(v){return pct(v,0)}
 
@@ -146,7 +148,7 @@ function compute(){
   B={lo:lo,hi:hi,size:size,nb:nb};RI={};
   var hk={};
   D.h.forEach(function(r){
-    if(!S.models.has(r.m)||r.h<lo||r.h>hi)return;
+    if(!S.models.has(r.m)||r.h<lo||r.h>hi||(!S.unnum&&!D.rp[r.r]))return;
     var a=RI[r.r]||(RI[r.r]=mkAgg(nb)),b=Math.floor((r.h-lo)/size);
     a.tok[b]+=r.k;a.total+=r.k;if(r.x>a.px[b])a.px[b]=r.x;
     if(r.d){a.dr[b]+=r.d;a.drops+=r.d;if(r.df>a.df[b]){a.df[b]=r.df;a.dt[b]=r.dt}}
@@ -330,11 +332,12 @@ function tilesInto(box,items){
   clear(box);
   items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));box.appendChild(d)});
 }
+function visibleRoles(){return D.rp.filter(function(p){return S.unnum||p}).length}
 function renderTiles(){
   var mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC":"—";
   tilesInto($("#tiles"),[
-    ["إجمالي التوكنات",compact(TILE.tokens),"كل أدوار المشروع في الفترة"],
-    ["الأدوار النشطة",num(TILE.roles),"من "+num(D.roles.length)+" دورًا مسجّلًا"],
+    ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة"],
+    ["الأدوار النشطة",num(TILE.roles),"من "+num(visibleRoles())+(S.unnum?" دورًا وفئة":" دورًا من أدوار المشروع")],
     ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة"],
     ["أعلى ضغط",TILE.n?pct(TILE.max,1):"—",who],
     ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—"],
@@ -442,19 +445,20 @@ function render(){
   if(!sel.length){clear($("#tchart"));clear($("#pchart"));return}
   drawTotal($("#tchart"),sel);drawPress($("#pchart"),sel);jobs.forEach(function(f){f()});
 }
-function saveView(){try{sessionStorage.setItem("mu_hourly",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models),q:S.q,bk:S.bk,mo:S.mode,sc:S.scale,id:S.idle,w:S.win,s:S.sel}))}catch(e){}}
+function saveView(){try{sessionStorage.setItem("mu_hourly",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models),q:S.q,bk:S.bk,mo:S.mode,sc:S.scale,id:S.idle,w:S.win,u:S.unnum,s:S.sel}))}catch(e){}}
 function loadView(){
   try{var v=JSON.parse(sessionStorage.getItem("mu_hourly")||"null");if(!v)return;sessionStorage.removeItem("mu_hourly");
     if(v.p&&v.p!=="custom")setPreset(v.p);else if(v.f&&v.t){S.preset="custom";S.from=v.f;S.to=v.t;syncInputs()}
     if(Array.isArray(v.m)&&v.m.length)S.models=new Set(v.m.filter(function(i){return i>=0&&i<D.models.length}));
     S.q=String(v.q||"");if(v.bk==="h"||v.bk==="d")S.bk=v.bk;if(v.mo==="cum"||v.mo==="per")S.mode=v.mo;if(v.sc==="abs"||v.sc==="rel")S.scale=v.sc;
-    S.idle=v.id!==false;if(WINS.indexOf(v.w)>=0)S.win=v.w;S.sel=Array.isArray(v.s)?v.s.filter(function(n){return typeof n==="string"}).slice(0,MAXSEL):null;
+    S.unnum=!!v.u;S.idle=v.id!==false;if(WINS.indexOf(v.w)>=0)S.win=v.w;S.sel=Array.isArray(v.s)?v.s.filter(function(n){return typeof n==="string"}).slice(0,MAXSEL):null;
   }catch(e){}
 }
 function init(){
   $("#al").textContent=D.alert;$("#dmin").textContent=num(D.drop_min);
   setPreset("7");loadView();buildChips();initRefresh(saveView);bindFilters();
-  $("#q").value=S.q;
+  $("#q").value=S.q;$("#unnum").checked=S.unnum;
+  $("#unnum").addEventListener("change",function(){S.unnum=this.checked;render()});
   /* ضبط الفترة المخصّصة يُبقي التجميع المختار؛ الفترة الطويلة تنتقل تلقائيًّا إلى اليوم */
   [].forEach.call($("#presets").children,function(b){b.addEventListener("click",function(){S.bk=(b.dataset.p==="2"||b.dataset.p==="7")?"h":"d";render()})});
   [["#mode","mode"],["#scale","scale"],["#bk","bk"],["#wsel","win"]].forEach(function(p){
@@ -463,7 +467,7 @@ function init(){
   [].forEach.call(document.querySelectorAll("[data-top]"),function(b){b.addEventListener("click",function(){S.sel=topN(Number(b.dataset.top));render()})});
   var qt;$("#q").addEventListener("input",function(){var el=this;clearTimeout(qt);qt=setTimeout(function(){S.q=el.value.trim().toLowerCase();render()},150)});
   $("#csv").addEventListener("click",exportCsv);
-  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.q="";S.bk="h";S.mode="cum";S.scale="abs";S.win=D.window;S.idle=true;S.sel=null;S.slots={};
+  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.q="";S.unnum=false;$("#unnum").checked=false;S.bk="h";S.mode="cum";S.scale="abs";S.win=D.window;S.idle=true;S.sel=null;S.slots={};
     $("#q").value="";setPreset("7");buildChips();render()});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(render,120)});
   S.q=S.q.toLowerCase();legend2();

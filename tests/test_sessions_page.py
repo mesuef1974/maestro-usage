@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import reports  # noqa: E402
+import role_groups  # noqa: E402
 import sessions_page  # noqa: E402
 import usage_db  # noqa: E402
 
@@ -68,7 +69,7 @@ class TestSessionsPage(unittest.TestCase):
 
     def test_roles_and_project_flag(self):
         roles = {r["n"]: r["p"] for r in self.data["roles"]}
-        self.assertEqual(roles, {"0101": True, sessions_page.UNNUMBERED: False, "8094": False})
+        self.assertEqual(roles, {"0101": True, role_groups.OTHER: False, "8094": False})
         s = self.data["sessions"]
         self.assertEqual(self.data["roles"][s[self.idx("aaaaaaaa")]["r"]]["n"], "0101")
         self.assertEqual(s[self.idx("aaaaaaaa")]["r"], s[self.idx("bbbbbbbb")]["r"])  # جلستان تحت دور واحد
