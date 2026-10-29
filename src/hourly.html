@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الجلسات بالساعة</title>
+<style>
+__CSS__
+h3{font-size:.95rem;margin:.9rem 0 .2rem}
+.tiles.dense{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-block:.4rem .8rem}
+.tile .v{font-size:1.45rem}
+.ctl{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;margin-block:.5rem}
+.rchips{display:flex;flex-wrap:wrap;gap:.35rem;margin-block:.4rem}
+.rchip{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:.1rem .65rem;cursor:pointer;font-size:.82rem;color:var(--ink2)}
+.rchip[aria-pressed="true"]{background:var(--surface);color:var(--ink);border-color:var(--ink);font-weight:600}
+.rchip .sw{inline-size:10px;block-size:10px;border-radius:50%}
+.rchip small{color:var(--ink3);font-weight:400}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:1rem}
+.rgrid>*{min-inline-size:0}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.8rem 1rem;min-inline-size:0}
+.rhead{display:flex;flex-wrap:wrap;gap:.2rem .8rem;align-items:baseline;margin-block-end:.3rem}
+.rhead h3{margin:0;display:inline-flex;gap:.4rem;align-items:center}
+.rstat{display:flex;flex-wrap:wrap;gap:.1rem .9rem;font-size:.8rem;color:var(--ink2)}
+.rstat b{color:var(--ink);font-weight:600}
+.xlist{font-size:.78rem;color:var(--ink3);margin-block:.25rem 0}
+.legend2{display:flex;flex-wrap:wrap;gap:.2rem 1.1rem;font-size:.8rem;color:var(--ink2);margin-block:.2rem .6rem}
+.legend2 span{white-space:nowrap}
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem}
+.qbar{block-size:14px;background:var(--chip);border-radius:3px;position:relative;margin-block:.3rem}
+.qbar i{position:absolute;inset-block:0;inset-inline-start:0;background:var(--ink);border-radius:3px}
+.qrow{display:flex;justify-content:space-between;gap:1rem;font-size:.88rem;border-block-end:1px solid var(--grid);padding-block:.2rem}
+.qrow b{font-weight:600}
+.defs dt{font-weight:600;margin-block-start:.6rem}
+.defs dd{margin:0;color:var(--ink2);font-size:.88rem}
+.exp{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:.25rem .8rem;cursor:pointer;color:var(--ink2)}
+@media (max-width:640px){.qgrid{grid-template-columns:1fr}.search{inline-size:100%}}
+</style>
+</head>
+<body>
+<div class="page">
+<nav class="nav" aria-label="صفحات المنصة"><a href="index.html">الاستهلاك</a><a href="sessions.html">الأدوار والجلسات</a><a href="hourly.html" aria-current="page">الجلسات بالساعة</a></nav>
+<h1>الجلسات بالساعة</h1>
+<p class="sub">منحنى التوكنات التراكمي وضغط السياق % لكل دور من أدوار المشروع على محور زمني ساعي. الساعات بالتوقيت العالمي UTC (الدوحة = +3). الضغط % = سياق الردّ ÷ <span id="win"></span> توكن، وهي <b>نافذة افتراضية نفترضها = 100%</b> (الافتراضي مليون توكن، ويمكن التبديل إلى 250 ألفًا وهي نافذة الضغط التلقائي autoCompactWindow المفعّلة) وليست قياسًا لنافذة النموذج الفعلية. وُلّدت في <span id="gen">__STAMP__</span>؛ أرقام فقط بلا نصوص محادثات.</p>
+<div class="live">
+  <button type="button" id="refresh" class="refresh">تحديث فوري</button>
+  <span id="age" class="sub"></span>
+  <span id="rmsg" class="sub" role="status"></span>
+</div>
+
+<div class="filters" role="group" aria-label="المرشِّحات">
+  <div class="seg" id="presets" role="group" aria-label="الفترة">
+    <button type="button" data-p="2">يومان</button>
+    <button type="button" data-p="7">7 أيام</button>
+    <button type="button" data-p="30">30 يومًا</button>
+    <button type="button" data-p="all">الكل</button>
+  </div>
+  <label class="dates">من <input type="date" id="from"></label>
+  <label class="dates">إلى <input type="date" id="to"></label>
+  <div class="chips" id="chips" role="group" aria-label="النماذج"></div>
+  <input type="search" class="search" id="q" placeholder="بحث في الأدوار (مثل 05)" aria-label="بحث في الأدوار">
+  <button type="button" class="reset" id="reset">إعادة الضبط</button>
+</div>
+
+<section class="tiles dense" id="tiles" aria-label="ملخص"></section>
+
+<section class="card" aria-labelledby="hq">
+  <div class="cardhead"><h2 id="hq">الحصة الأسبوعية للخطة</h2><span class="sub" id="qsum"></span></div>
+  <div class="qgrid">
+    <div id="quota"></div>
+    <div class="wrap" id="qtab" style="max-block-size:220px"></div>
+  </div>
+  <p class="warn" id="qwarn" role="note"></p>
+</section>
+
+<section class="card" aria-labelledby="hp">
+  <div class="cardhead"><h2 id="hp">الأدوار والعرض</h2><span class="sub" id="psum"></span></div>
+  <div class="ctl">
+    <div class="seg" id="mode" role="group" aria-label="نوع التوكنات"><button type="button" data-v="cum">تراكمي</button><button type="button" data-v="per">لكل فترة</button></div>
+    <div class="seg" id="scale" role="group" aria-label="المقياس"><button type="button" data-v="abs">مقياس موحّد</button><button type="button" data-v="rel">نسبي لكل دور</button></div>
+    <div class="seg" id="bk" role="group" aria-label="التجميع"><button type="button" data-v="h">ساعة</button><button type="button" data-v="d">يوم</button></div>
+    <div class="seg" id="wsel" role="group" aria-label="نافذة السياق (100%)"><button type="button" data-v="1000000">نافذة 1 مليون = 100%</button><button type="button" data-v="250000">نافذة 250 ألفًا = 100%</button></div>
+    <label class="tog"><input type="checkbox" id="idle"> تظليل الفترات الخاملة</label>
+    <button type="button" class="exp" id="csv">تصدير CSV</button>
+  </div>
+  <div class="ctl">
+    <button type="button" class="mini" data-top="4">الأثقل 4</button>
+    <button type="button" class="mini" data-top="6">الأثقل 6</button>
+    <button type="button" class="mini" data-top="8">الأثقل 8</button>
+    <span class="sub" id="pmsg" role="status"></span>
+  </div>
+  <div class="rchips" id="rchips" role="group" aria-label="اختيار الأدوار (حتى ثمانية)"></div>
+</section>
+
+<section class="card" aria-labelledby="ht">
+  <div class="cardhead"><h2 id="ht">الإجمالي: توكنات كل دور</h2><span class="sub" id="tsum"></span></div>
+  <div class="legend" id="tleg"></div>
+  <div class="chart" id="tchart"></div>
+</section>
+
+<section class="card" aria-labelledby="hpr">
+  <div class="cardhead"><h2 id="hpr">الإجمالي: ضغط السياق % لكل دور</h2><span class="sub" id="prsum"></span></div>
+  <div class="chart" id="pchart"></div>
+</section>
+
+<section aria-labelledby="hr">
+  <div class="cardhead"><h2 id="hr">رسم مستقل لكل دور</h2><span class="sub" id="rsum"></span></div>
+  <div class="legend2" id="leg2"></div>
+  <div class="rgrid" id="rgrid"></div>
+</section>
+
+<details class="card defs"><summary>التعريفات والتحفظات</summary>
+<dl>
+<dt>التوكنات</dt><dd>لكل ردّ: إدخال + كتابة ذاكرة + قراءة ذاكرة + مخرجات، من كل الردود بما فيها الوكلاء الفرعيون. هي «ما عولج» لا «ما جرى تسعيره»؛ وقراءة الذاكرة وحدها نحو 98% منه. التراكمي يبدأ من الصفر عند بداية الفترة المحدّدة.</dd>
+<dt>ضغط السياق %</dt><dd>أكبر سياق لردّ في الخيط الرئيس خلال الساعة (أو اليوم عند التجميع باليوم)، مقسومًا على نافذة افتراضية قدرها <span id="win2"></span> توكن = 100%. النافذة الفعلية للنموذج قد تختلف، فالنسبة مؤشر مقارن لا نسبة فعلية. الفترات التي لا ردّ رئيسًا فيها بلا نقطة ضغط (الخط ينقطع). العتبة <span id="al"></span>%.</dd>
+<dt>عبور العتبة</dt><dd>أول فترة يبلغ فيها الضغط العتبة بعد فترة نشطة سابقة أقل منها (أو أول فترة نشطة).</dd>
+<dt>هبوط السياق (تقدير الضغط أو المسح)</dt><dd>ردّ سياقه أقل من نصف سياق الردّ السابق في الجلسة نفسها، وكان السابق <span id="dmin"></span> توكن فأكثر. لا يسجّل Claude Code الضغط في السجلات التي نقرؤها، فالعلامة استدلال لا عدّ؛ والمسح الكامل (/clear) يبدأ غالبًا جلسة جديدة فلا يظهر هنا.</dd>
+<dt>الفترات الخاملة</dt><dd>فترات بلا أي ردّ للدور (توكنات = 0). تظليلها اختياري.</dd>
+<dt>المقياس</dt><dd>«موحّد»: محور التوكنات واحد لكل رسوم الأدوار فتُقارَن الأحجام. «نسبي»: لكل دور محوره الخاص (النسبة من أعلى قيمة له) فيُقارَن الشكل.</dd>
+<dt>الحصة الأسبوعية</dt><dd>تُسجَّل لقطاتها يدويًّا من أداة get_usage؛ ولا يعمل statusLine في تطبيق سطح المكتب. اللقطات قليلة، فالنسبة لحظية ولا تصلح لاستنتاج اتجاه.</dd>
+</dl>
+</details>
+</div>
+<div id="tip" role="status" aria-live="off"></div>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent);
+__LIB__
+
+var LAST=D.last_day,FIRST=D.first_day,WIN=D.window,AL=D.alert/100,MAXSEL=8,H1=36e5,WINS=[D.window,250000];
+var S={from:null,to:LAST,preset:"7",models:new Set(D.models.map(function(_,i){return i})),bk:"h",mode:"cum",scale:"abs",win:D.window,idle:true,q:"",sel:null,slots:{}};
+function c2(v){return compact(v,2)}
+function p0(v){return pct(v,0)}
+
+/* ---------- حساب الفترة ---------- */
+var R,RI,ALL,B,TILE,CH,SEL,PMAX=100;
+function mkAgg(nb){var f=function(){var a=new Array(nb),i;for(i=0;i<nb;i++)a[i]=0;return a};return {tok:f(),px:f(),dr:f(),df:f(),dt:f(),total:0,drops:0}}
+function hourLabel(h){return ymd(h*H1)+" "+("0"+(h%24)).slice(-2)+":00"}
+function bucketHour(i){return B.lo+i*B.size}
+function bLabel(i){var h=bucketHour(i);return B.size===1?hourLabel(h)+" UTC":ymd(h*H1)+" (يوم UTC)"}
+function bShort(i){var h=bucketHour(i),d=ymd(h*H1);return B.size===1?dm(d)+" "+("0"+(h%24)).slice(-2)+":00":dm(d)}
+function compute(){
+  WIN=S.win;
+  var lo=Date.parse(S.from+"T00:00:00Z")/H1,hi=Date.parse(S.to+"T00:00:00Z")/H1+23,size=S.bk==="d"?24:1,nb=Math.floor((hi-lo)/size)+1;
+  B={lo:lo,hi:hi,size:size,nb:nb};RI={};
+  var hk={};
+  D.h.forEach(function(r){
+    if(!S.models.has(r.m)||r.h<lo||r.h>hi)return;
+    var a=RI[r.r]||(RI[r.r]=mkAgg(nb)),b=Math.floor((r.h-lo)/size);
+    a.tok[b]+=r.k;a.total+=r.k;if(r.x>a.px[b])a.px[b]=r.x;
+    if(r.d){a.dr[b]+=r.d;a.drops+=r.d;if(r.df>a.df[b]){a.df[b]=r.df;a.dt[b]=r.dt}}
+    if(r.x>0){var k=r.r+":"+r.h;if(!(hk[k]>=r.x))hk[k]=r.x}
+  });
+  ALL=mkAgg(nb);
+  Object.keys(RI).forEach(function(k){var a=RI[k];for(var i=0;i<nb;i++)ALL.tok[i]+=a.tok[i];ALL.total+=a.total;ALL.drops+=a.drops});
+  R=Object.keys(RI).map(Number).sort(function(x,y){return RI[y].total-RI[x].total||D.roles[x].localeCompare(D.roles[y])});
+  /* بطاقات الملخص على مستوى الساعة بصرف النظر عن التجميع */
+  var n=0,sum=0,mx=0,mxk=null,over=0;
+  Object.keys(hk).forEach(function(k){var v=hk[k]/WIN;n++;sum+=v;if(v>mx){mx=v;mxk=k}if(v>=AL)over++});
+  PMAX=100*Math.max(1,Math.ceil(mx-1e-9));
+  TILE={n:n,avg:n?sum/n:null,max:mx,maxk:mxk,over:over,tokens:ALL.total,roles:R.filter(function(r){return RI[r].total>0}).length};
+}
+function fin(a){
+  var nb=B.nb,i,run=0,last=null;
+  a.cum=new Array(nb);a.pr=new Array(nb);a.cross=[];a.peak=null;a.act=0;
+  for(i=0;i<nb;i++){
+    run+=a.tok[i];a.cum[i]=run;if(a.tok[i]>0)a.act++;
+    var p=a.px[i]>0?a.px[i]/WIN:null;a.pr[i]=p;
+    if(p!=null){
+      if(p>=AL&&(last==null||last<AL))a.cross.push(i);
+      if(!a.peak||p>a.peak.v)a.peak={i:i,v:p};
+      last=p;
+    }
+  }
+  return a;
+}
+function vals(a){return S.mode==="cum"?a.cum:a.tok}
+function vmax(arr){var m=0;for(var i=0;i<arr.length;i++)if(arr[i]>m)m=arr[i];return m}
+
+/* ---------- الاختيار والألوان ---------- */
+function topN(n){return R.slice(0,n).map(function(r){return D.roles[r]})}
+function curSel(){
+  var s=S.sel===null?topN(6):S.sel.slice();
+  return s.filter(function(n){return D.roles.indexOf(n)>=0}).slice(0,MAXSEL);
+}
+function assignSlots(sel){
+  var next={},used={};
+  sel.forEach(function(n){var s=S.slots[n];if(s!=null&&!used[s]){next[n]=s;used[s]=1}});
+  sel.forEach(function(n){if(next[n]==null){for(var s=0;s<MAXSEL;s++)if(!used[s]){next[n]=s;used[s]=1;break}}});
+  S.slots=next;
+}
+function cvar(n){return "--s"+(S.slots[n]+1)}
+function roleIdx(n){return D.roles.indexOf(n)}
+function aggOf(n){var i=roleIdx(n);return fin(RI[i]||mkAgg(B.nb))}
+
+/* ---------- إطار الرسم ---------- */
+function frame(box,o){
+  clear(box);
+  var W=chartW(box),H=o.H||(W<480?240:280),ml=o.ml||44,mr=o.mr||14,mt=18,mb=24,iw=W-ml-mr,ih=H-mt-mb,nb=B.nb;
+  var svg=sv("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H,role:"group","aria-label":o.label+"؛ استعمل الأسهم للتنقل بين الفترات"});
+  var X=function(i){return nb<2?ml+iw/2:ml+iw*i/(nb-1)},half=nb<2?iw/2:iw/(nb-1)/2;
+  var YL=function(v){return mt+ih-ih*v/o.left.max},YR=o.right?function(v){return mt+ih-ih*v/o.right.max}:null;
+  if(o.idle&&S.idle){
+    var s=-1;
+    for(var i=0;i<=nb;i++){
+      var idle=i<nb&&o.idle[i];
+      if(idle&&s<0)s=i;
+      if(!idle&&s>=0){var x0=Math.max(ml,X(s)-half),x1=Math.min(ml+iw,X(i-1)+half);
+        svg.appendChild(sv("rect",{x:x0,y:mt,width:Math.max(0,x1-x0),height:ih,fill:css("--chip"),opacity:.9}));s=-1}
+    }
+  }
+  for(var g=0;g<=4;g++){
+    var y=mt+ih-ih*g/4;
+    svg.appendChild(sv("line",{x1:ml,x2:ml+iw,y1:y,y2:y,class:g?"grid":"axis"}));
+    svg.appendChild(sv("text",{x:ml-6,y:y+4,"text-anchor":"end"},o.left.fmt(o.left.max*g/4)));
+    if(o.right)svg.appendChild(sv("text",{x:ml+iw+6,y:y+4,"text-anchor":"start"},o.right.fmt(o.right.max*g/4)));
+  }
+  svg.appendChild(sv("text",{x:ml-6,y:9,"text-anchor":"end",style:"fill:var(--ink)"},o.left.title));
+  if(o.right)svg.appendChild(sv("text",{x:ml+iw+6,y:9,"text-anchor":"start",style:"fill:var(--ink)"},o.right.title));
+  /* علامات الزمن */
+  var steps=B.size===1?[1,2,3,6,12,24,48,72,168,336,720]:[1,2,3,7,14,30],st=steps[steps.length-1],k;
+  for(k=0;k<steps.length;k++)if(nb/steps[k]<=Math.max(2,iw/60)){st=steps[k];break}
+  for(i=0;i<nb;i+=st){
+    var h=bucketHour(i),lbl=B.size===1?(st<24?(h%24===0?dm(ymd(h*H1)):("0"+(h%24)).slice(-2)+":00"):dm(ymd(h*H1))):dm(ymd(h*H1));
+    svg.appendChild(sv("text",{x:X(i),y:H-8,"text-anchor":"middle"},lbl));
+  }
+  if(o.thr){
+    var ty=YL(o.thr*100);
+    svg.appendChild(sv("line",{x1:ml,x2:ml+iw,y1:ty,y2:ty,stroke:css("--warn"),"stroke-width":1.5,"stroke-dasharray":"6 4"}));
+    svg.appendChild(sv("text",{x:ml+4,y:ty-4,"text-anchor":"start",style:"fill:var(--warn)"},D.alert+"%"));
+  }
+  var marks=sv("g");svg.appendChild(marks);
+  var cross=sv("line",{y1:mt,y2:mt+ih,stroke:css("--ink3"),"stroke-width":1,visibility:"hidden"});svg.appendChild(cross);
+  var me={setX:function(i){var x=X(i);cross.setAttribute("x1",x);cross.setAttribute("x2",x);cross.setAttribute("visibility","visible")},hide:function(){cross.setAttribute("visibility","hidden")}};
+  function at(i,ev){
+    CH.forEach(function(c){c.setX(i)});
+    var r=svg.getBoundingClientRect(),t=o.tip(i);
+    showTip(ev?ev.clientX:r.left+X(i),ev?ev.clientY:r.top+mt+20,t.title,t.rows);
+  }
+  function off(){CH.forEach(function(c){c.hide()});hideTip()}
+  svg.addEventListener("pointermove",function(e){
+    var r=svg.getBoundingClientRect(),px=e.clientX-r.left;
+    if(px<ml-4||px>ml+iw+4)return off();
+    at(Math.max(0,Math.min(nb-1,nb<2?0:Math.round((px-ml)/iw*(nb-1)))),e)});
+  svg.addEventListener("pointerleave",off);
+  attachNav(svg,nb,at,off);
+  CH.push(me);box.appendChild(svg);
+  return {svg:svg,marks:marks,X:X,YL:YL,YR:YR,ml:ml,mt:mt,iw:iw,ih:ih};
+}
+function path(f,arr,Y,col,w,dash){
+  var d="",pen=false;
+  arr.forEach(function(v,i){if(v==null){pen=false;return}d+=(pen?"L":"M")+f.X(i)+","+Y(v);pen=true});
+  var a={d:d,fill:"none",stroke:css(col),"stroke-width":w,"stroke-linejoin":"round","stroke-linecap":"round"};
+  if(dash)a["stroke-dasharray"]=dash;
+  f.marks.appendChild(sv("path",a));
+}
+function dots(f,arr,Y,col,r){
+  arr.forEach(function(v,i){if(v==null)return;f.marks.appendChild(sv("circle",{cx:f.X(i),cy:Y(v),r:r,fill:css(col),stroke:css("--surface"),"stroke-width":1.5}))});
+}
+function idleOf(a){return a.tok.map(function(t){return t===0})}
+function pointR(){return B.size===1&&B.nb>400?2:3}
+
+/* ---------- الإجمالي ---------- */
+function drawTotal(box,sel){
+  var lines=sel.map(function(n){var a=aggOf(n);return {n:n,a:a,v:vals(a),c:cvar(n)}});
+  var tot=fin(ALL),tv=vals(tot),rel=S.scale==="rel";
+  var m=vmax(tv);lines.forEach(function(l){var x=vmax(l.v);if(x>m)m=x});
+  var ymax=rel?1:niceMax(m||1);
+  var norm=function(arr){if(!rel)return arr;var x=vmax(arr)||1;return arr.map(function(v){return v/x})};
+  var f=frame(box,{label:"توكنات الأدوار المحدّدة والإجمالي",ml:58,left:{max:ymax,fmt:rel?p0:function(v){return compact(v,v>=1e9&&v%1e9?1:0)},title:rel?"% من أعلى قيمة":"توكن"},idle:idleOf(tot),
+    tip:function(i){
+      var rows=lines.map(function(l){var p=l.a.pr[i];return {color:css(l.c),name:l.n,value:c2(l.v[i])+(p!=null?" · ضغط "+p0(p):"")}});
+      rows.push({name:"الإجمالي (كل الأدوار)",value:c2(tv[i])});
+      return {title:bLabel(i)+(S.mode==="cum"?" · تراكمي":" · لكل فترة"),rows:rows};
+    }});
+  path(f,norm(tv),f.YL,"--ink",2,"6 3");
+  lines.forEach(function(l){path(f,norm(l.v),f.YL,l.c,2)});
+}
+function drawPress(box,sel){
+  var lines=sel.map(function(n){return {n:n,a:aggOf(n),c:cvar(n)}});
+  var tot=fin(ALL);
+  var f=frame(box,{label:"ضغط السياق % للأدوار المحدّدة",ml:44,left:{max:PMAX,fmt:function(v){return v.toFixed(0)+"%"},title:"ضغط %"},thr:AL,idle:idleOf(tot),
+    tip:function(i){
+      var rows=lines.filter(function(l){return l.a.pr[i]!=null}).map(function(l){return {color:css(l.c),name:l.n,value:pct(l.a.pr[i],1)+" · "+c2(l.a.px[i])}});
+      if(!rows.length)rows=[{name:"لا ردّ رئيس في هذه الفترة",value:"—"}];
+      return {title:bLabel(i),rows:rows};
+    }});
+  var Y=function(v){return f.YL(v*100)};
+  lines.forEach(function(l){path(f,l.a.pr,Y,l.c,1.8);dots(f,l.a.pr,Y,l.c,pointR())});
+  lines.forEach(function(l){l.a.cross.forEach(function(i){f.marks.appendChild(sv("circle",{cx:f.X(i),cy:Y(l.a.pr[i]),r:6,fill:"none",stroke:css(l.c),"stroke-width":2}))})});
+}
+
+/* ---------- رسم الدور ---------- */
+function drawRole(box,n,a,absMax){
+  var v=vals(a),rel=S.scale==="rel",own=vmax(v)||1,ymax=rel?own:absMax,col=cvar(n);
+  var f=frame(box,{label:"الدور "+n+": التوكنات والضغط",ml:44,mr:56,left:{max:PMAX,fmt:function(x){return x.toFixed(0)+"%"},title:"ضغط %"},
+    right:{max:ymax,fmt:rel?function(x){return p0(x/ymax)}:function(x){return compact(x,x>=1e9&&x%1e9?1:0)},title:rel?"% من أعلى قيمة":"توكن"},thr:AL,idle:idleOf(a),
+    tip:function(i){
+      var rows=[{color:css(col),name:S.mode==="cum"?"توكنات تراكمية":"توكنات الفترة",value:c2(v[i])}];
+      if(S.mode==="cum")rows.push({name:"توكنات هذه الفترة",value:c2(a.tok[i])});
+      rows.push({name:"ضغط السياق",value:a.pr[i]!=null?pct(a.pr[i],1)+" · "+c2(a.px[i]):"— (لا ردّ رئيس)"});
+      if(a.dr[i])rows.push({name:"هبوط السياق (تقدير)",value:"من "+c2(a.df[i])+" إلى "+c2(a.dt[i])+(a.dr[i]>1?" (+"+(a.dr[i]-1)+")":"")});
+      if(a.cross.indexOf(i)>=0)rows.push({name:"عبور العتبة",value:D.alert+"%"});
+      return {title:bLabel(i),rows:rows};
+    }});
+  var YL=f.YL,YR=f.YR;
+  if(S.mode==="cum"){
+    var d="M"+f.X(0)+","+YR(0);
+    v.forEach(function(x,i){d+="L"+f.X(i)+","+YR(x)});
+    f.marks.appendChild(sv("path",{d:d+"L"+f.X(B.nb-1)+","+YR(0)+"Z",fill:css(col),opacity:.16}));
+    path(f,v,YR,col,2);
+  }else{
+    var bw=Math.max(1,Math.min(14,f.iw/B.nb*.8));
+    v.forEach(function(x,i){if(x>0){var y=YR(x);f.marks.appendChild(sv("rect",{x:f.X(i)-bw/2,y:y,width:bw,height:Math.max(1,f.mt+f.ih-y),fill:css(col),opacity:.55}))}});
+  }
+  var Y=function(p){return YL(p*100)};
+  path(f,a.pr,Y,"--ink",1.5);dots(f,a.pr,Y,"--ink",pointR()-.5);
+  a.cross.forEach(function(i){f.marks.appendChild(sv("circle",{cx:f.X(i),cy:Y(a.pr[i]),r:6,fill:"none",stroke:css("--warn"),"stroke-width":2.2}))});
+  a.dr.forEach(function(c,i){if(!c)return;var x=f.X(i),y=a.pr[i]!=null?Y(a.pr[i]):f.mt+f.ih-10;
+    f.marks.appendChild(sv("path",{d:"M"+(x-4.5)+","+(y-13)+"L"+(x+4.5)+","+(y-13)+"L"+x+","+(y-5)+"Z",fill:css("--s2"),stroke:css("--surface"),"stroke-width":1}))});
+  if(a.peak){var px=f.X(a.peak.i),py=Y(a.peak.v);
+    f.marks.appendChild(sv("path",{d:"M"+px+","+(py-6)+"L"+(px+6)+","+py+"L"+px+","+(py+6)+"L"+(px-6)+","+py+"Z",fill:css("--ink"),stroke:css("--surface"),"stroke-width":1.5}));
+    var right=px>f.ml+f.iw/2;
+    f.marks.appendChild(sv("text",{x:px+(right?-9:9),y:py<f.mt+14?py+16:py-9,"text-anchor":right?"end":"start",style:"fill:var(--ink);font-weight:600"},pct(a.peak.v,0)))}
+}
+
+/* ---------- البطاقات ---------- */
+function tilesInto(box,items){
+  clear(box);
+  items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));box.appendChild(d)});
+}
+function renderTiles(){
+  var mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC":"—";
+  tilesInto($("#tiles"),[
+    ["إجمالي التوكنات",compact(TILE.tokens),"كل أدوار المشروع في الفترة"],
+    ["الأدوار النشطة",num(TILE.roles),"من "+num(D.roles.length)+" دورًا مسجّلًا"],
+    ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة"],
+    ["أعلى ضغط",TILE.n?pct(TILE.max,1):"—",who],
+    ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—"],
+    ["هبوط السياق (تقدير)",num(ALL.drops),"ضغط أو مسح مُستدَل عليه"]]);
+}
+function dq(ms){return new Date(ms+3*H1).toISOString().slice(0,16).replace("T"," ")}
+function renderQuota(){
+  var box=$("#quota");clear(box);
+  var n=D.plan.length;
+  if(!n){box.appendChild(mk("div",{class:"empty"},"لا لقطات مسجّلة بعد."));$("#qsum").textContent="";$("#qwarn").textContent="لا توجد لقطات حصة؛ سجّلها بـ get_usage ثم python src\\record_usage.py.";clear($("#qtab"));return}
+  var p=D.plan[n-1],t=Date.parse(p.ts),ageH=(Date.now()-t)/H1;
+  var rows=[
+    ["آخر تحديث للقياس",dq(t)+" (الدوحة)"],
+    ["عمر القياس",ageH<1?"أقل من ساعة":ageH<48?num(ageH,1)+" ساعة":num(ageH/24,1)+" يومًا"],
+    ["المستهلك أسبوعيًّا",p.w==null?"—":num(p.w,1)+"%"],
+    ["المتبقي أسبوعيًّا",p.w==null?"—":num(100-p.w,1)+"%"],
+    ["إعادة الضبط الأسبوعية",p.wr?dq(Date.parse(p.wr))+" (الدوحة)":"—"],
+    ["نافذة الخمس ساعات",p.f==null?"—":(p.fr&&Date.parse(p.fr)<Date.now()?"انتهت نافذتها (الرقم قديم)":num(p.f,1)+"% حتى "+dq(Date.parse(p.fr)))]];
+  var bar=mk("div",{class:"qbar",role:"img","aria-label":"المستهلك أسبوعيًّا "+(p.w==null?"غير معروف":num(p.w,1)+"%")}),i=mk("i");i.style.inlineSize=Math.max(0,Math.min(100,p.w||0))+"%";bar.appendChild(i);box.appendChild(bar);
+  rows.forEach(function(r){var d=mk("div",{class:"qrow"});d.appendChild(mk("span",null,r[0]));d.appendChild(mk("b",null,r[1]));box.appendChild(d)});
+  $("#qsum").textContent=num(n)+" لقطة";
+  var w=$("#qwarn");w.textContent="تنبيه: اللقطات قليلة ("+num(n)+" فقط) وتُسجَّل يدويًّا من get_usage؛ النسبة لحظية ولا تُبنى عليها اتجاهات.";
+  var last=D.plan.slice(-6).reverse();
+  drawTable($("#qtab"),[{k:"ts",l:"الوقت (الدوحة)",f:function(r){return dq(Date.parse(r.ts))}},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],last,null,null);
+}
+function renderChips(){
+  var box=$("#rchips");clear(box);
+  var sel=curSel(),q=S.q;
+  var list=R.filter(function(r){return !q||D.roles[r].toLowerCase().indexOf(q)>=0});
+  sel.forEach(function(n){var i=roleIdx(n);if(i>=0&&list.indexOf(i)<0&&(!q||n.indexOf(q)>=0))list.push(i)});
+  list.slice(0,80).forEach(function(r){
+    var n=D.roles[r],on=sel.indexOf(n)>=0;
+    var b=mk("button",{type:"button",class:"rchip","aria-pressed":String(on),"aria-label":"الدور "+n});
+    var sw=mk("span",{class:"sw"});sw.style.background=on?css(cvar(n)):"var(--line)";b.appendChild(sw);
+    b.appendChild(mk("span",null,n));b.appendChild(mk("small",null,RI[r]?compact(RI[r].total,1):"0"));
+    b.addEventListener("click",function(){
+      var cur=curSel(),k=cur.indexOf(n);
+      if(k>=0)cur.splice(k,1);else{if(cur.length>=MAXSEL){$("#pmsg").textContent="الحد الأقصى "+MAXSEL+" أدوار؛ ألغِ دورًا أولًا.";return}cur.push(n)}
+      S.sel=cur;$("#pmsg").textContent="";render();
+    });box.appendChild(b);
+  });
+  if(!list.length)box.appendChild(mk("div",{class:"empty"},"لا أدوار مطابقة."));
+  $("#psum").textContent=num(sel.length)+" محدَّدة من "+num(R.length)+" دورًا نشطًا في الفترة";
+}
+function legendTotal(sel){
+  var box=$("#tleg");clear(box);
+  sel.forEach(function(n){var s=mk("span");var i=mk("i");i.style.background=css(cvar(n));s.appendChild(i);s.appendChild(document.createTextNode(n));box.appendChild(s)});
+  var s=mk("span");var i=mk("i");i.style.background=css("--ink");i.style.height="0";i.style.borderBlockStart="2px dashed "+css("--ink");s.appendChild(i);s.appendChild(document.createTextNode("الإجمالي (كل أدوار الفترة)"));box.appendChild(s);
+}
+function legend2(){
+  var box=$("#leg2");clear(box);
+  [["━","--ink","خط الضغط % (المحور الأيمن للتوكنات، الأيسر للضغط)"],["┅","--warn","عتبة "+D.alert+"%"],["◯","--warn","عبور العتبة"],["◆","--ink","ذروة الضغط"],["▼","--s2","هبوط السياق (تقدير)"],["▒","--line","فترة بلا نشاط"]].forEach(function(l){
+    var s=mk("span");var g=mk("b",null,l[0]);g.style.color=css(l[1]);g.style.marginInlineEnd=".3rem";s.appendChild(g);s.appendChild(document.createTextNode(l[2]));box.appendChild(s)});
+}
+function lstDates(a,idx,max){
+  var l=idx.slice(0,max).map(bShort).join(" · ");return l+(idx.length>max?" +"+(idx.length-max):"")
+}
+function renderRoleCards(sel){
+  var grid=$("#rgrid"),jobs=[];clear(grid);
+  var aggs=sel.map(function(n){return aggOf(n)}),absMax=niceMax(Math.max(1,aggs.reduce(function(m,a){return Math.max(m,vmax(vals(a)))},0)));
+  $("#rsum").textContent=num(sel.length)+" دورًا · "+(S.mode==="cum"?"تراكمي":"لكل فترة")+" · "+(S.scale==="abs"?"مقياس موحّد":"نسبي")+" · تجميع بال"+(S.bk==="h"?"ساعة":"يوم");
+  if(!sel.length){grid.appendChild(mk("div",{class:"empty"},"اختر دورًا واحدًا على الأقل."));return jobs}
+  sel.forEach(function(n,k){
+    var a=aggs[k],card=mk("div",{class:"rcard"}),head=mk("div",{class:"rhead"}),h3=mk("h3");
+    var sw=mk("span",{class:"sw"});sw.style.background=css(cvar(n));sw.style.inlineSize="12px";sw.style.blockSize="12px";h3.appendChild(sw);h3.appendChild(document.createTextNode("الدور "+n));head.appendChild(h3);
+    var st=mk("div",{class:"rstat"});
+    [["التوكنات",c2(a.total)],["أعلى ضغط",a.peak?pct(a.peak.v,1)+" ("+bShort(a.peak.i)+")":"—"],["عبور "+D.alert+"%",num(a.cross.length)],["هبوط السياق",num(a.drops)],["فترات نشطة",num(a.act)+" من "+num(B.nb)]].forEach(function(x){
+      var s=mk("span",null,x[0]+" ");s.appendChild(mk("b",null,x[1]));st.appendChild(s)});
+    head.appendChild(st);card.appendChild(head);
+    var box=mk("div",{class:"chart"});card.appendChild(box);
+    if(a.cross.length)card.appendChild(mk("p",{class:"xlist"},"عبور العتبة: "+lstDates(a,a.cross,6)));
+    grid.appendChild(card);
+    if(!a.total)box.appendChild(mk("div",{class:"empty"},"لا نشاط لهذا الدور في الفترة والنماذج المحدّدة."));else jobs.push(function(){drawRole(box,n,a,absMax)});
+  });
+  return jobs;
+}
+
+/* ---------- تصدير CSV ---------- */
+function exportCsv(){
+  var sel=curSel(),out=["bucket_utc,role,tokens_bucket,tokens_cumulative,pressure_pct,peak_context,drops"];
+  function row(label,name,a){for(var i=0;i<B.nb;i++){if(!a.tok[i]&&!a.px[i])continue;
+    out.push([label(i),name,a.tok[i],a.cum[i],a.pr?(a.pr[i]==null?"":(100*a.pr[i]).toFixed(2)):"",a.px?a.px[i]:"",a.dr?a.dr[i]:""].join(","))}}
+  var lab=function(i){var h=bucketHour(i);return ymd(h*H1)+(B.size===1?"T"+("0"+(h%24)).slice(-2)+":00:00Z":"")};
+  sel.forEach(function(n){row(lab,n,aggOf(n))});
+  row(lab,"ALL",fin(ALL));
+  var blob=new Blob(["﻿"+out.join("\r\n")+"\r\n"],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sessions_hourly_"+S.from+"_"+S.to+".csv";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},1500);
+}
+
+/* ---------- العرض ---------- */
+function syncSegs(){
+  [["#mode","mode"],["#scale","scale"],["#bk","bk"],["#wsel","win"]].forEach(function(p){
+    [].forEach.call($(p[0]).children,function(b){b.setAttribute("aria-pressed",String(b.dataset.v===String(S[p[1]])))})});
+  $("#win").textContent=num(WIN);$("#win2").textContent=num(WIN);
+  $("#idle").checked=S.idle;
+}
+function render(){
+  compute();CH=[];
+  var sel=curSel();assignSlots(sel);SEL=sel;
+  syncSegs();renderTiles();renderQuota();renderChips();legendTotal(sel);
+  $("#tsum").textContent=(S.mode==="cum"?"تراكمي من بداية الفترة":"لكل "+(S.bk==="h"?"ساعة":"يوم"))+" · "+(S.scale==="abs"?"مقياس موحّد":"نسبي")+" · "+num(B.nb)+" "+(S.bk==="h"?"ساعة":"يومًا");
+  $("#prsum").textContent=sel.length?"العتبة "+D.alert+"% · النافذة "+compact(WIN)+" توكن = 100%"+(PMAX>100?" · المحور ممدود إلى "+PMAX+"% لأن سياقات تجاوزت النافذة":""):"";
+  var jobs=renderRoleCards(sel); /* تُبنى البطاقات أولًا كي تُقاس عروض الرسوم بعد استقرار التخطيط وظهور شريط التمرير */
+  if(!sel.length){clear($("#tchart"));clear($("#pchart"));return}
+  drawTotal($("#tchart"),sel);drawPress($("#pchart"),sel);jobs.forEach(function(f){f()});
+}
+function saveView(){try{sessionStorage.setItem("mu_hourly",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models),q:S.q,bk:S.bk,mo:S.mode,sc:S.scale,id:S.idle,w:S.win,s:S.sel}))}catch(e){}}
+function loadView(){
+  try{var v=JSON.parse(sessionStorage.getItem("mu_hourly")||"null");if(!v)return;sessionStorage.removeItem("mu_hourly");
+    if(v.p&&v.p!=="custom")setPreset(v.p);else if(v.f&&v.t){S.preset="custom";S.from=v.f;S.to=v.t;syncInputs()}
+    if(Array.isArray(v.m)&&v.m.length)S.models=new Set(v.m.filter(function(i){return i>=0&&i<D.models.length}));
+    S.q=String(v.q||"");if(v.bk==="h"||v.bk==="d")S.bk=v.bk;if(v.mo==="cum"||v.mo==="per")S.mode=v.mo;if(v.sc==="abs"||v.sc==="rel")S.scale=v.sc;
+    S.idle=v.id!==false;if(WINS.indexOf(v.w)>=0)S.win=v.w;S.sel=Array.isArray(v.s)?v.s.filter(function(n){return typeof n==="string"}).slice(0,MAXSEL):null;
+  }catch(e){}
+}
+function init(){
+  $("#al").textContent=D.alert;$("#dmin").textContent=num(D.drop_min);
+  setPreset("7");loadView();buildChips();initRefresh(saveView);bindFilters();
+  $("#q").value=S.q;
+  /* ضبط الفترة المخصّصة يُبقي التجميع المختار؛ الفترة الطويلة تنتقل تلقائيًّا إلى اليوم */
+  [].forEach.call($("#presets").children,function(b){b.addEventListener("click",function(){S.bk=(b.dataset.p==="2"||b.dataset.p==="7")?"h":"d";render()})});
+  [["#mode","mode"],["#scale","scale"],["#bk","bk"],["#wsel","win"]].forEach(function(p){
+    [].forEach.call($(p[0]).children,function(b){b.addEventListener("click",function(){S[p[1]]=p[1]==="win"?Number(b.dataset.v):b.dataset.v;render()})})});
+  $("#idle").addEventListener("change",function(){S.idle=this.checked;render()});
+  [].forEach.call(document.querySelectorAll("[data-top]"),function(b){b.addEventListener("click",function(){S.sel=topN(Number(b.dataset.top));render()})});
+  var qt;$("#q").addEventListener("input",function(){var el=this;clearTimeout(qt);qt=setTimeout(function(){S.q=el.value.trim().toLowerCase();render()},150)});
+  $("#csv").addEventListener("click",exportCsv);
+  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.q="";S.bk="h";S.mode="cum";S.scale="abs";S.win=D.window;S.idle=true;S.sel=null;S.slots={};
+    $("#q").value="";setPreset("7");buildChips();render()});
+  var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(render,120)});
+  S.q=S.q.toLowerCase();legend2();
+  render();
+}
+init();
+})();
+</script>
+</body>
+</html>
