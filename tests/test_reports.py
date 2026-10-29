@@ -73,7 +73,10 @@ class TestReports(unittest.TestCase):
         self.assertTrue(os.path.exists(path))
         html = open(path, encoding="utf-8").read()
         self.assertIn('dir="rtl"', html)
-        self.assertNotIn("http", html.replace("http-equiv", ""))  # بلا موارد خارجية
+        # بلا موارد خارجية: الرابط الوحيد المسموح هو مساحة أسماء SVG (نص لا طلب)
+        self.assertEqual(html.replace("http://www.w3.org/2000/svg", "").count("http"), 0)
+        for bad in ("<link", "@import", "fetch(", "XMLHttpRequest", "src=\"http", "<script src"):
+            self.assertNotIn(bad, html)
 
 
 if __name__ == "__main__":

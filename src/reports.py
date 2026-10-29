@@ -10,6 +10,7 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dashboard  # noqa: E402
 import usage_db  # noqa: E402
 
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
@@ -182,16 +183,6 @@ def source(text, stamp):
     return '<p class="src">المصدر: %s · آخر تحديث للقاعدة: %s (UTC)</p>' % (html.escape(text), html.escape(stamp))
 
 
-CSS = """
-:root{--bg:#fafaf7;--fg:#1a1a1a;--mut:#666;--bd:#d8d8d0;--hd:#eeeee6}
-@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#e8e8e8;--mut:#9a9a9a;--bd:#3a3a3a;--hd:#242424}}
-body{background:var(--bg);color:var(--fg);font:15px/1.7 "Segoe UI",Tahoma,sans-serif;margin:0 auto;max-inline-size:1100px;padding:1rem 1rem 4rem}
-h1{font-size:1.5rem}h2{margin-block-start:2.5rem;font-size:1.2rem;border-block-end:1px solid var(--bd)}
-table{border-collapse:collapse;inline-size:100%;margin-block:.5rem;font-size:.85rem}
-th,td{border:1px solid var(--bd);padding:.3rem .5rem;text-align:start}th{background:var(--hd)}
-td{font-variant-numeric:tabular-nums}.src,.note{color:var(--mut);font-size:.8rem}.warn{color:#b45309}
-.wrap{overflow-x:auto}
-"""
 
 
 def build(con, out_dir=REPORTS_DIR):
@@ -291,13 +282,9 @@ def build(con, out_dir=REPORTS_DIR):
                  '(هـ) الوكلاء الفرعيون بلا أصل فلا يدخلون هذا العدّ.</p>')
     parts.append(source("جدول usage_turns (العمود turn_origin) وربط الأرقام من sessions.number", stamp))
 
-    page = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            '<title>تقارير استهلاك Claude Code</title><style>%s</style></head><body><h1>تقارير استهلاك Claude Code</h1>'
-            '<p class="note">وُلّدت محليًّا في %s من القاعدة flow_usage.sqlite3. أرقام فقط؛ لا نصوص محادثات. المقياس توكن لا دولار (الخطة اشتراك ثابت).</p>%s</body></html>'
-            % (CSS, html.escape(datetime.now().strftime("%Y-%m-%d %H:%M")), "".join(parts)))
     path = os.path.join(out_dir, "index.html")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(page)
+    data = dashboard.payload(con, session_label, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY)
+    dashboard.write(path, data, "".join(parts), datetime.now().strftime("%Y-%m-%d %H:%M"))
     return path
 
 

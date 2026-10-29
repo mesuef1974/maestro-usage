@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import backup_db  # noqa: E402
+import reports  # noqa: E402
 import statusline_loader  # noqa: E402
 import usage_db  # noqa: E402
 import usage_ingest  # noqa: E402
@@ -55,9 +56,15 @@ def main():
         con = usage_db.connect()
         st = usage_ingest.run(con)
         sp = statusline_loader.load_spool(con)
+        try:
+            t2 = time.time()
+            reports.build(con)  # يُولّد reports\index.html وملفات CSV؛ فشله لا يوقف الدورة
+            rep = "ok sec %.1f" % (time.time() - t2)
+        except Exception as exc:  # noqa: BLE001
+            rep = "ERROR " + type(exc).__name__
         con.close()
         log("ingest " + json.dumps({k: st[k] for k in ("files_ingested", "turns_new", "turns_updated", "turns_reassigned", "files_error", "turns_total")})
-            + " spool " + json.dumps(sp) + " sec %.1f" % (time.time() - t))
+            + " spool " + json.dumps(sp) + " reports " + rep + " sec %.1f" % (time.time() - t))
         if backup_due():
             dest, res = backup_db.backup()
             log("backup integrity_check=" + res)
