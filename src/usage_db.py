@@ -12,6 +12,7 @@ SCHEMA_VERSION = 3
 CONFIG_SEEDS = [
     ("2026-10-29", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "9", "45", "عتبة الضغط التلقائي؛ التغيير الأول في اليوم. لم تُطبَّق وفق get_usage (autoCompactsAtPercent=97)"),
     ("2026-10-29", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "45", "25", "عتبة الضغط التلقائي؛ التغيير الثاني في اليوم نفسه. لم تُطبَّق وفق get_usage (autoCompactsAtPercent=97 في جلسة جديدة)"),
+    ("2026-10-29", "autoCompactWindow", "none", "250000", "أضافته 0101 بإذن المالك؛ فعّال وفق get_usage في جلسة جديدة (contextWindow=250000، autoCompactsAtPercent=87 أي نحو 217 ألف توكن بدل نحو 970 ألفًا)"),
     ("2026-10-29", "statusLine", "none", "command", "ثبّتته 0101 بإذن المالك؛ يسري على الجلسات الجديدة"),
 ]
 
