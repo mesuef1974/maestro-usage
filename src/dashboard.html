@@ -23,6 +23,7 @@ __CSS__
   <div class="lh"><h2 id="hl">حدود استهلاك الخطة<span id="lplan"></span></h2><a href="#h3">عرض الرسم ↓</a></div>
   <div class="lrow" id="lr5"><div class="lt"><span class="ln">حدّ الخمس ساعات</span><span><span class="lr" id="lr5r"></span><span class="lp" id="lr5p"></span></span></div><div class="lb" role="progressbar" aria-label="حدّ الخمس ساعات" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr5f"></span></div></div>
   <div class="lrow" id="lr7"><div class="lt"><span class="ln">الأسبوعي · كل النماذج</span><span><span class="lr" id="lr7r"></span><span class="lp" id="lr7p"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr7f"></span></div></div>
+  <div class="lrow" id="lrn" hidden><div class="lt"><span class="ln">تجديد الاشتراك الشهري</span><span><span class="lr" id="lrnr"></span><span class="lp" id="lrnp"></span></span></div></div>
   <p class="note" id="lnote"></p>
 </section>
 
@@ -181,9 +182,19 @@ function renderLimits(){
   D.plan.forEach(function(p){if((p.f!=null||p.w!=null)&&(!last||p.ts>last.ts))last=p});
   if(!last){box.hidden=true;return}
   box.hidden=false;
-  var pl=null;D.plan.forEach(function(p){if(p.pl&&(!pl||p.ts>pl.ts))pl=p});
-  $("#lplan").textContent=pl?" · "+pl.pl:"";
+  $("#lplan").textContent=D.plan_label?" · "+D.plan_label:"";
   var now=Date.now();
+  /* التجديد الشهري: أقرب يوم تجديد قادم (بتوقيت الجهاز)؛ يوم أكبر من طول الشهر يُقصّ إلى آخر يوم فيه */
+  var rn=$("#lrn"),rd=D.plan_renew_day;
+  rn.hidden=!rd;
+  if(rd){
+    var t=new Date(now),nx;
+    var at=function(y,m){var last=new Date(y,m+1,0).getDate();return new Date(y,m,Math.min(rd,last),23,59,59)};
+    nx=at(t.getFullYear(),t.getMonth());if(nx.getTime()<now)nx=at(t.getFullYear(),t.getMonth()+1);
+    var left=Math.ceil((nx.getTime()-now)/864e5);
+    $("#lrnr").textContent=WD[nx.getDay()]+" "+nx.getDate()+"/"+(nx.getMonth()+1)+"/"+nx.getFullYear();
+    $("#lrnp").textContent=left<=1?"اليوم أو غدًا":"بعد "+left+" يومًا";
+  }
   limitRow("lr5",last.f,last.fr,false,now);
   limitRow("lr7",last.w,last.wr,true,now);
   var age=Math.max(0,Math.round((now-Date.parse(last.ts))/6e4));
