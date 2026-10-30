@@ -229,3 +229,8 @@
 - `scripts/clean_temp_and_models.py` (عرض افتراضي؛ يتخطّى `claude` وكل مجلد يرد اسمه في أوامر عملية حيّة، والملفات المقفلة تُترك). شغّلتُه `--apply`: حُذف ≈11.0 GB فعليًّا (flux-control-lab 3.08 GB، المجلد 7F107B51 1.98 GB، DiagOutputDir 0.55 GB، vscode-stable-user-x64 0.25 GB، DockerDesktopUpdates 46 MB، وغيرها، وQwen3-8B 5.03 GB). بقي في Temp نحو 498 MB (claude والمقفل).
 - تنبيه: ما حُذف من flux-control-lab كان تجربة بنموذج Klein Base؛ النسخة المقطّرة والمستودع `C:\Codex\Projects\local-pen-studio` لم يُمسّا. لم أتحقّق أن Docker وVS Code سليمان بعد حذف مؤقتهما (الحذف قد يعيد بناء ما فقداه).
 - تحقّقتُ: بقاء Qwen3-VL-4B وTemp\claude، والاختبارات ناجحة، وC صار فيه 131 GB خالية. لم تُحذف بنود القائمة الآمنة الأخرى (puppeteer وnpm-cache ونسخ القاعدة القديمة وCrashDumps).
+
+## 2026-10-30 — حذف الكاش ونسخ القاعدة القديمة (بأمر المالك)
+- بند من قائمة الكاش الآمنة اختارها المالك: `.cache\puppeteer` (1.51 GB) وnpm-cache (446 MB) وCrashDumps (151 MB) وثلاث نسخ احتياطية قديمة للقاعدة (≈361 MB).
+- `scripts/clean_caches.py` (عرض افتراضي، يحذف محتويات المجلدات لا المجلدات نفسها، ويُبقي أحدث نسخة قاعدة). حُذف فعليًّا 2.47 GB. بقيت `flow_usage_before_purge_20261030_203124.sqlite3` (نسخة ما قبل حذف السجلات) فقط في `.maestro\backups`.
+- تحقّقتُ: `usage_cli --health` يعمل (آخر لقطة قبل 120 ثانية). لم أختبر puppeteer أو npm بعد الحذف؛ يُعيدان التنزيل عند أول استعمال. لم يُحذف شيء من `.codex` أو `.lmstudio\extensions` أو `codex-runtimes`.
