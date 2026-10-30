@@ -199,7 +199,7 @@ function aggOf(n){var i=roleIdx(n);return fin(RI[i]||mkAgg(B.nb))}
 /* ---------- إطار الرسم ---------- */
 function frame(box,o){
   clear(box);
-  var W=chartW(box),H=o.H||(W<480?240:280),ml=o.ml||44,mr=o.mr||14,mt=18,mb=24,iw=W-ml-mr,ih=H-mt-mb,nb=B.nb;
+  var W=chartW(box),H=o.H||(W<480?240:280),ml=o.ml||44,mr=o.mr||14,mt=18,mb=o.noX?6:24,iw=W-ml-mr,ih=H-mt-mb,nb=B.nb;
   var svg=sv("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H,role:"group","aria-label":o.label+"؛ استعمل الأسهم للتنقل بين الفترات"});
   var X=function(i){return nb<2?ml+iw/2:ml+iw*i/(nb-1)},half=nb<2?iw/2:iw/(nb-1)/2;
   var YL=function(v){return mt+ih-ih*v/o.left.max},YR=o.right?function(v){return mt+ih-ih*v/o.right.max}:null;
@@ -223,11 +223,11 @@ function frame(box,o){
   /* علامات الزمن */
   var steps=B.size===1?[1,2,3,6,12,24,48,72,168,336,720]:[1,2,3,7,14,30],st=steps[steps.length-1],k;
   for(k=0;k<steps.length;k++)if(nb/steps[k]<=Math.max(2,iw/60)){st=steps[k];break}
-  for(i=0;i<nb;i+=st){
+  for(i=0;!o.noX&&i<nb;i+=st){
     var h=bucketHour(i),lbl=B.size===1?(st<24?(h%24===0?dm(ymd(h*H1)):("0"+(h%24)).slice(-2)+":00"):dm(ymd(h*H1))):dm(ymd(h*H1));
     svg.appendChild(sv("text",{x:X(i),y:H-8,"text-anchor":"middle"},lbl));
   }
-  if(o.thr){
+  if(o.thr&&o.thr*100<=o.left.max+1e-6){ /* العتبة ترسم فقط إن وقعت داخل المحور المتكيّف */
     var ty=YL(o.thr*100);
     svg.appendChild(sv("line",{x1:ml,x2:ml+iw,y1:ty,y2:ty,stroke:css("--warn"),"stroke-width":1.5,"stroke-dasharray":"6 4"}));
     svg.appendChild(sv("text",{x:ml+4,y:ty-4,"text-anchor":"start",style:"fill:var(--warn)"},D.alert+"%"));
@@ -259,6 +259,11 @@ function path(f,arr,Y,col,w,dash){
 }
 function dots(f,arr,Y,col,r){
   arr.forEach(function(v,i){if(v==null)return;f.marks.appendChild(sv("circle",{cx:f.X(i),cy:Y(v),r:r,fill:css(col),stroke:css("--surface"),"stroke-width":1.5}))});
+}
+/* محور الضغط يتكيّف مع أعلى قيمة للأدوار المحدّدة بخطوة نظيفة؛ فوق النافذة (>100%) يمتد إلى مضاعفات 100% */
+function adaptP(sel){
+  var m=0;sel.forEach(function(n){aggOf(n).pr.forEach(function(p){if(p!=null&&p>m)m=p})});
+  return m>1?100*Math.ceil(m-1e-9):niceMax(Math.max(m*100,10));
 }
 function idleOf(a){return a.tok.map(function(t){return t===0})}
 function pointR(){return B.size===1&&B.nb>400?2:3}
@@ -294,28 +299,36 @@ function drawPress(box,sel){
 }
 
 /* ---------- رسم الدور ---------- */
+/* لوحتان متراصّتان بمحور زمني مشترك (التوكنات أعلاه والضغط % أدناه) بدل محورين متعارضين في رسم واحد؛ المؤشر الرأسي متزامن بينهما */
 function drawRole(box,n,a,absMax){
   var v=vals(a),rel=S.scale==="rel",own=vmax(v)||1,ymax=rel?own:absMax,col=cvar(n);
-  var f=frame(box,{label:"الدور "+n+": التوكنات والضغط",ml:44,mr:56,left:{max:PMAX,fmt:function(x){return x.toFixed(0)+"%"},title:"ضغط %"},
-    right:{max:ymax,fmt:rel?function(x){return p0(x/ymax)}:function(x){return compact(x,x>=1e9&&x%1e9?1:0)},title:rel?"% من أعلى قيمة":"توكن"},thr:AL,idle:idleOf(a),
+  clear(box);
+  var bt=mk("div"),bp=mk("div");box.appendChild(bt);box.appendChild(bp);
+  var ft=frame(bt,{label:"الدور "+n+": التوكنات",ml:56,H:150,noX:true,
+    left:{max:ymax,fmt:rel?function(x){return p0(x/ymax)}:function(x){return compact(x,x>=1e9&&x%1e9?1:0)},title:rel?"% من أعلى قيمة":"توكن"},idle:idleOf(a),
     tip:function(i){
       var rows=[{color:css(col),name:S.mode==="cum"?"توكنات تراكمية":"توكنات الفترة",value:c2(v[i])}];
       if(S.mode==="cum")rows.push({name:"توكنات هذه الفترة",value:c2(a.tok[i])});
-      rows.push({name:"ضغط السياق",value:a.pr[i]!=null?pct(a.pr[i],1)+" · "+c2(a.px[i]):"— (لا ردّ رئيس)"});
+      return {title:bLabel(i),rows:rows};
+    }});
+  var YR=ft.YL;
+  if(S.mode==="cum"){
+    var d="M"+ft.X(0)+","+YR(0);
+    v.forEach(function(x,i){d+="L"+ft.X(i)+","+YR(x)});
+    ft.marks.appendChild(sv("path",{d:d+"L"+ft.X(B.nb-1)+","+YR(0)+"Z",fill:css(col),opacity:.16}));
+    path(ft,v,YR,col,2);
+  }else{
+    var bw=Math.max(1,Math.min(14,ft.iw/B.nb*.8));
+    v.forEach(function(x,i){if(x>0){var y=YR(x);ft.marks.appendChild(sv("rect",{x:ft.X(i)-bw/2,y:y,width:bw,height:Math.max(1,ft.mt+ft.ih-y),fill:css(col),opacity:.55}))}});
+  }
+  var f=frame(bp,{label:"الدور "+n+": ضغط السياق",ml:56,H:170,left:{max:PMAX,fmt:function(x){return x.toFixed(0)+"%"},title:"ضغط %"},thr:AL,idle:idleOf(a),
+    tip:function(i){
+      var rows=[{name:"ضغط السياق",value:a.pr[i]!=null?pct(a.pr[i],1)+" · "+c2(a.px[i]):"— (لا ردّ رئيس)"}];
       if(a.dr[i])rows.push({name:"هبوط السياق (تقدير)",value:"من "+c2(a.df[i])+" إلى "+c2(a.dt[i])+(a.dr[i]>1?" (+"+(a.dr[i]-1)+")":"")});
       if(a.cross.indexOf(i)>=0)rows.push({name:"عبور العتبة",value:D.alert+"%"});
       return {title:bLabel(i),rows:rows};
     }});
-  var YL=f.YL,YR=f.YR;
-  if(S.mode==="cum"){
-    var d="M"+f.X(0)+","+YR(0);
-    v.forEach(function(x,i){d+="L"+f.X(i)+","+YR(x)});
-    f.marks.appendChild(sv("path",{d:d+"L"+f.X(B.nb-1)+","+YR(0)+"Z",fill:css(col),opacity:.16}));
-    path(f,v,YR,col,2);
-  }else{
-    var bw=Math.max(1,Math.min(14,f.iw/B.nb*.8));
-    v.forEach(function(x,i){if(x>0){var y=YR(x);f.marks.appendChild(sv("rect",{x:f.X(i)-bw/2,y:y,width:bw,height:Math.max(1,f.mt+f.ih-y),fill:css(col),opacity:.55}))}});
-  }
+  var YL=f.YL;
   var Y=function(p){return YL(p*100)};
   path(f,a.pr,Y,"--ink",1.5);dots(f,a.pr,Y,"--ink",pointR()-.5);
   a.cross.forEach(function(i){f.marks.appendChild(sv("circle",{cx:f.X(i),cy:Y(a.pr[i]),r:6,fill:"none",stroke:css("--warn"),"stroke-width":2.2}))});
@@ -438,10 +451,10 @@ function syncSegs(){
 }
 function render(){
   compute();CH=[];
-  var sel=curSel();assignSlots(sel);SEL=sel;
+  var sel=curSel();assignSlots(sel);SEL=sel;PMAX=adaptP(sel);
   syncSegs();renderTiles();renderQuota();renderChips();legendTotal(sel);
   $("#tsum").textContent=(S.mode==="cum"?"تراكمي من بداية الفترة":"لكل "+(S.bk==="h"?"ساعة":"يوم"))+" · "+(S.scale==="abs"?"مقياس موحّد":"نسبي")+" · "+num(B.nb)+" "+(S.bk==="h"?"ساعة":"يومًا");
-  $("#prsum").textContent=sel.length?"العتبة "+D.alert+"% · النافذة "+compact(WIN)+" توكن = 100%"+(PMAX>100?" · المحور ممدود إلى "+PMAX+"% لأن سياقات تجاوزت النافذة":""):"";
+  $("#prsum").textContent=sel.length?"العتبة "+D.alert+"% · النافذة "+compact(WIN)+" توكن = 100%"+(PMAX>100?" · المحور ممدود إلى "+PMAX+"% لأن سياقات تجاوزت النافذة":" · المحور حتى "+PMAX+"% (يتكيّف مع أعلى قيمة)")+(AL*100>PMAX+1e-6?" · العتبة خارج المحور لأن أعلى ضغط دونها":""):"";
   var jobs=renderRoleCards(sel); /* تُبنى البطاقات أولًا كي تُقاس عروض الرسوم بعد استقرار التخطيط وظهور شريط التمرير */
   if(!sel.length){clear($("#tchart"));clear($("#pchart"));return}
   drawTotal($("#tchart"),sel);drawPress($("#pchart"),sel);jobs.forEach(function(f){f()});

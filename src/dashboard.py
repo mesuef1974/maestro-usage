@@ -62,8 +62,8 @@ def payload(con, label_fn, not_applied_mark, min_turns):
     fact_b = [dict(s=index[k[0]], d=k[1], m=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mx=r[6], cv=r[7])
               for k, r in sorted(b.items())]
 
-    plan = [dict(ts=ts, f=f, w=w, src=src) for ts, f, w, src in con.execute(
-        "SELECT ts, five_hour_pct, seven_day_pct, source FROM plan_snapshots ORDER BY ts")]
+    plan = [dict(ts=ts, f=f, fr=fr, w=w, src=src) for ts, f, fr, w, src in con.execute(
+        "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, source FROM plan_snapshots ORDER BY ts")]
     changes = [dict(ts=ts, key=key, old=old, new=new, applied=not_applied_mark not in (note or ""))
                for ts, key, old, new, note in con.execute(
                    "SELECT ts, key, old_value, new_value, note FROM config_changes ORDER BY ts, id")]

@@ -25,8 +25,10 @@ function sv(tag,attrs,text){
   /* الصفحة RTL فيُقلب معنى start/end في نصوص SVG؛ تُكتب المواضع هنا بمعناها الفيزيائي (end = حافة النص اليمنى) ويُبدَّل عند الإنشاء */
   if(tag==="text"){var a=e.getAttribute("text-anchor");if(a==="end")e.setAttribute("text-anchor","start");else if(a==="start")e.setAttribute("text-anchor","end")}
   if(text!=null)e.textContent=text;return e}
-function niceMax(v){ /* أربع فترات شبكة بخطوة «نظيفة» (1 أو 2 أو 5 × 10^n) فتخرج العلامات 0 و1 و2 و3 و4 بدل 1.3 و3.8 */
-  if(v<=0)return 4;var s=v/4,p=Math.pow(10,Math.floor(Math.log10(s))),f=s/p;var n=f<=1?1:f<=2?2:f<=5?5:10;return 4*n*p}
+function niceMax(v){ /* أربع فترات شبكة بخطوة «نظيفة» (1 أو 1.5 أو 2 أو 3 أو 4 أو 5 أو 6 أو 8 × 10^n) فتخرج العلامات 0 و1 و2 و3 و4 بدل 1.3 و3.8 */
+  if(v<=0)return 4;var s=v/4,p=Math.pow(10,Math.floor(Math.log10(s))),f=s/p;
+  /* مضاعفات بخانة عشرية واحدة على الأكثر (1 و1.5 و2 و3 و4 و5 و6 و8) فلا يتضخّم المحور حتى الضعف ولا تظهر علامات بكسور لا تُعرض كاملة */
+  var n=[1,1.5,2,3,4,5,6,8,10].filter(function(c){return f<=c+1e-9})[0];return 4*n*p}
 function clear(e){while(e.firstChild)e.removeChild(e.firstChild)}
 
 /* ---------- تلميح ---------- */
@@ -114,14 +116,20 @@ function drawLines(box,o){
   var nt=Math.max(2,Math.min(6,Math.floor(iw/90)));
   for(var k=0;k<nt;k++){var xv=x0+(x1-x0)*k/(nt-1);if(x1===x0&&k)break;
     svg.appendChild(sv("text",{x:X(xv),y:H-8,"text-anchor":"middle"},o.xfmt(xv)))}
-  if(o.marker){var mx=X(o.marker.x);
-    svg.appendChild(sv("line",{x1:mx,x2:mx,y1:mt,y2:mt+ih,stroke:css("--ink"),"stroke-width":1}));
-    var tx=sv("text",{x:mx+(mx>W/2?-6:6),y:mt+11,"text-anchor":mx>W/2?"end":"start",style:"fill:var(--ink)"},o.marker.label);svg.appendChild(tx)}
+  (o.vlines||[]).forEach(function(vl){var vx=X(vl.x);if(vx<ml||vx>W-mr)return; /* خطوط رأسية خافتة (مثل تصفير النافذة) */
+    svg.appendChild(sv("line",{x1:vx,x2:vx,y1:mt,y2:mt+ih,stroke:css("--ink3"),"stroke-width":1,"stroke-dasharray":"3 4",opacity:.7}))});
+  (o.markers||(o.marker?[o.marker]:[])).forEach(function(mk2,qi){var mx=X(mk2.x);
+    var la={x1:mx,x2:mx,y1:mt,y2:mt+ih,stroke:css("--ink"),"stroke-width":1};if(qi)la["stroke-dasharray"]="4 3";
+    svg.appendChild(sv("line",la));
+    var tx=sv("text",{x:mx+(mx>W/2?-6:6),y:mt+11+13*qi,"text-anchor":mx>W/2?"end":"start",style:"fill:var(--ink)"},mk2.label);svg.appendChild(tx)});
   var cross=sv("line",{y1:mt,y2:mt+ih,stroke:css("--ink3"),"stroke-width":1,visibility:"hidden"});svg.appendChild(cross);
   var ends=[];
   o.series.forEach(function(s){
     var d="",pen=false;
-    xs.forEach(function(xv,i){var v=s.v[i];if(v==null){pen=false;return}d+=(pen?"L":"M")+X(xv)+","+Y(v);pen=true});
+    var prev=null;
+    xs.forEach(function(xv,i){var v=s.v[i];if(v==null){pen=false;return}
+      if(o.gap&&prev!=null&&xv-prev>o.gap)pen=false; /* فجوة أطول من الحدّ (نوم الحاسوب مثلًا): الخط ينقطع ولا يصل ما لم يُقَس */
+      d+=(pen?"L":"M")+X(xv)+","+Y(v);pen=true;prev=xv});
     svg.appendChild(sv("path",{d:d,fill:"none",stroke:css(s.c),"stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"}));
     var last=-1;
     xs.forEach(function(xv,i){var v=s.v[i];if(v==null)return;last=i;

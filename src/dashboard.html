@@ -160,6 +160,7 @@ function render3(){
   $("#c3sum").textContent=pts.length+" لقطة";
   var lg=$("#l3");clear(lg);
   [["خمس ساعات","--s1"],["أسبوعي (كل النماذج)","--s2"]].forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
+  var rl=mk("span");rl.textContent="┆ تصفير النافذة الخمسية";lg.appendChild(rl);
   var last=pts.length?pts[pts.length-1]:null;
   $("#n3").textContent=pts.length<5?"اللقطات قليلة بعد ("+pts.length+")؛ تتراكم مع الأيام.":"المصدر: لقطات تُسجَّل آليًّا من أمر /usage بلا استهلاك توكنات"+(last?" (آخر مصدر: "+last.src+")":"")+"، وتُحدَّث هنا كل دقيقة عند التقديم من الخادم المحلي.";
   if(!pts.length){clear(box);box.appendChild(mk("div",{class:"empty"},"لا لقطات لحصة الخطة في هذه الفترة."));clear($("#t3"));return}
@@ -168,7 +169,10 @@ function render3(){
   var span=x1-x0,two=span<2*864e5;
   /* المحور يتكيّف مع القيم (حدّ أدنى 20% وأقصى 100%) فلا تنضغط نسب صغيرة كـ2% و8% في خط مسطّح */
   var vmax=Math.max.apply(null,pts.reduce(function(a,p){return a.concat([p.f,p.w])},[]).filter(function(v){return v!=null}).concat([10]));
-  drawLines(box,{label:"خط حصة الخطة",xs:ms,x0:x0,x1:x1,ymax:Math.min(100,niceMax(vmax)),ml:40,
+  /* تصفير النافذة الخمسية: خطوط رأسية عند الأزمنة المسجّلة (مقرَّبة إلى 5 دقائق)، وينقطع الخط عند فجوة أطول من 20 دقيقة (نوم الحاسوب) */
+  var rs={};pts.forEach(function(p){if(p.fr){var t=Math.round(Date.parse(p.fr)/3e5)*3e5;if(t>x0&&t<x1)rs[t]=1}});
+  var resets=Object.keys(rs).map(function(t){return {x:Number(t)}});
+  drawLines(box,{label:"خط حصة الخطة",xs:ms,x0:x0,x1:x1,ymax:Math.min(100,niceMax(vmax)),ml:40,gap:12e5,vlines:resets,
     yfmt:function(v){return Math.round(v)+"%"},
     xfmt:function(v){var d=new Date(v),h=d.toISOString().slice(11,16);return two?h+" "+dm(ymd(v)):dm(ymd(v))},
     tfmt:function(v){return v.toFixed(0)+"%"},endLabel:function(v){return v.toFixed(0)+"%"},
@@ -219,8 +223,9 @@ function render5(){
   var hol=days28.map(function(d){return d===LAST});
   var xi=days28.map(function(_,i){return i});
   var mi=c?days28.indexOf(c.ts.slice(0,10)):-1;
-  var mark=mi>=0?{x:mi,label:"ضبط النافذة "+num(Number(c.new))+" ("+dm(c.ts.slice(0,10))+")"}:null;
-  var common={xs:xi,x0:0,x1:days28.length-1,ml:58,xfmt:function(v){return dm(days28[Math.round(v)])},marker:mark,
+  /* علامة لكل تغيير مطبَّق لـautoCompactWindow داخل الأيام الـ28 (250 ألفًا في 10-29 ثم مليون في 10-30) */
+  var marks=ch.map(function(x){var ix=days28.indexOf(x.ts.slice(0,10));return ix>=0?{x:ix,label:"ضبط النافذة "+compact(Number(x.new),0)+" ("+dm(x.ts.slice(0,10))+")"}:null}).filter(Boolean);
+  var common={xs:xi,x0:0,x1:days28.length-1,ml:58,xfmt:function(v){return dm(days28[Math.round(v)])},markers:marks,
     title:function(i){return days28[i]+(days28[i]===LAST?" (اليوم، ناقص)":"")}};
   var mx=Math.max.apply(null,ctx.filter(function(x){return x!=null}).concat([1]));
   drawLines($("#c5a"),Object.assign({},common,{label:"متوسط السياق للردّ",ymax:niceMax(mx),yfmt:function(v){return compact(v,v>=1e6?1:0)},tfmt:function(v){return compact(v,1)+" توكن"},
@@ -238,7 +243,7 @@ function render5(){
     [{l:"أيام فعّالة",b:num(B.ad),a:num(A.ad)},{l:"ردود",b:num(B.t),a:num(A.t)},{l:"متوسط السياق للردّ",b:compact(B.ctx,2),a:compact(A.ctx,2)},
      {l:"نسبة الردود فوق العتبة",b:pct(B.sh),a:pct(A.sh)},{l:"قراءة الذاكرة لكل يوم فعّال",b:compact(B.crd,2),a:compact(A.crd,2)}]);
   var full=af.filter(function(d){return d>cd&&d<LAST}).length;
-  n5.textContent=full<1?"لا أيام كاملة بعد التغيير: يوم التغيير نفسه يضمّ ساعات قبله وبعده، واليوم الحالي ناقص. المقارنة مبكرة ولا تصلح حكمًا على الأثر.":"أيام كاملة بعد التغيير: "+full+". الأثر يحتاج أسبوعًا على الأقل؛ ويبقى الترابط ظاهريًّا لا سببيًّا.";
+  n5.textContent=full<3?"أيام كاملة بعد آخر تغيير: "+full+" من 3 كحدّ أدنى لأي حكم. يوم التغيير نفسه يضمّ ساعات قبله وبعده، واليوم الحالي ناقص، والتغييران متقاربان (250 ألفًا ثم مليون خلال يومين). المقارنة مبكرة ولا تصلح حكمًا على الأثر.":"أيام كاملة بعد التغيير: "+full+". الأثر يحتاج أسبوعًا على الأقل؛ ويبقى الترابط ظاهريًّا لا سببيًّا.";
   var rows=days28.slice().reverse().map(function(d,i){var o=agg[d];return {d:d,t:o?o.t:0,ctx:o&&o.t?o.s/o.t:null,sh:o&&o.t?o.v/o.t:null,cr:o?o.cr:0}});
   drawTable($("#t5d"),[{k:"d",l:"اليوم"},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},{k:"ctx",l:"متوسط السياق",n:1,f:function(r){return compact(r.ctx,2)}},
     {k:"sh",l:"نسبة فوق العتبة",n:1,f:function(r){return pct(r.sh)}},{k:"cr",l:"قراءة ذاكرة",n:1,f:function(r){return compact(r.cr,2)}}],rows);
