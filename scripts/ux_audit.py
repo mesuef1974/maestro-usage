@@ -1,6 +1,6 @@
 """تدقيق واجهات المنصّة بنظام التقييم الأولويّ لمهارة ui-ux-pro-max: عشر فئات بأوزان (حرج 4، عالٍ 3، متوسط 2، منخفض 1).
 
-يفتح كل صفحة في Chromium (playwright) بثلاثة عروض (375/768/1440) وسمتين، ويقيس مؤشرات آلية ويصوّر، ثم يحسب درجة كل فئة وإجماليًّا من 100.
+يفتح كل صفحة في Chromium (playwright) بأربعة عروض (375/768/1024/1440) وسمتين، ويقيس مؤشرات آلية ويصوّر، ثم يحسب درجة كل فئة وإجماليًّا من 100.
 المخرجات أرقام وقيم منطقية فقط (لا نصوص صفحات): docs/ux_audit/<label>.json، ولقطات في reports/ux/<label>/ (خارج git).
 التشغيل: python scripts/ux_audit.py --label before   ثم بعد التصميم --label after، ثم --compare before after.
 فحوص تحتاج حكمًا بشريًّا (التباين على تدرّجات، دلالة اللون وحده، حالات الفراغ) تُدوَّن في docs/ux_audit.md ولا تدخل الدرجة الآلية.
@@ -14,7 +14,7 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = "http://127.0.0.1:8790/"
 PAGES = ["index.html", "sessions.html", "hourly.html", "skills.html"]
-VIEWS = {"mobile": (375, 812), "tablet": (768, 1024), "desktop": (1440, 900)}
+VIEWS = {"mobile": (375, 812), "tablet": (768, 1024), "laptop": (1024, 768), "desktop": (1440, 900)}
 WEIGHT = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
 CATS = [("accessibility", "الوصول", "CRITICAL"), ("touch", "اللمس والتفاعل", "CRITICAL"), ("performance", "الأداء", "HIGH"),
         ("style", "اتساق النمط", "HIGH"), ("layout", "التخطيط والاستجابة", "HIGH"), ("typography", "الطباعة واللون", "MEDIUM"),
@@ -174,7 +174,7 @@ def score_page(d):
     s["semantic-tokens"] = 1.0 if L["rootVars"] >= 12 else 0.5 if L["rootVars"] >= 4 else 0.0
     s["no-inline-colors"] = frac(L["inlineColor"], max(1, L["inlineColor"] + 20))
     y = c["layout"]
-    y["horizontal-scroll"] = 1.0 if M["sw"] <= M["cw"] + 1 else 0.0
+    y["horizontal-scroll"] = 1.0 if all(v["sw"] <= v["cw"] + 1 for v in d.values()) else 0.0
     y["viewport-meta"] = 1.0 if L["vpOk"] else 0.0
     y["readable-text"] = frac(L["tiny"], L["textChars"])
     y["container-width"] = 1.0 if L["pageMax"] != "none" else 0.0

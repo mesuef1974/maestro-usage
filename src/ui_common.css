@@ -182,3 +182,4 @@ input[type=checkbox],input[type=radio]{inline-size:1.4rem;block-size:1.4rem;acce
   summary{min-block-size:44px;padding-block:.6rem}
   .wrap{max-block-size:70vh}
 }
+.app>.page{inline-size:100%;min-inline-size:0}
