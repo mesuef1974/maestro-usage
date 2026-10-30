@@ -11,7 +11,7 @@ import startup_cost  # noqa: E402
 import ui  # noqa: E402
 
 THRESHOLD = 300_000  # يطابق reports.CTX_THRESHOLD
-PLAN_LABEL = "Max (20x)"  # اسم الخطة المعتمد من المستخدم (القاعدة تحفظ «Max» فقط)
+PLAN_LABEL = "Ultra"  # اسم الخطة (كانت «Max 20x» حتى 2026-10-30؛ القاعدة تحفظ «Max» فقط)
 PLAN_RENEW_DAY = None  # يوم تجديد الاشتراك الشهري (1-31)؛ None = لا يُعرض سطر التجديد
 
 # ترتيب ثابت: اللون يتبع النموذج لا رتبته. الباقي يُطوى في «أخرى».
