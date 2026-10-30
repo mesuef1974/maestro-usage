@@ -107,6 +107,8 @@ function hourLabel(h){return ymd(h*H1)+" "+("0"+(h%24)).slice(-2)+":00"}
 function bucketHour(i){return B.lo+i*B.size}
 function bLabel(i){var h=bucketHour(i);return B.size===1?hourLabel(h)+" UTC":ymd(h*H1)+" (يوم UTC)"}
 function bShort(i){var h=bucketHour(i),d=ymd(h*H1);return B.size===1?dm(d)+" "+("0"+(h%24)).slice(-2)+":00":dm(d)}
+/* قالب واحد لعدّة صفحات: يُنفَّذ كل جزء فقط إن كان قسمه موجودًا */
+function has(id){return !!document.getElementById(id)}
 function compute(){
   WIN=S.win;
   var lo=Date.parse(S.from+"T00:00:00Z")/H1,hi=Date.parse(S.to+"T00:00:00Z")/H1+23,size=S.bk==="d"?24:1,nb=Math.floor((hi-lo)/size)+1;
@@ -455,8 +457,8 @@ function init(){
 init();
 /* بطاقة الحصة حيّة: عند التقديم من الخادم المحلي تُسحب اللقطات من القاعدة كل دقيقة بدل انتظار إعادة بناء الصفحة (كل 15 دقيقة)؛ من ملف مباشر تبقى لقطة آخر بناء */
 if(location.protocol!=="file:"){
-  var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;renderQuota()}}).catch(function(){})};
-  pullPlan();setInterval(pullPlan,60000);
+  if(has("hq")){var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;renderQuota()}}).catch(function(){})};
+  pullPlan();setInterval(pullPlan,60000)}
 }
 })();
 </script>

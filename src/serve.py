@@ -19,7 +19,7 @@ import reports  # noqa: E402
 import run_cycle  # noqa: E402
 import usage_db  # noqa: E402
 
-PAGES = {"/": "index.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
+PAGES = {"/": "index.html", "/sessions.html": "roles.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 

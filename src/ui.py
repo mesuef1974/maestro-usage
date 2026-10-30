@@ -74,11 +74,11 @@ def shell(cur):
     return top, "</main></div>"
 
 
-def pagehead(page, template):
+def pagehead(page, template, stamp=""):
     live = ""
     if template in pages.LIVE_TEMPLATES:
         live = ('<div class="live"><button type="button" id="refresh" class="refresh">تحديث فوري</button>'
-                '<span id="age" class="sub"></span><span id="rmsg" class="sub" role="status"></span></div>')
+                '<span id="age" class="sub"></span><span id="rmsg" class="sub" role="status"></span><span id="gen" hidden>%s</span></div>' % html.escape(stamp))
     return '<header class="pagehead"><h1>%s</h1><p class="lede">%s</p>%s</header>' % (html.escape(page["title"]), html.escape(page["lede"]), live)
 
 
@@ -114,7 +114,7 @@ def render(page_file, data, parts):
         html_ = re.sub(r'<a href="plan.html">[^<]*</a>', "", html_)
     top, bottom = shell(page_file)
     assets = FAVICON_LINK + '<link rel="stylesheet" href="%s?v=%s">' % (ASSET_URL, css_hash())
-    for token, value in (("__ASSETS__", assets), ("__PAGEHEAD__", pagehead(page, page["template"])), ("__SHELL_OPEN__", top), ("__SHELL_CLOSE__", bottom),
+    for token, value in (("__ASSETS__", assets), ("__PAGEHEAD__", pagehead(page, page["template"], parts.get("__STAMP__", ""))), ("__SHELL_OPEN__", top), ("__SHELL_CLOSE__", bottom),
                          ("__LIB__", lib_js()), *parts.items(), ("__DATA__", embed_json(data))):
         if token in ("__STATIC__", "__STAMP__") and token not in html_:
             continue  # قسم هذا الجزء ليس في هذه الصفحة

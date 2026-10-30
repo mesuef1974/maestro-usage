@@ -308,6 +308,7 @@ function choose(e){
 }
 function compareWith(e){
   if(!S.sel||same(S.sel,e)){S.sel=e;render();return}
+  if(!document.getElementById("cmp")){S.cmp=e;saveView();location.href="compare.html#cmp";return} /* المقارنة في صفحة أخرى */
   S.cmp=e;render();var c=$("#cmp");if(c.scrollIntoView)c.scrollIntoView({block:"start"});
 }
 function focusDetail(){var d=$("#detail");if(d.scrollIntoView)d.scrollIntoView({block:"start"})}
