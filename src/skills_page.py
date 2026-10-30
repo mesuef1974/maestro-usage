@@ -29,14 +29,14 @@ CURATION = {
     "accessibility": ("تدقيق وتحسين وصول الويب وفق WCAG 2.2 (14 كيلوبايت).", "nameonly", ["fixing-accessibility", "web-design-mastery"],
                       "الأفضل: accessibility (الأشمل)؛ وفي واجهات SchoolOS web-design-mastery. 0 استدعاء: يكفي الاسم."),
     "fixing-accessibility": ("إصلاح مشكلات ARIA والتركيز والتباين والنماذج.", "archive", ["accessibility"],
-                             "تتداخل مع accessibility كليًّا تقريبًا؛ احتفظ بواحدة. 0 استدعاء."),
+                             "أُرشفت بأمر المالك 2026-10-30. تتداخل مع accessibility كليًّا تقريبًا؛ احتفظ بواحدة. 0 استدعاء."),
     "arabic-rtl-review": ("مراجعة النص العربي واتجاه RTL والطباعة وصيغ الأرقام والتواريخ ونبرة الفصحى/الخليجية.", "keep", ["web-design-mastery", "vue-comp"],
                           "أكثر مهارات المستخدم استعمالًا (20 استدعاء)، وتعمل name-only. تداخل جزئي في RTL مع web-design-mastery."),
     "adr": ("يكتب سجلّ قرار معماري (ADR) بقالب أزكية.", "keep", [], "قيمتها قرار هندسي مطلوب في قواعدك العامة؛ لا استدعاء حتى الآن، تكلفتها اسم فقط."),
     "django-app": ("يهيّئ تطبيق Django بهيكل SchoolOS (DDD/Clean).", "archive", ["drf-endpoint-scaffold", "schoolos-platform"],
-                   "تغطّيها schoolos-platform (خريطة الشيفرة) مع drf-endpoint-scaffold. 0 استدعاء."),
-    "explain-code": ("شرح الشيفرة بتشبيهات ومخطّطات.", "archive", [], "عام يؤديه Claude بلا مهارة؛ 0 استدعاء."),
-    "lesson": ("درس تعليمي منظّم.", "archive", [], "0 استدعاء؛ تأكّد أنها لا تخدم مجلد Teaching قبل الأرشفة."),
+                   "أُرشفت بأمر المالك 2026-10-30. تغطّيها schoolos-platform (خريطة الشيفرة) مع drf-endpoint-scaffold. 0 استدعاء."),
+    "explain-code": ("شرح الشيفرة بتشبيهات ومخطّطات.", "archive", [], "أُرشفت بأمر المالك 2026-10-30. عام يؤديه Claude بلا مهارة؛ 0 استدعاء."),
+    "lesson": ("درس تعليمي منظّم.", "archive", [], "أُرشفت بأمر المالك 2026-10-30. 0 استدعاء؛ تأكّد أنها لا تخدم مجلد Teaching قبل الأرشفة."),
     "vue-comp": ("قالب مكوّن Vue 3 بـComposition API وRTL أولًا.", "nameonly", ["web-design-mastery"],
                  "يوافق قاعدتك العامة (Vue 3 + RTL)؛ 0 استدعاء فاجعلها name-only."),
     "anthropic-skills:built-in-browser": ("دليل تشغيل متصفح التطبيق المدمج.", "nameonly", ["anthropic-skills:chrome-browser", "anthropic-skills:computer-use"],
@@ -166,8 +166,10 @@ def disk_rows():
     for p in sorted(glob.glob(PROJECT_SKILLS + "/*/SKILL.md")):
         add(os.path.basename(os.path.dirname(p)), "مشروع shschool_mvp", _read(p))
     for p in sorted(glob.glob(os.path.join(CLAUDE, "skills_archive", "**", "*.md"), recursive=True)):
-        if os.path.basename(p) != "README.md":
-            add(os.path.basename(p)[:-3], "مؤرشف 2026-10-25", _read(p), "archived")
+        base = os.path.basename(p)
+        if base != "README.md":
+            name = os.path.basename(os.path.dirname(p)) if base == "SKILL.md" else base[:-3]
+            add(name, "مؤرشف", _read(p), "archived")
     return out
 
 
