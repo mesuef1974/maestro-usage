@@ -21,7 +21,8 @@ import usage_db  # noqa: E402
 HOME = os.path.expanduser("~")
 CLAUDE_DIR = os.path.join(HOME, ".claude")
 PROJECTS = os.path.join(CLAUDE_DIR, "projects")
-FRESH_MAX = 60_000  # أول ردّ بسياق أكبر يُعدّ جلسة مستأنفة لا بدءًا جديدًا
+FRESH_MAX = 60_000  # أول ردّ بسياق أكبر يُعدّ جلسة مستأنفة لا بدءًا جديدًا (أحكام الأثر)
+CHART_FRESH_MAX = 110_000  # سقف الرسم التاريخي وحده: قبل 10/25 كان البدء 77–98 ألفًا؛ بأمر المالك ولا يمسّ أحكام الأثر
 K = 20  # حجم نافذة المقارنة (جلسات)
 MIN_N = 15
 MIN_DELTA = 3_000  # فرق الوسيط الأدنى (توكن) ليُعدّ أثرًا
@@ -155,10 +156,10 @@ def refresh_samples(con):
     return n
 
 
-def _fresh(con, scope=None):
+def _fresh(con, scope=None, cap=FRESH_MAX):
     """[(ts, ctx, folder, proj)] للجلسات الجديدة مرتبة بالزمن؛ scope=("folder"|"proj", قيمة) أو None."""
     q = "SELECT ts, ctx, folder, proj FROM startup_samples WHERE ctx < ?"
-    args = [FRESH_MAX]
+    args = [cap]
     if scope:
         q += " AND %s = ?" % ("folder" if scope[0] == "folder" else "proj")
         args.append(scope[1])
@@ -244,7 +245,7 @@ def daily(con, days=60):
     """وسيط سياق البدء ونطاقه الربيعي لكل يوم (جلسات جديدة فقط)."""
     since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
     by = {}
-    for ts, ctx, _f, _p in _fresh(con):
+    for ts, ctx, _f, _p in _fresh(con, cap=CHART_FRESH_MAX):
         if ts[:10] >= since:
             by.setdefault(ts[:10], []).append(ctx)
     return [dict(d=d, n=len(v), med=round(statistics.median(v)), p25=round(_quant(v, .25)), p75=round(_quant(v, .75)))

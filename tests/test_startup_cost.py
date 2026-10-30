@@ -85,6 +85,14 @@ class TestStartupCost(unittest.TestCase):
         e = sc.effects(self.con)[0]
         self.assertEqual((e["scope"], e["mb"], e["ma"]), ("A", 50_000, 50_000))  # أثر B لا يلوّث A
 
+    def test_daily_chart_cap_is_wider_than_verdict_cap(self):
+        self.sample(1, 90_000)  # بدء قديم أثقل من 60 ألفًا: يظهر في الرسم اليومي لا في أحكام الأثر
+        self.sample(2, 150_000)  # أكبر من سقف الرسم: جلسة مستأنفة
+        self.assertEqual(len(sc._fresh(self.con)), 0)
+        days = sc.daily(self.con, days=3650)
+        self.assertEqual([d["n"] for d in days], [1])
+        self.assertEqual(days[0]["med"], 90_000)
+
     def test_payload_shape_empty(self):
         p = sc.payload(self.con)
         self.assertEqual((p["daily"], p["fx"]), ([], []))
