@@ -95,6 +95,17 @@ def run(con, fetch_fn=None, now=None):
     return {"agents": len(rows), "agents_new": new, "numbers_linked": linked}
 
 
+def health(con, now=None):
+    """أرقام فحص صحة الالتقاط: عدد التشغيلات والجلسات وإعادات التشغيل وعمر آخر التقاط (ثوانٍ) والحيّ منها."""
+    now = now or datetime.now(timezone.utc)
+    runs, sessions, last = con.execute("SELECT COUNT(*), COUNT(DISTINCT session_id), MAX(last_seen) FROM agent_starts").fetchone()
+    restarts = runs - sessions
+    age = None if not last else int((now - datetime.strptime(last, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)).total_seconds())
+    live = con.execute("SELECT COUNT(*) FROM agent_starts WHERE last_seen=?", (last,)).fetchone()[0] if last else 0
+    return {"runs": runs, "sessions": sessions, "restarts": restarts, "last_capture_age_sec": age, "live_at_last_capture": live,
+            "healthy": age is not None and age <= 3 * MIN_INTERVAL_SEC}
+
+
 if __name__ == "__main__":
     c = usage_db.connect()
-    print(run(c))
+    print(health(c) if "--health" in sys.argv[1:] else run(c))

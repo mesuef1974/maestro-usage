@@ -66,6 +66,14 @@ class TestAgents(unittest.TestCase):
             raise OSError("x")
         self.assertEqual(agents_cli.run(self.con, boom, now=later), {"agents": "fail"})
 
+    def test_health_counts_restarts_and_age(self):
+        self.assertFalse(agents_cli.health(self.con)["healthy"])
+        agents_cli.record(self.con, agents_cli.parse(blob(("s1", "0101 · أ", 1, T1))), "2026-10-30T07:00:00Z")
+        agents_cli.record(self.con, agents_cli.parse(blob(("s1", "0101 · أ", 2, T1 + 1000), ("s2", "0102 · ب", 3, T1))), "2026-10-30T07:05:00Z")
+        h = agents_cli.health(self.con, datetime(2026, 10, 30, 7, 6, tzinfo=timezone.utc))
+        self.assertEqual((h["runs"], h["sessions"], h["restarts"], h["last_capture_age_sec"], h["live_at_last_capture"], h["healthy"]), (3, 2, 1, 60, 2, True))
+        self.assertFalse(agents_cli.health(self.con, datetime(2026, 10, 30, 9, 0, tzinfo=timezone.utc))["healthy"])
+
 
 if __name__ == "__main__":
     unittest.main()

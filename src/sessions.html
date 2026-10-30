@@ -41,12 +41,20 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <label class="dates">من <input type="date" id="from"></label>
   <label class="dates">إلى <input type="date" id="to"></label>
   <div class="chips" id="chips" role="group" aria-label="النماذج"></div>
+  <div class="chips" id="rchips" role="group" aria-label="نظام نافذة السياق"></div>
   <input type="search" class="search" id="q" placeholder="بحث: رقم الدور أو المجلد أو معرّف الجلسة" aria-label="بحث في الأدوار والجلسات">
   <label class="tog"><input type="checkbox" id="unnum"> إظهار غير المرقّمة (فئات بحسب المجلد)</label>
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
 
 <section class="tiles dense" id="tiles" aria-label="ملخص الأدوار الظاهرة"></section>
+
+<section class="card" aria-labelledby="hg">
+  <div class="cardhead"><h2 id="hg">بحسب نظام نافذة السياق</h2><span class="sub" id="gsum"></span></div>
+  <p class="sub">نظام النافذة الذي قرأته عملية الجلسة عند بدئها (افتراضي، 250 ألفًا، مليون). بدء العملية معروف للجلسات الملتقطة من 30/10 فقط؛ لغيرها يُستدلّ بما يُجزم به وإلا «غير محدد». لا تتأثر هذه البطاقة بمرشِّح النظام.</p>
+  <div class="wrap" id="rg" style="max-block-size:none"></div>
+  <p class="note" id="gnote"></p>
+</section>
 
 <section class="card" aria-labelledby="hr">
   <div class="cardhead"><h2 id="hr">ترتيب الأدوار</h2><span class="sub" id="rsum"></span></div>
@@ -79,6 +87,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
 <dl>
 <dt>الدور والجلسة</dt><dd>الدور هو الرقم (0101…0801) كما يسجّله Claude Code في عنوان الجلسة؛ تحمله جلسات كثيرة. الجلسة هي معرّف CLI (ثمانية أحرف). الجلسات بلا رقم لا تُجمع في سلّة واحدة: تُسمّى فئات بحسب مجلد العمل (بلا رقم · مراقب MonitorWidget، مستودع shschool_mvp، مدير التسليم، أشجار عمل git، أخرى) وتُخفى افتراضيًّا؛ ومثلها أي رقم خارج 01xx–08xx. الفئة تجمع جلسات كثيرة فليست دورًا واحدًا.</dd>
 <dt>سياق الردّ</dt><dd>إدخال + كتابة ذاكرة + قراءة ذاكرة للردّ الواحد. مقاييس الضغط (متوسط السياق، أكبر سياق، نسبة فوق العتبة، هبوط السياق، الإيقاظ) تُحسب من ردود الخيط الرئيس فقط، دون الوكلاء الفرعيين لأن سياقاتهم مستقلة وصغيرة. أما الاستهلاك (ردود، قراءة، كتابة، مخرجات) فيشمل الجميع، والوكلاء الفرعيون يظهرون أصلًا باسم «وكيل فرعي».</dd>
+<dt>نظام نافذة السياق</dt><dd>إعداد autoCompactWindow يُقرأ عند بدء عملية الجلسة لا عند كل ردّ. التصنيف الدقيق يلزمه وقت بدء العملية (من claude agents، معروف للجلسات الملتقطة منذ 30/10)؛ وإلا يُجزم فقط بما لا يحتمل غيره: ردّ قبل 29/10 افتراضي، وجلسة وُلدت بعد 29/10 وردّها قبل 30/10 03:04Z على 250 ألفًا، وما سوى ذلك «غير محدد». تغيير 29/10 مسجَّل بيوم فقط، فجلسة بدأت صباحه قبل التعديل قد تُحسب 250 ألفًا وهي افتراضية. الجلسة المستأنفة تُصنَّف بحسب آخر بدء ملتقط.</dd>
 <dt>العتبة</dt><dd>ردود سياقها فوق <span id="thr"></span> توكن.</dd>
 <dt>كلفة الإيقاظ</dt><dd>الردّ الذي يأتي بعد فجوة تزيد على ساعة عن الردّ السابق في الجلسة نفسها (الردّ الأول في الجلسة لا يُعدّ إيقاظًا). كتابة الذاكرة عنده هي ما أُعيد بناؤه من السياق بعد انتهاء صلاحية الذاكرة المؤقتة. تقدير مبني على الأوقات المسجّلة.</dd>
 <dt>هبوط السياق (تقدير للضغط أو المسح)</dt><dd>ردّ سياقه أقل من نصف سياق الردّ السابق في الجلسة نفسها، وكان السابق <span id="dmin"></span> توكن فأكثر. لا يسجّل Claude Code الضغط التلقائي في السجلات التي نقرؤها، فالعدد استدلال؛ وقد يفوته ضغطٌ صغير ويعدّ تغييرًا آخر في السياق. المسح الكامل (/clear) يبدأ غالبًا جلسةً جديدة فلا يظهر هنا.</dd>
@@ -97,7 +106,7 @@ __LIB__
 
 var LAST=D.last_day,FIRST=D.first_day;
 var S={from:null,to:LAST,preset:"30",models:new Set(D.models.map(function(_,i){return i})),unnum:false,q:"",
-  metric:"cr",rall:false,dm:"cr",sel:null,cmp:null,sk:"cr",sd:-1,ssk:"cr",ssd:-1};
+  rg:new Set(D.regimes.map(function(_,i){return i})),metric:"cr",rall:false,dm:"cr",sel:null,cmp:null,sk:"cr",sd:-1,ssk:"cr",ssd:-1};
 
 /* ---------- المقاييس ---------- */
 function c2(v){return compact(v,2)}
@@ -137,7 +146,7 @@ function foldText(a){
 function roleOf(r){return D.sessions[r.s].r}
 
 /* ---------- نطاق العرض ---------- */
-var PR,VR,T,V,SM;
+var PX,VX,PR,VR,T,V,SM;
 function vis(si){
   var s=D.sessions[si];
   if(!S.unnum&&!D.roles[s.r].p)return false;
@@ -146,8 +155,9 @@ function vis(si){
   return SM[si];
 }
 function base(){
-  PR=D.c.filter(function(r){return S.models.has(r.m)&&inRange(r.d)});
-  SM={};VR=PR.filter(function(r){return vis(r.s)});
+  PX=D.c.filter(function(r){return S.models.has(r.m)&&inRange(r.d)});
+  PR=PX.filter(function(r){return S.rg.has(r.x)});
+  SM={};VR=PR.filter(function(r){return vis(r.s)});VX=PX.filter(function(r){return vis(r.s)});
   T=agg(PR);V=agg(VR);
 }
 function ent(k,i){return {k:k,i:i}}
@@ -186,6 +196,39 @@ function renderTiles(){
     ["متوسط السياق للردّ",compact(V.ctx),"توكن · فوق العتبة "+pct(V.ov)],
     ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة"]]);
 }
+
+/* ---------- نظام نافذة السياق ---------- */
+var RGC=["--oth","--s2","--s1","--s4"];
+function buildRegimeChips(){
+  var box=$("#rchips");clear(box);
+  D.regimes.forEach(function(n,i){
+    var b=mk("button",{type:"button",class:"chip","aria-pressed":String(S.rg.has(i))});
+    var sw=mk("span",{class:"sw"});sw.style.background=css(RGC[i]);b.appendChild(sw);b.appendChild(mk("span",null,"نافذة: "+n));
+    b.addEventListener("click",function(){
+      if(S.rg.has(i))S.rg.delete(i);else S.rg.add(i);
+      if(!S.rg.size)D.regimes.forEach(function(_,j){S.rg.add(j)});
+      buildRegimeChips();render();
+    });box.appendChild(b);
+  });
+}
+function renderRegimes(){
+  var g=groupBy(VX,function(r){return r.x}),rows=[];
+  D.regimes.forEach(function(n,i){var a=g[i];if(!a)return;
+    rows.push({x:n,sc:a.sc,t:a.t,ctx:a.ctx,mx:a.mx,ov:a.ov,dr:a.dr,drr:a.mt?a.dr/a.mt:null,ccr:a.t?a.cc/a.t:null,crr:a.t?a.cr/a.t:null})});
+  $("#gsum").textContent=num(rows.length)+" نظامًا ظاهرًا";
+  drawTable($("#rg"),[
+    {k:"x",l:"النظام"},{k:"sc",l:"جلسات",n:1,f:function(r){return num(r.sc)}},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},
+    {k:"ctx",l:"متوسط السياق",n:1,f:function(r){return c2(r.ctx)}},{k:"mx",l:"أكبر سياق",n:1,f:function(r){return c2(r.mx)}},
+    {k:"ov",l:"فوق العتبة",n:1,f:function(r){return pct(r.ov)}},{k:"drr",l:"هبوط لكل 100 ردّ",n:1,f:function(r){return r.drr==null?"—":num(100*r.drr,1)}},
+    {k:"ccr",l:"كتابة ذاكرة للردّ",n:1,f:function(r){return c2(r.ccr)}},{k:"crr",l:"قراءة ذاكرة للردّ",n:1,f:function(r){return c2(r.crr)}}],rows);
+  var m=g[3]?g[3].t:0,all=0;Object.keys(g).forEach(function(k){all+=g[k].t});
+  $("#gnote").textContent=all&&m?"«غير محدد» يضمّ "+pct(m/all)+" من الردود الظاهرة؛ لا تُنسب إلى نظام قبل التقاط بدء عمليات جلساتها.":"";
+}
+function sessRegimes(rows){
+  var m={};rows.forEach(function(r){m[r.x]=(m[r.x]||0)+r.t});
+  return Object.keys(m).sort(function(a,b){return m[b]-m[a]}).map(function(k){return D.regimes[k]}).join(" + ")||"—";
+}
+function startText(s){return s.st?dm0(s.st.slice(0,10))+" "+s.st.slice(11,16)+(s.ns>1?" ("+s.ns+" تشغيلات)":""):"غير ملتقط"}
 
 /* ---------- ترتيب الأدوار ---------- */
 function roleGroups(){return groupBy(VR,roleOf)}
@@ -354,13 +397,13 @@ function renderDetail(){
   var sw=mk("div",{class:"wrap",style:"max-block-size:360px"});right.appendChild(sw);
   var sg=groupBy(rows,function(r){return r.s});
   var srows=Object.keys(sg).map(function(k){var x=sg[k],i=Number(k),s=D.sessions[i];
-    return {i:i,name:(s.n||"بلا رقم")+" · "+s.k,f:s.f||"—",dc:x.dc,t:x.t,cr:x.cr,cc:x.cc,ctx:x.ctx,mx:x.mx,ov:x.ov,dr:x.dr,wk:x.wk,wc:x.wc}});
-  var scols=[{k:"name",l:"الجلسة"},{k:"f",l:"مجلد العمل"},{k:"dc",l:"أيام",n:1,f:function(r){return num(r.dc)}},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},
+    return {i:i,name:(s.n||"بلا رقم")+" · "+s.k,f:s.f||"—",rgm:sessRegimes(rows.filter(function(r){return r.s===i})),st:startText(s),dc:x.dc,t:x.t,cr:x.cr,cc:x.cc,ctx:x.ctx,mx:x.mx,ov:x.ov,dr:x.dr,wk:x.wk,wc:x.wc}});
+  var scols=[{k:"name",l:"الجلسة"},{k:"f",l:"مجلد العمل"},{k:"rgm",l:"نافذة السياق"},{k:"st",l:"بدء العملية (UTC)"},{k:"dc",l:"أيام",n:1,f:function(r){return num(r.dc)}},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},
     {k:"cr",l:"قراءة",n:1,f:function(r){return c2(r.cr)}},{k:"cc",l:"كتابة",n:1,f:function(r){return c2(r.cc)}},{k:"ctx",l:"متوسط السياق",n:1,f:function(r){return c2(r.ctx)}},
     {k:"mx",l:"أكبر سياق",n:1,f:function(r){return c2(r.mx)}},{k:"ov",l:"فوق العتبة",n:1,f:function(r){return pct(r.ov)}},{k:"dr",l:"هبوط",n:1,f:function(r){return num(r.dr)}},
     {k:"wk",l:"إيقاظ",n:1,f:function(r){return num(r.wk)}},{k:"wc",l:"كتابة إيقاظ",n:1,f:function(r){return c2(r.wc)}},
     {k:"act",l:"",el:function(r){return btn("اختيار","اختيار الجلسة "+r.name,function(){choose(ent("s",r.i))})}}];
-  drawTable(sw,scols,sortRows(srows,S.ssk,S.ssd),{k:S.ssk,d:S.ssd},function(k){if(S.ssk===k)S.ssd=-S.ssd;else{S.ssk=k;S.ssd=(k==="name"||k==="f")?1:-1}renderDetail()},
+  drawTable(sw,scols,sortRows(srows,S.ssk,S.ssd),{k:S.ssk,d:S.ssd},function(k){if(S.ssk===k)S.ssd=-S.ssd;else{S.ssk=k;S.ssd=(k==="name"||k==="f"||k==="rgm"||k==="st")?1:-1}renderDetail()},
     function(r){return same(S.sel,ent("s",r.i))});
 }
 function dm0(day){return Number(day.slice(8,10))+"/"+Number(day.slice(5,7))}
@@ -411,7 +454,7 @@ function render(){
   document.querySelectorAll(".chart").forEach(function(c){c.classList.add("busy")});
   base();
   if(!S.sel){var g=roleGroups(),best=null;Object.keys(g).forEach(function(k){if(D.roles[k].p&&(best==null||g[k].cr>g[best].cr))best=k});if(best!=null)S.sel=ent("r",Number(best))}
-  renderTiles();renderRank();renderRoles();renderDetail();renderCompare();
+  renderTiles();renderRegimes();renderRank();renderRoles();renderDetail();renderCompare();
   $("#thr").textContent=num(D.threshold);$("#dmin").textContent=num(D.drop_min);
   requestAnimationFrame(function(){document.querySelectorAll(".chart").forEach(function(c){c.classList.remove("busy")})});
 }
@@ -425,14 +468,14 @@ function loadView(){
   }catch(e){}
 }
 function init(){
-  setPreset("30");loadView();buildChips();buildMetricButtons();initRefresh(saveView);bindFilters();
+  setPreset("30");loadView();buildChips();buildRegimeChips();buildMetricButtons();initRefresh(saveView);bindFilters();
   $("#unnum").checked=S.unnum;$("#q").value=S.q;
   $("#unnum").addEventListener("change",function(){S.unnum=this.checked;render()});
   var qt;$("#q").addEventListener("input",function(){var el=this;clearTimeout(qt);qt=setTimeout(function(){S.q=el.value.trim().toLowerCase();render()},150)});
   $("#pa").addEventListener("change",function(){var e=decode(this.value);if(e){S.sel=e;if(same(S.cmp,e))S.cmp=null;render()}});
   $("#pb").addEventListener("change",function(){S.cmp=decode(this.value);render()});
-  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.unnum=false;S.q="";S.metric="cr";S.rall=false;S.dm="cr";S.sk="cr";S.sd=-1;S.ssk="cr";S.ssd=-1;S.sel=null;S.cmp=null;
-    $("#unnum").checked=false;$("#q").value="";setPreset("30");buildChips();buildMetricButtons();render()});
+  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.unnum=false;S.q="";S.metric="cr";S.rall=false;S.dm="cr";S.sk="cr";S.sd=-1;S.ssk="cr";S.ssd=-1;S.sel=null;S.cmp=null;S.rg=new Set(D.regimes.map(function(_,i){return i}));
+    $("#unnum").checked=false;$("#q").value="";setPreset("30");buildChips();buildRegimeChips();buildMetricButtons();render()});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(render,120)});
   S.q=S.q.toLowerCase();
   render();

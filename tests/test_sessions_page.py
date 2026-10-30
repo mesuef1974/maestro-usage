@@ -88,8 +88,10 @@ class TestSessionsPage(unittest.TestCase):
     def test_payload_whitelist_and_render(self):
         """الحقول النصية: معرّف الجلسة (8 أحرف)، الرقم، المجلد، اليوم، الأصل المعروف. لا شيء غيرها."""
         for s in self.data["sessions"]:
-            self.assertEqual(set(s), {"k", "n", "f", "r"})
+            self.assertEqual(set(s), {"k", "n", "f", "r", "st", "ns"})
+            self.assertTrue(s["st"] is None or re.fullmatch(r"\d{4}-\d\d-\d\dT[\d:.]+Z", s["st"]))
         for r in self.data["c"]:
+            self.assertIn(r["x"], range(len(self.data["regimes"])))
             self.assertRegex(r["d"], r"^\d{4}-\d\d-\d\d$")
             self.assertIn(r["g"], ("human", "peer", "scheduled", "sdk", "task_notification", "system", "unknown", "sub"))
         self.data["sessions"][0]["f"] = "</script><b>"

@@ -12,6 +12,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402  (مجموعات النماذج والعتبة نفسها)
+import regime  # noqa: E402
 import role_groups  # noqa: E402
 import ui  # noqa: E402
 
@@ -49,6 +50,11 @@ def payload(con):
             roles.append(dict(n=key, p=bool(PROJECT_RE.match(key))))
         return role_of[key]
 
+    starts = {}  # session_key -> أزمنة بدء العمليات المعروفة (agent_starts)، مرتبة
+    for sid, st in con.execute("SELECT session_id, started_at FROM agent_starts ORDER BY started_at"):
+        starts.setdefault(sid, []).append(st)
+    ch = regime.changes()
+    first_ts = {}
     sess, sess_of = [], {}
     facts = {}
     prev = {}  # session_key -> (epoch, ctx) لآخر ردّ رئيس
@@ -59,7 +65,10 @@ def payload(con):
         if key not in sess_of:
             number, cwd = meta.get(key, ("", ""))
             sess_of[key] = len(sess)
-            sess.append(dict(k=key[:8], n=number, f=folder_label(cwd), r=role_idx(role_groups.role_name(number, cwd))))
+            first_ts[key] = ts
+            known = starts.get(key, [])
+            sess.append(dict(k=key[:8], n=number, f=folder_label(cwd), r=role_idx(role_groups.role_name(number, cwd)),
+                             st=known[-1] if known else None, ns=len(known)))
         ctx = i + cc + cr
         g = SUB if side else dashboard._origin(org)
         wk = wc = dr = 0
@@ -72,7 +81,8 @@ def payload(con):
                 if p[1] >= DROP_MIN_PREV and ctx < DROP_RATIO * p[1]:
                     dr = 1
             prev[key] = (epoch, ctx)
-        k = (sess_of[key], ts[:10], dashboard._group(model), g)
+        x = regime.classify(ts, first_ts[key], starts.get(key, []), ch)
+        k = (sess_of[key], ts[:10], dashboard._group(model), g, x)
         r = facts.setdefault(k, [0] * 10)  # t,i,cc,cr,u,v,mx,dr,wk,wc
         v = 0 if side else int(ctx > dashboard.THRESHOLD)
         for j, x in enumerate((1, i, cc, cr, u, v)):
@@ -82,11 +92,11 @@ def payload(con):
         r[7] += dr
         r[8] += wk
         r[9] += wc
-    rows = [dict(s=k[0], d=k[1], m=k[2], g=k[3], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mx=r[6], dr=r[7], wk=r[8], wc=r[9])
+    rows = [dict(s=k[0], d=k[1], m=k[2], g=k[3], x=k[4], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mx=r[6], dr=r[7], wk=r[8], wc=r[9])
             for k, r in sorted(facts.items())]
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in dashboard.MODEL_GROUPS] + [dashboard.OTHER_NAME], threshold=dashboard.THRESHOLD,
-                wake_gap=WAKE_GAP_SEC, drop_ratio=DROP_RATIO, drop_min=DROP_MIN_PREV,
+                regimes=regime.NAMES, wake_gap=WAKE_GAP_SEC, drop_ratio=DROP_RATIO, drop_min=DROP_MIN_PREV,
                 first_day=first, last_day=last, roles=roles, sessions=sess, c=rows)
 
 
