@@ -51,7 +51,7 @@ __CSS__
 
 <section class="card" aria-labelledby="h3">
   <div class="cardhead"><h2 id="h3">حصة الخطة</h2><span class="sub" id="c3sum"></span></div>
-  <p class="sub">نسبة المستخدَم من نافذة الخمس ساعات والنافذة الأسبوعية (كل النماذج) من لقطات get_usage.</p>
+  <p class="sub">نسبة المستخدَم من نافذة الخمس ساعات والنافذة الأسبوعية (كل النماذج) من لقطات /usage الآلية.</p>
   <div class="legend" id="l3"></div>
   <div class="chart" id="c3"></div>
   <details><summary>عرض الجدول</summary><div class="wrap" id="t3"></div></details>
@@ -160,12 +160,15 @@ function render3(){
   $("#c3sum").textContent=pts.length+" لقطة";
   var lg=$("#l3");clear(lg);
   [["خمس ساعات","--s1"],["أسبوعي (كل النماذج)","--s2"]].forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
-  $("#n3").textContent=pts.length<5?"اللقطات قليلة بعد ("+pts.length+")؛ تتراكم مع الأيام. لم تصل عيّنات statusLine، فالمصدر الحالي لقطات get_usage التي تُسجَّل يدويًّا.":"المصدر: لقطات get_usage وعيّنات statusLine إن وصلت.";
+  var last=pts.length?pts[pts.length-1]:null;
+  $("#n3").textContent=pts.length<5?"اللقطات قليلة بعد ("+pts.length+")؛ تتراكم مع الأيام.":"المصدر: لقطات تُسجَّل آليًّا من أمر /usage بلا استهلاك توكنات"+(last?" (آخر مصدر: "+last.src+")":"")+"، وتُحدَّث هنا كل دقيقة عند التقديم من الخادم المحلي.";
   if(!pts.length){clear(box);box.appendChild(mk("div",{class:"empty"},"لا لقطات لحصة الخطة في هذه الفترة."));clear($("#t3"));return}
   var ms=pts.map(function(p){return Date.parse(p.ts)}),x0=Math.min.apply(null,ms),x1=Math.max.apply(null,ms);
   if(x1-x0<36e5){x0-=18e5;x1+=18e5}
   var span=x1-x0,two=span<2*864e5;
-  drawLines(box,{label:"خط حصة الخطة",xs:ms,x0:x0,x1:x1,ymax:100,ml:40,
+  /* المحور يتكيّف مع القيم (حدّ أدنى 20% وأقصى 100%) فلا تنضغط نسب صغيرة كـ2% و8% في خط مسطّح */
+  var vmax=Math.max.apply(null,pts.reduce(function(a,p){return a.concat([p.f,p.w])},[]).filter(function(v){return v!=null}).concat([10]));
+  drawLines(box,{label:"خط حصة الخطة",xs:ms,x0:x0,x1:x1,ymax:Math.min(100,niceMax(vmax)),ml:40,
     yfmt:function(v){return Math.round(v)+"%"},
     xfmt:function(v){var d=new Date(v),h=d.toISOString().slice(11,16);return two?h+" "+dm(ymd(v)):dm(ymd(v))},
     tfmt:function(v){return v.toFixed(0)+"%"},endLabel:function(v){return v.toFixed(0)+"%"},
@@ -223,7 +226,7 @@ function render5(){
   drawLines($("#c5a"),Object.assign({},common,{label:"متوسط السياق للردّ",ymax:niceMax(mx),yfmt:function(v){return compact(v,v>=1e6?1:0)},tfmt:function(v){return compact(v,1)+" توكن"},
     series:[{name:"متوسط السياق",c:"--s7",v:ctx,hollow:hol}]}));
   var mx2=Math.max.apply(null,shr.filter(function(x){return x!=null}).concat([.01]));
-  drawLines($("#c5b"),Object.assign({},common,{label:"نسبة الردود فوق العتبة",ymax:niceMax(mx2*100)/100,ml:46,yfmt:function(v){return Math.round(v*100)+"%"},tfmt:function(v){return pct(v)},
+  drawLines($("#c5b"),Object.assign({},common,{label:"نسبة الردود فوق العتبة",ymax:Math.min(1,niceMax(mx2*100)/100),ml:46,yfmt:function(v){return Math.round(v*100)+"%"},tfmt:function(v){return pct(v)},
     series:[{name:"نسبة الردود",c:"--s7",v:shr,hollow:hol}]}));
   var n5=$("#n5");
   if(!c){$("#c5sum").textContent="";n5.textContent="لا تغيير مسجَّل لـ autoCompactWindow في config_changes.";clear($("#t5"));clear($("#t5d"));return}
@@ -263,6 +266,11 @@ function init(){
   $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.sk="ratio";S.sd=-1;S.lim=25;setPreset("30");buildChips();render()});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(render,120)});
   render();
+  /* رسم الحصة حيّ: عند التقديم من الخادم المحلي تُسحب اللقطات كل دقيقة بدل انتظار إعادة بناء الصفحة؛ من ملف مباشر تبقى لقطة آخر بناء */
+  if(location.protocol!=="file:"){
+    var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;render3()}}).catch(function(){})};
+    pullPlan();setInterval(pullPlan,60000);
+  }
 }
 init();
 })();

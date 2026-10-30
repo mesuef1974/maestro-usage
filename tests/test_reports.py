@@ -84,7 +84,8 @@ class TestReports(unittest.TestCase):
         for bad in ("<link", "@import", "XMLHttpRequest", "src=\"http", "<script src"):
             self.assertNotIn(bad, html)
         # الطلب الوحيد المسموح: زر التحديث الفوري نحو الخادم المحلي بمسار نسبي
-        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"'))
+        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري والقراءة الحيّة للقطات الحصة
+        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"') + html.count('fetch("/plan.json"'))
 
 
 if __name__ == "__main__":
