@@ -1,6 +1,6 @@
 ﻿# تثبيت مهمة مجدولة (للمستخدم الحالي فقط) لتشغيل src\run_cycle.py كل N دقيقة. التراجع: .\install_task.ps1 -Remove
 param(
-    [int]$EveryMinutes = 15,
+    [int]$EveryMinutes = 1,
     [switch]$Remove
 )
 $ErrorActionPreference = "Stop"

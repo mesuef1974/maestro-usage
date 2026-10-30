@@ -33,7 +33,7 @@ def live_plan():
 
 def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
     reports_dir = reports_dir or reports.REPORTS_DIR
-    refresh_fn = refresh_fn or run_cycle.main
+    refresh_fn = refresh_fn or (lambda: run_cycle.main(["--force"]))  # زر التحديث يفرض بناء التقارير
     plan_fn = plan_fn or live_plan
     lock = threading.Lock()  # دورة واحدة في وقت واحد
 
