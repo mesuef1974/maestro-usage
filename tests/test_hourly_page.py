@@ -85,7 +85,8 @@ class TestHourlyPage(unittest.TestCase):
         with open(os.path.join(out, "hourly.html"), encoding="utf-8") as f:
             html = f.read()
         self.assertEqual(html.replace("http://www.w3.org/2000/svg", "").count("http"), 0)
-        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"'))
+        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري والقراءة الحيّة للقطات الحصة
+        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"') + html.count('fetch("/plan.json"'))
         for bad in ("<link", "@import", "XMLHttpRequest", "<script src"):
             self.assertNotIn(bad, html)
         self.assertIn("themebtn", html)  # زر السمة المركزي

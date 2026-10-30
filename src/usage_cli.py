@@ -10,6 +10,7 @@
 رمز الخروج: 0 سُجّلت لقطة أو لم يحن الموعد (skip)، 1 فشل التشغيل أو التحليل، 2 بيانات قديمة (آخر معلوم) فلم تُسجَّل.
 """
 import argparse
+import json
 import os
 import re
 import shutil
@@ -27,7 +28,8 @@ TIMEOUT_SEC = 150
 BASE_SEC = 300      # الفاصل العادي بين لقطتين
 HOT_SEC = 60        # الفاصل ما دامت النسب تتغيّر بين آخر لقطتين
 SLACK_SEC = 30      # سماح لتفاوت إقلاع المهمة (تُستدعى كل دقيقة)
-RESET_LAG_SEC = 20  # لقطة فور انتهاء النافذة بعد هذه المهلة
+RESET_LAG_SEC = 10  # لقطة فور انتهاء النافذة بعد هذه المهلة من الحدّ الأعلى للتصفير
+RESET_ROUND_SEC = 60  # تقريب /usage لوقت التصفير إلى الدقيقة
 FIXED_ZONES = {"Asia/Qatar": 3}  # احتياط إن غابت قاعدة المناطق الزمنية في ويندوز
 MONTHS = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
 WINDOWS = (("five", r"Current session"), ("seven", r"Current week \(all models\)"), ("fable", r"Current week \(Fable\)"))
@@ -104,11 +106,41 @@ def due(con, now=None):
     last = rows[0]
     last_ts = _epoch(last[0])
     if last[4]:
-        reset = _epoch(last[4])
-        if last_ts < reset <= now - RESET_LAG_SEC:
+        # /usage يقرّب وقت التصفير إلى دقيقة ويتأرجح بين دقيقتين متجاورتين بين تشغيل وآخر، فالحدّ الأعلى للتصفير الفعلي بعد دقيقة
+        boundary = _epoch(last[4]) + RESET_ROUND_SEC
+        if last_ts < boundary <= now - RESET_LAG_SEC:
             return True, "window_reset"
     hot = len(rows) > 1 and tuple(last[1:4]) != tuple(rows[1][1:4])
     return now - last_ts >= (HOT_SEC if hot else BASE_SEC) - SLACK_SEC, "hot" if hot else "base"
+
+
+def health(con, now=None, log_path=None):
+    """ملخّص صحة التجميع: عمر آخر لقطة، وعدد اللقطات والإخفاقات في 24 ساعة، وأكبر فجوة (ثوانٍ) بينها، وتوزيع أسباب اللقطة من السجل."""
+    now = (now or datetime.now(timezone.utc)).timestamp()
+    stamps = [_epoch(r[0]) for r in con.execute(
+        "SELECT ts FROM plan_snapshots WHERE source='cli_usage' ORDER BY ts") if now - _epoch(r[0]) <= 86400]
+    out = {"snapshots_24h": len(stamps), "last_age_sec": round(now - stamps[-1]) if stamps else None,
+           "max_gap_sec": round(max((b - a for a, b in zip(stamps, stamps[1:])), default=0)), "fail": 0, "stale": 0, "why": {}}
+    try:
+        with open(log_path or LOG, encoding="utf-8") as f:
+            for line in f:
+                ts, _, rest = line.partition(" ")
+                try:
+                    if now - _epoch(ts) > 86400:
+                        continue
+                except ValueError:
+                    continue
+                if rest.startswith("fail"):
+                    out["fail"] += 1
+                elif rest.startswith("stale"):
+                    out["stale"] += 1
+                else:
+                    m = re.search(r"why=(\w+)", rest)
+                    if m:
+                        out["why"][m.group(1)] = out["why"].get(m.group(1), 0) + 1
+    except OSError:
+        pass
+    return out
 
 
 def run_claude():
@@ -131,8 +163,12 @@ def main(argv=None):
     ap.add_argument("--db")
     ap.add_argument("--text-file", help="تحليل نص محفوظ بدل تشغيل claude (للاختبار اليدوي)")
     ap.add_argument("--force", action="store_true", help="تجاوز فحص الموعد وأخذ لقطة الآن")
+    ap.add_argument("--health", action="store_true", help="اطبع ملخّص صحة التجميع (24 ساعة) ولا تأخذ لقطة")
     a = ap.parse_args(argv)
     con = usage_db.connect(a.db)
+    if a.health:
+        print(json.dumps(health(con), ensure_ascii=False))
+        return 0
     why = "forced"
     if not (a.force or a.text_file):
         ok, why = due(con)

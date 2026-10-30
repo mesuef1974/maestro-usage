@@ -475,6 +475,11 @@ function init(){
   render();
 }
 init();
+/* بطاقة الحصة حيّة: عند التقديم من الخادم المحلي تُسحب اللقطات من القاعدة كل دقيقة بدل انتظار إعادة بناء الصفحة (كل 15 دقيقة)؛ من ملف مباشر تبقى لقطة آخر بناء */
+if(location.protocol!=="file:"){
+  var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;renderQuota()}}).catch(function(){})};
+  pullPlan();setInterval(pullPlan,60000);
+}
 })();
 </script>
 </body>

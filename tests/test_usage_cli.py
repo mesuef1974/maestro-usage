@@ -134,14 +134,29 @@ class TestDue(unittest.TestCase):
 
     def test_window_reset_triggers_immediate_snapshot_once(self):
         self.snap("2026-10-30T10:00:00Z", 4.0, resets="2026-10-30T10:03:00Z")
-        self.assertEqual(usage_cli.due(self.con, self.at("10:03:10")), (False, "base"))   # قبل مهلة 20 ثانية
-        self.assertEqual(usage_cli.due(self.con, self.at("10:03:25")), (True, "window_reset"))
-        self.snap("2026-10-30T10:03:30Z", 0.0)       # لقطة بعد التصفير بلا resets_at جديد ← لا تكرار
-        self.assertEqual(usage_cli.due(self.con, self.at("10:03:50")), (False, "hot"))
+        # المسجَّل 10:03:00 مقرَّب إلى الدقيقة فالتصفير الفعلي قد يقع حتى 10:03:59، فلا لقطة قبل 10:04:10
+        self.assertEqual(usage_cli.due(self.con, self.at("10:03:25")), (False, "base"))
+        self.assertEqual(usage_cli.due(self.con, self.at("10:04:05")), (False, "base"))
+        self.assertEqual(usage_cli.due(self.con, self.at("10:04:15")), (True, "window_reset"))
+        self.snap("2026-10-30T10:04:20Z", 0.0)       # لقطة بعد التصفير بلا resets_at جديد ← لا تكرار
+        self.assertEqual(usage_cli.due(self.con, self.at("10:04:40")), (False, "hot"))
 
     def test_after_sleep_snapshot_is_due_immediately(self):
         self.snap("2026-10-30T00:00:00Z", 0.0)
         self.assertEqual(usage_cli.due(self.con, self.at("03:16:30")), (True, "base"))
+
+    def test_health_counts_gaps_failures_and_reasons(self):
+        for ts in ("2026-10-30T09:00:00Z", "2026-10-30T09:05:00Z", "2026-10-30T09:40:00Z"):
+            self.snap(ts, 1.0)
+        self.snap("2026-10-20T09:00:00Z", 1.0)       # أقدم من 24 ساعة ← لا يُحتسب
+        with open(usage_cli.LOG, "w", encoding="utf-8") as fh:
+            fh.write("2026-10-30T09:00:00Z five=1.0 seven=7.0 fable=0.0 recorded why=base\n"
+                     "2026-10-30T09:05:00Z five=1.0 seven=7.0 fable=0.0 recorded why=hot\n"
+                     "2026-10-30T09:20:00Z fail run TimeoutExpired\n2026-10-30T09:21:00Z stale\n"
+                     "2026-10-01T09:00:00Z five=1.0 seven=7.0 fable=0.0 recorded why=base\n")
+        h = usage_cli.health(self.con, self.at("09:45:00"))
+        self.assertEqual((h["snapshots_24h"], h["last_age_sec"], h["max_gap_sec"]), (3, 300, 2100))
+        self.assertEqual((h["fail"], h["stale"], h["why"]), (1, 1, {"base": 1, "hot": 1}))
 
     def test_main_skips_without_running_claude_unless_forced(self):
         self.snap(usage_db.now_iso(), 1.0)

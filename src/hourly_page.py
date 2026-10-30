@@ -55,12 +55,17 @@ def payload(con):
             if dfrom > r[3]:
                 r[3], r[4] = dfrom, dto
     rows = [dict(r=k[0], h=k[1], m=k[2], k=v[0], x=v[1], d=v[2], df=v[3], dt=v[4]) for k, v in sorted(facts.items())]
-    plan = [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, fa=fa, src=src) for ts, f, fr, w, wr, fa, src in con.execute(
-        "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, fable_pct, source FROM plan_snapshots ORDER BY ts")]
+    plan = plan_rows(con)
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in dashboard.MODEL_GROUPS] + [dashboard.OTHER_NAME], window=WINDOW, alert=ALERT_PCT,
                 drop_ratio=sessions_page.DROP_RATIO, drop_min=sessions_page.DROP_MIN_PREV,
                 first_day=first, last_day=last, roles=roles, rp=[int(role_groups.is_project(n)) for n in roles], h=rows, plan=plan)
+
+
+def plan_rows(con):
+    """لقطات الحصة بالشكل الذي تقرؤه الصفحة (D.plan)؛ يخدم البناء الثابت ونقطة /plan.json الحيّة."""
+    return [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, fa=fa, src=src) for ts, f, fr, w, wr, fa, src in con.execute(
+        "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, fable_pct, source FROM plan_snapshots ORDER BY ts")]
 
 
 def render(data, stamp):
