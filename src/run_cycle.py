@@ -9,6 +9,7 @@ import time
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import agents_cli  # noqa: E402
 import backup_db  # noqa: E402
 import reports  # noqa: E402
 import statusline_loader  # noqa: E402
@@ -85,6 +86,7 @@ def main(argv=None):
         con = usage_db.connect()
         st = usage_ingest.run(con)
         sp = statusline_loader.load_spool(con)
+        ag = agents_cli.run(con)  # صفر توكنات؛ كل 5 دقائق
         new_data = bool(st["turns_new"] or st["turns_updated"] or st["turns_reassigned"] or sp.get("plans_new"))
         state = load_state()
         rep = "skipped"
@@ -101,9 +103,9 @@ def main(argv=None):
             state["pending"] = state["pending"] or new_data
         save_state(state)
         con.close()
-        if new_data or st["files_error"] or rep != "skipped" or force:  # دورة بلا جديد ولا بناء لا تُسجَّل (كل دقيقة)
+        if new_data or ag.get("agents_new") or ag.get("agents") == "fail" or st["files_error"] or rep != "skipped" or force:  # دورة بلا جديد ولا بناء لا تُسجَّل (كل دقيقة)
             log("ingest " + json.dumps({k: st[k] for k in ("files_ingested", "turns_new", "turns_updated", "turns_reassigned", "files_error", "turns_total")})
-                + " spool " + json.dumps(sp) + " reports " + rep + " sec %.1f" % (time.time() - t))
+                + " spool " + json.dumps(sp) + " agents " + json.dumps(ag) + " reports " + rep + " sec %.1f" % (time.time() - t))
         if backup_due():
             dest, res = backup_db.backup()
             log("backup integrity_check=" + res)

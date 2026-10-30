@@ -18,7 +18,7 @@ PATH = r"[A-Za-z]:[\\/][^\r\n\t]{0,300}|/[^\r\n\t]{0,300}"
 WHITELIST = {
     ("sessions", "session_key"): ID,
     ("sessions", "number"): r"\d{4}",
-    ("sessions", "number_source"): r"custom-title|app",
+    ("sessions", "number_source"): r"custom-title|app|agents",
     ("sessions", "cwd"): PATH,
     ("sessions", "branch"): r"[^\s]{1,200}",
     ("sessions", "first_seen"): r"\d{4}-\d\d-\d\dT[\d:.]+Z",
@@ -48,6 +48,12 @@ WHITELIST = {
     ("statusline_samples", "ts"): r"[\d\-T:.Z]+",
     ("statusline_samples", "session_key"): ID,
     # config_changes: مفتاح/قيمتان قصيرتان تكتبها 0101؛ الملاحظة نص بشري قصير من المالك لا من السجلات
+    ("agent_starts", "session_id"): ID,
+    ("agent_starts", "started_at"): r"\d{4}-\d\d-\d\dT[\d:.]+Z",
+    ("agent_starts", "number"): r"\d{4}",
+    ("agent_starts", "kind"): r"[a-z_\-]{1,30}",
+    ("agent_starts", "first_seen"): r"\d{4}-\d\d-\d\dT[\d:.]+Z",
+    ("agent_starts", "last_seen"): r"\d{4}-\d\d-\d\dT[\d:.]+Z",
     ("config_changes", "ts"): r"[\d\-T:.Z]+",
     ("config_changes", "key"): r"[A-Za-z0-9_]{1,80}",
     ("config_changes", "old_value"): r"[^\r\n]{1,80}",

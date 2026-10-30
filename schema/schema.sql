@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS schema_version (
 CREATE TABLE IF NOT EXISTS sessions (
     session_key   TEXT PRIMARY KEY,          -- معرّف CLI
     number        TEXT,                      -- 0101… (NULL لغير جلسات الفلو)
-    number_source TEXT,                      -- custom-title | app | NULL
+    number_source TEXT,                      -- custom-title | app | agents | NULL
     title         TEXT,                      -- يبقى NULL عمدًا: العناوين قد تحمل بيانات
     cwd           TEXT,
     branch        TEXT,
@@ -117,3 +117,16 @@ FROM usage_turns GROUP BY session_key;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_statusline_samples ON statusline_samples(ts, session_key);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_plan_snapshots ON plan_snapshots(ts, session_key, source);
+
+-- تشغيلات الجلسات الحيّة من `claude agents --json`: صف لكل (جلسة، وقت بدء عملية)؛ تغيّر startedAt لجلسة = إعادة تشغيل/استئناف.
+-- يُحفظ رقم الجلسة (4 أرقام) لا الاسم الكامل، لأن الأسماء نصوص بشرية.
+CREATE TABLE IF NOT EXISTS agent_starts (
+    session_id TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    number     TEXT,
+    kind       TEXT,
+    pid        INTEGER,
+    first_seen TEXT NOT NULL,
+    last_seen  TEXT NOT NULL,
+    PRIMARY KEY (session_id, started_at)
+);
