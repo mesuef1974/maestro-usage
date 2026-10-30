@@ -223,3 +223,9 @@
 - `scripts/remove_idle_venvs.py` (قائمة صريحة، عرض افتراضي، يتخطّى ما ليس فيه pyvenv.cfg وما فيه عملية حيّة، ويحفظ قائمة حزم كل بيئة في `.maestro\venv_freezes` قبل حذفها). شغّلتُه `--apply` بأمر المالك: حُذفت 17 بيئة مشاريع ≈11.59 GB (أكبرها llm-math-representation-geometry 5.0 GB وant-neural-reasoner 4.7 GB، وبيئتا Azkia mahsoos وmanhaj-graph، وschoolos-template)، وأُزيل بـ`pipx uninstall` الأدوات manim وjupyterlab وhttpie.
 - أُبقيت عمدًا (لأن الخطّافات تعتمد عليها أو ليست «بيئة مشروع»): أدوات pipx ruff وpre-commit وblack وpoetry، وكاش pre-commit، وruff044_venv، وuv، وإضافة LM Studio.
 - تحقّقتُ: عرض السكربت ثانية يعطي 0.00 GB، والبيئات الثلاث المحمية ما زالت فيها pyvenv.cfg، وruff وpre-commit يعملان، و125 اختبارًا ناجحًا، وC فيه 118 GB خالية وD فيه 68 GB. لم أتحقّق من البيئتين المؤقتتين في Temp (لم أمسّهما). الاسترجاع: قوائم الحزم محفوظة لإعادة البناء بـ`pip install`، أمّا الشيفرة فلم تُحذف (البيئات فقط).
+
+## 2026-10-30 — حذف Temp وQwen3-8B (بأمر المالك)
+- الطلب: حذف مجلد Temp كله عدا `claude\` وما قيد الاستعمال، وحذف النماذج عدا Qwen3-VL-4B. القرار بعد ثلاثة أسئلة: Klein Base (3.07 GB في `Temp\flux-control-lab`) يُحذف؛ Qwen3-8B (5.0 GB) يُحذف؛ Qwen3-VL-4B يبقى.
+- `scripts/clean_temp_and_models.py` (عرض افتراضي؛ يتخطّى `claude` وكل مجلد يرد اسمه في أوامر عملية حيّة، والملفات المقفلة تُترك). شغّلتُه `--apply`: حُذف ≈11.0 GB فعليًّا (flux-control-lab 3.08 GB، المجلد 7F107B51 1.98 GB، DiagOutputDir 0.55 GB، vscode-stable-user-x64 0.25 GB، DockerDesktopUpdates 46 MB، وغيرها، وQwen3-8B 5.03 GB). بقي في Temp نحو 498 MB (claude والمقفل).
+- تنبيه: ما حُذف من flux-control-lab كان تجربة بنموذج Klein Base؛ النسخة المقطّرة والمستودع `C:\Codex\Projects\local-pen-studio` لم يُمسّا. لم أتحقّق أن Docker وVS Code سليمان بعد حذف مؤقتهما (الحذف قد يعيد بناء ما فقداه).
+- تحقّقتُ: بقاء Qwen3-VL-4B وTemp\claude، والاختبارات ناجحة، وC صار فيه 131 GB خالية. لم تُحذف بنود القائمة الآمنة الأخرى (puppeteer وnpm-cache ونسخ القاعدة القديمة وCrashDumps).
