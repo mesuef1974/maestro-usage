@@ -64,8 +64,8 @@ def payload(con):
 
 def plan_rows(con):
     """لقطات الحصة بالشكل الذي تقرؤه الصفحة (D.plan)؛ يخدم البناء الثابت ونقطة /plan.json الحيّة."""
-    return [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, fa=fa, src=src) for ts, f, fr, w, wr, fa, src in con.execute(
-        "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, fable_pct, source FROM plan_snapshots ORDER BY ts")]
+    return [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, fa=fa, pl=pl, src=src) for ts, f, fr, w, wr, fa, pl, src in con.execute(
+        "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, fable_pct, plan, source FROM plan_snapshots ORDER BY ts")]
 
 
 def render(data, stamp):

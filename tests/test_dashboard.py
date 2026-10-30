@@ -51,7 +51,7 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual(len(self.data["models"]), other + 1)
 
     def test_plan_and_changes(self):
-        self.assertEqual(self.data["plan"], [dict(ts="2026-10-22T06:00:00Z", f=3.0, fr=None, w=5.0, src="get_usage")])
+        self.assertEqual(self.data["plan"], [dict(ts="2026-10-22T06:00:00Z", f=3.0, fr=None, w=5.0, wr=None, pl=None, src="get_usage")])
         applied = {(c["key"], c["new"]): c["applied"] for c in self.data["changes"]}
         self.assertFalse(applied[("CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "25")])
         self.assertTrue(applied[("autoCompactWindow", "250000")])

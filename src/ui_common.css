@@ -43,6 +43,19 @@ button,input{font:inherit;color:inherit}
 .chip[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
 .sw{inline-size:10px;block-size:10px;border-radius:2px;display:inline-block;flex:none}
 .reset{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:.25rem .7rem;cursor:pointer;color:var(--ink2)}
+.limits{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.9rem 1.1rem;margin-block:1rem 0;min-inline-size:0}
+.limits .lh{display:flex;flex-wrap:wrap;gap:.3rem 1rem;justify-content:space-between;align-items:baseline;margin-block-end:.7rem}
+.limits .lh h2{margin:0;font-size:1rem;color:var(--ink2);font-weight:500}
+.limits .lh a{color:var(--ink2);font-size:.85rem;text-decoration:none}
+.limits .lh a:hover{color:var(--ink);text-decoration:underline}
+.lrow+.lrow{margin-block-start:.8rem}
+.lrow .lt{display:flex;flex-wrap:wrap;gap:.1rem 1rem;justify-content:space-between;align-items:baseline}
+.lrow .ln{font-weight:600}
+.lrow .lr{color:var(--ink3);font-size:.85rem}
+.lrow .lp{font-size:1.05rem;font-weight:600;margin-inline-start:.9rem}
+.lrow .lb{block-size:6px;background:var(--chip);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-block-start:.35rem}
+.lrow .lf{display:block;block-size:100%;background:var(--s1);border-radius:999px;min-inline-size:4px;transition:inline-size .3s}
+.lrow .lf.hot{background:var(--s8)}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin-block:1rem}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.8rem 1rem;min-inline-size:0}
 .tile .l{color:var(--ink2);font-size:.82rem}
