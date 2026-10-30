@@ -167,3 +167,6 @@
 ## 2026-10-30 — تنظيف مفاتيح skillOverrides بأمر المالك، وتبيّن أن flow.md لا يُستورد أصلًا
 - حُذفت من ‎~/.claude/settings.json عشرة مفاتيح بلا أثر (token-shield:* السبعة وdjango-app وexplain-code وlesson): 52 → 42، وبقية الملف مطابقة (نسخة احتياطية في Temp\settings.backup.json)؛ حدث startup_skill_overrides_cleanup في config_changes.
 - نقل flow.md من CLAUDE.md: غير لازم، فـCLAUDE.md المنصّة يقول إنه لا يُستورد عند البدء (W-20261026-004)؛ كانت توصية الصفحة مبنية على فرضية قديمة وصُحّحت (ملاحظة schoolos-flow). وبه صحّحت البند 3 لـ0301.
+
+## 2026-10-30 — CLAUDE.md للمشروع
+- كُتب CLAUDE.md في جذر maestro_usage (بلا استيرادات @ حفاظًا على سياق البدء): الغرض والأوامر والبنية وطريقة إضافة صفحة والقواعد الصلبة من CHARTER والاتفاقات والمزالق. كان المشروع بلا ملف كهذا؛ يضيف نحو 1.5 ألف توكن إلى بدء جلسات هذا المجلد فقط، وتُقاس بأثر startup_cost (مجلد maestro_usage).
