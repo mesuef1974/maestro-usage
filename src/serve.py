@@ -1,7 +1,7 @@
 """خادم محلي اختياري للّوحة: يقدّم reports\\index.html ويشغّل دورة تحميل فورية عند ضغط «تحديث فوري».
 
 يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8790]
-المسارات: GET / (اللوحة) وGET /sessions.html (الأدوار والجلسات)، GET /hourly.html (الجلسات بالساعة)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
+المسارات: GET / (اللوحة) وGET /sessions.html (الأدوار والجلسات)، GET /hourly.html (الجلسات بالساعة)، GET /skills.html (حصر المهارات)،GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
 """
 import argparse
 import json
@@ -18,7 +18,7 @@ import reports  # noqa: E402
 import run_cycle  # noqa: E402
 import usage_db  # noqa: E402
 
-PAGES = {"/": "index.html", "/index.html": "index.html", "/sessions.html": "sessions.html", "/hourly.html": "hourly.html"}
+PAGES = {"/": "index.html", "/index.html": "index.html", "/sessions.html": "sessions.html", "/hourly.html": "hourly.html", "/skills.html": "skills.html"}
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 

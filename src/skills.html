@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>حصر المهارات</title>
+<style>
+__CSS__
+.tiles.dense{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-block:.4rem .8rem}
+.tile .v{font-size:1.45rem}
+.filters2{display:flex;flex-wrap:wrap;gap:.5rem .8rem;align-items:center;margin-block:.6rem}
+.tog{display:inline-flex;gap:.3rem;align-items:center;font-size:.85rem;color:var(--ink2)}
+#tbl .wrap{max-block-size:none;overflow-x:auto}
+#tbl table{table-layout:auto;min-inline-size:1100px}
+#tbl td{white-space:normal;vertical-align:top;line-height:1.5;min-inline-size:0}
+#tbl td.nw,#tbl th{white-space:nowrap}
+#tbl td.b{min-inline-size:15rem;max-inline-size:22rem}
+#tbl td.nt{min-inline-size:17rem;max-inline-size:26rem;color:var(--ink2)}
+#tbl td.k{font-weight:600;direction:ltr;text-align:right;word-break:break-all;min-inline-size:11rem}
+.rec{display:inline-flex;align-items:center;gap:.35rem;font-weight:600;white-space:nowrap}
+.dot{inline-size:.7rem;block-size:.7rem;border-radius:50%;display:inline-block;flex:none}
+.dups{display:flex;flex-wrap:wrap;gap:.2rem}
+.dups span{border:1px solid var(--line);background:var(--chip);border-radius:4px;padding:0 .35rem;font-size:.76rem;direction:ltr}
+.zero{color:var(--warn)}
+.sav{color:var(--s3);font-weight:600}
+.gone td{white-space:nowrap}
+.defs dt{font-weight:600;margin-block-start:.6rem}
+.defs dd{margin:0;color:var(--ink2);font-size:.88rem}
+@media (max-width:640px){.search{inline-size:100%}}
+</style>
+</head>
+<body>
+<div class="page">
+<nav class="nav" aria-label="صفحات المنصة"><a href="index.html">الاستهلاك</a><a href="sessions.html">الأدوار والجلسات</a><a href="hourly.html">الجلسات بالساعة</a><a href="skills.html" aria-current="page">حصر المهارات</a></nav>
+<h1>حصر المهارات</h1>
+<p class="sub">كل مهارة وأمر محلي أو مزامَن أو مضمَّن: فائدتها واستعمالها الفعلي وتكرارها مع غيرها وتوصية الإبقاء أو الإخفاء أو الأرشفة. الاستعمال من مسح سجلات الجلسات (<span id="files"></span> ملف، آخر مسح <span id="scan"></span>) والتوصيات حكم يدوي مبني عليها؛ لا يُغيَّر أي إعداد من هذه الصفحة. وُلّدت في <span id="gen">__STAMP__</span>.</p>
+
+<section class="tiles dense" id="tiles" aria-label="ملخص الحصر"></section>
+
+<div class="filters2" role="group" aria-label="المرشِّحات">
+  <div class="chips" id="rchips" role="group" aria-label="التوصية"></div>
+  <select id="src" aria-label="المصدر"></select>
+  <input type="search" class="search" id="q" placeholder="بحث: اسم المهارة أو فائدتها" aria-label="بحث في المهارات">
+  <label class="tog"><input type="checkbox" id="dup"> المكرَّرة فقط</label>
+  <label class="tog"><input type="checkbox" id="unused"> بلا استعمال فقط</label>
+  <button type="button" class="mini" id="reset">إعادة الضبط</button>
+</div>
+
+<section class="card" id="tbl" aria-labelledby="ht">
+  <div class="cardhead"><h2 id="ht">الجدول</h2><span class="sub" id="tsum"></span></div>
+  <p class="sub">انقر عنوان عمود للترتيب. «استدعاءات» عبر أداة Skill أو أمر مائل. «توكن الآن» و«بعد التوصية» تقدير لكلفة سطرها في قائمة السياق (أحرف ÷ <span id="cpt"></span>)؛ المطفأة بلا كلفة.</p>
+  <div class="wrap" id="rows"></div>
+  <p class="note">0 استدعاء لا يعني عدم النفع: قد تُقرأ المهارة مباشرة، أو تحيل إليها تعليمات النظام، أو تُطلب في مهام نادرة. لذلك الاسم وحده (name-only) أول خيار قبل الأرشفة.</p>
+</section>
+
+<section class="card" aria-labelledby="hg">
+  <div class="cardhead"><h2 id="hg">استُعملت سابقًا وليست في الحصر</h2><span class="sub" id="gsum"></span></div>
+  <p class="sub">أسماء وردت في السجلات بالأداة أو بأمر مائل ولا ملف محلي لها الآن (حذفت أو أُعيدت تسميتها أو إضافات قديمة). للعلم لا للإجراء.</p>
+  <div class="wrap" id="gone" style="max-block-size:320px"></div>
+</section>
+
+<details class="card defs"><summary>التعريفات والتحفظات</summary>
+<dl>
+<dt>التوصيات</dt><dd>أبقِ: تبقى كما هي. اسم فقط (name-only): يبقى اسمها في القائمة بلا وصفها فتُستدعى بالاسم وتُوفَّر كلفة الوصف. أطفئ (off): لا تظهر في القائمة أصلًا. أرشف: تنقل إلى ‎~/.claude/skills_archive. نظِّف: مفاتيح بلا أثر تُحذف من skillOverrides.</dd>
+<dt>الكلفة بالتوكن</dt><dd>سطر المهارة في القائمة = الاسم + الوصف (مفعّلة)، أو الاسم (name-only)، أو صفر (off). الأحرف ÷ 3.5 تقدير تقريبي؛ لا يقيس أثر الأداء الفعلي لكل مهارة إلا قياس بدء الجلسات قبل/بعد التغيير (صفحة الاستهلاك).</dd>
+<dt>الاستعمال</dt><dd>عدّ لأداة Skill ولأوامر الشرطة المائلة في سجلات الجلسات المحلية فقط. استدعاءات الوكلاء الفرعيين ضمن الجلسة نفسها. ما يُقرأ من ملف المهارة دون الأداة لا يُعدّ.</dd>
+<dt>التكرار</dt><dd>تداخل في الموضوع بين مهارتين أو أكثر؛ العمود «الأفضل/ملاحظة» يبيّن أيّها يُحتفظ به ولماذا. مهارات «أزكية» (schoolos-*) تخدم مشروعًا واحدًا وتتجاور بالتصميم لا بالتكرار.</dd>
+</dl>
+</details>
+</div>
+<div id="tip" role="status" aria-live="off"></div>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent);
+__LIB__
+
+var REC={keep:{l:"أبقِ",c:"--s3"},nameonly:{l:"اسم فقط",c:"--s1"},off:{l:"أطفئ",c:"--oth"},archive:{l:"أرشف",c:"--s4"},clean:{l:"نظِّف",c:"--s8"}};
+var ORDER=["keep","nameonly","off","archive","clean"];
+var ST={on:"مفعّلة","name-only":"اسم فقط",off:"مطفأة",archived:"مؤرشفة"};
+var S={recs:new Set(ORDER),src:"",q:"",dup:false,unused:false,sk:"k",sd:1};
+var ROWS=D.rows;
+
+function fmtDay(d){return d?d.slice(2).replace(/-/g,"/"):"—"}
+function recEl(r){
+  var o=REC[r.r]||REC.keep,e=mk("span",{class:"rec"}),d=mk("span",{class:"dot"});
+  d.style.background=css(o.c);e.appendChild(d);e.appendChild(mk("span",null,o.l));return e;
+}
+function dupEl(r){
+  var e=mk("div",{class:"dups"});
+  if(!r.d.length){e.textContent="—";return e}
+  r.d.forEach(function(n){e.appendChild(mk("span",null,n))});return e;
+}
+function useEl(r){
+  var e=mk("span",null,r.n?num(r.n)+" · "+num(r.s)+" جلسة":"0");
+  if(!r.n)e.className="zero";return e;
+}
+var COLS=[
+  {k:"k",l:"المهارة",el:function(r){var e=mk("span",null,r.k);return e}},
+  {k:"src",l:"المصدر",f:function(r){return r.src}},
+  {k:"st",l:"الحالة الآن",f:function(r){return ST[r.st]||r.st}},
+  {k:"b",l:"الفائدة",f:function(r){return r.b}},
+  {k:"n",l:"استدعاءات",el:useEl},
+  {k:"last",l:"آخر استعمال",f:function(r){return fmtDay(r.last)}},
+  {k:"nd",l:"مكرَّرة مع",el:dupEl},
+  {k:"nt",l:"الأفضل / ملاحظة",f:function(r){return r.nt}},
+  {k:"r",l:"التوصية",el:recEl},
+  {k:"t0",l:"توكن الآن",n:1,f:function(r){return r.t0==null?"—":num(r.t0)}},
+  {k:"t1",l:"بعد التوصية",n:1,f:function(r){return r.t1==null?"—":num(r.t1)}}
+];
+var CLS={k:"k nw",src:"nw",st:"nw",b:"b",n:"nw",last:"nw",nd:"nw",nt:"nt",r:"nw",t0:"nw",t1:"nw"};
+
+function visible(){
+  var q=S.q.trim().toLowerCase();
+  return ROWS.filter(function(r){
+    if(!S.recs.has(r.r))return false;
+    if(S.src&&r.src!==S.src)return false;
+    if(S.dup&&!r.d.length)return false;
+    if(S.unused&&r.n)return false;
+    if(q&&(r.k+" "+r.b+" "+r.nt).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+}
+function sorted(rows){
+  var k=S.sk,d=S.sd;
+  return rows.slice().sort(function(a,b){
+    var x=k==="nd"?a.d.length:k==="r"?ORDER.indexOf(a.r):a[k],y=k==="nd"?b.d.length:k==="r"?ORDER.indexOf(b.r):b[k];
+    if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;
+    return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"ar"))*d;
+  });
+}
+function tile(l,v,d){var t=mk("div",{class:"tile"});t.appendChild(mk("div",{class:"l"},l));t.appendChild(mk("div",{class:"v"},v));t.appendChild(mk("div",{class:"d"},d||""));return t}
+function renderTiles(){
+  var box=$("#tiles");clear(box);
+  var by={};ORDER.forEach(function(k){by[k]=0});ROWS.forEach(function(r){by[r.r]=(by[r.r]||0)+1});
+  var dup=ROWS.filter(function(r){return r.d.length}).length;
+  var unused=ROWS.filter(function(r){return !r.n&&r.st!=="archived"}).length;
+  box.appendChild(tile("عدد المهارات",num(ROWS.length),"كل المصادر بما فيها المؤرشفة والمضمَّنة"));
+  box.appendChild(tile("أبقِ كما هي",num(by.keep),"اسم فقط: "+num(by.nameonly)));
+  box.appendChild(tile("أطفئ أو نظِّف",num(by.off+by.clean),"أرشف: "+num(by.archive)));
+  box.appendChild(tile("مكرَّرة أو متداخلة",num(dup),"لها مهارة أخرى بموضوعها"));
+  box.appendChild(tile("بلا أي استدعاء",num(unused),"عبر الأداة أو أمر مائل"));
+  var sv=D.t0-D.t1;
+  box.appendChild(tile("كلفة القائمة",compact(D.t0,2),"بعد التوصيات "+compact(D.t1,2)+" · توفير ≈ "+compact(Math.max(sv,0),2)));
+}
+function buildFilters(){
+  var rc=$("#rchips");clear(rc);
+  ORDER.forEach(function(k){
+    var b=mk("button",{type:"button",class:"chip","aria-pressed":String(S.recs.has(k))}),sw=mk("span",{class:"sw"});
+    sw.style.background=css(REC[k].c);b.appendChild(sw);b.appendChild(mk("span",null,REC[k].l));
+    b.addEventListener("click",function(){
+      if(S.recs.has(k))S.recs.delete(k);else S.recs.add(k);
+      if(!S.recs.size)ORDER.forEach(function(j){S.recs.add(j)});
+      buildFilters();render();
+    });rc.appendChild(b);
+  });
+}
+function buildSources(){
+  var sel=$("#src"),seen={},opts=[""];
+  ROWS.forEach(function(r){if(!seen[r.src]){seen[r.src]=1;opts.push(r.src)}});
+  clear(sel);
+  opts.forEach(function(o){var op=mk("option",{value:o},o||"كل المصادر");sel.appendChild(op)});
+  sel.value=S.src;
+}
+function onSort(k){if(S.sk===k)S.sd=-S.sd;else{S.sk=k;S.sd=(k==="n"||k==="t0"||k==="t1"||k==="nd")?-1:1}render()}
+function renderTable(){
+  var rows=sorted(visible()),box=$("#rows");
+  drawTable(box,COLS,rows,{k:S.sk,d:S.sd},onSort);
+  var trs=box.querySelectorAll("tbody tr");
+  [].forEach.call(trs,function(tr){[].forEach.call(tr.children,function(td,i){var c=CLS[COLS[i].k];if(c)td.className=(td.className+" "+c).trim()})});
+  var ths=box.querySelectorAll("thead th");
+  $("#tsum").textContent=num(rows.length)+" من "+num(ROWS.length);
+  if(!rows.length)box.appendChild(mk("div",{class:"empty"},"لا مهارات تطابق المرشِّحات."));
+}
+function renderGone(){
+  var g=D.gone,box=$("#gone");
+  $("#gsum").textContent=num(g.length)+" اسمًا";
+  drawTable(box,[
+    {k:"k",l:"الاسم",f:function(r){return r.k}},
+    {k:"n",l:"استدعاءات",n:1,f:function(r){return num(r.n)}},
+    {k:"s",l:"جلسات",n:1,f:function(r){return num(r.s)}},
+    {k:"first",l:"أول مرة",f:function(r){return fmtDay(r.first)}},
+    {k:"last",l:"آخر مرة",f:function(r){return fmtDay(r.last)}},
+    {k:"via",l:"عبر",f:function(r){return r.via}}
+  ],g,null,null);
+}
+function render(){renderTable()}
+
+$("#files").textContent=num(D.files||0);
+$("#scan").textContent=D.scanned_at?D.scanned_at.slice(0,10):"—";
+$("#cpt").textContent=String(D.cpt);
+buildFilters();buildSources();renderTiles();renderGone();render();
+$("#q").addEventListener("input",function(){S.q=this.value;render()});
+$("#src").addEventListener("change",function(){S.src=this.value;render()});
+$("#dup").addEventListener("change",function(){S.dup=this.checked;render()});
+$("#unused").addEventListener("change",function(){S.unused=this.checked;render()});
+$("#reset").addEventListener("click",function(){
+  S.recs=new Set(ORDER);S.src="";S.q="";S.dup=false;S.unused=false;S.sk="k";S.sd=1;
+  $("#q").value="";$("#dup").checked=false;$("#unused").checked=false;buildFilters();buildSources();render();
+});
+})();
+</script>
+</body>
+</html>

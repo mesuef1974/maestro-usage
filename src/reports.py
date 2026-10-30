@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402
 import hourly_page  # noqa: E402
 import sessions_page  # noqa: E402
+import skills_page  # noqa: E402
 import usage_db  # noqa: E402
 
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
@@ -290,6 +291,7 @@ def build(con, out_dir=REPORTS_DIR):
     dashboard.write(path, data, "".join(parts), gen)
     sessions_page.write(os.path.join(out_dir, "sessions.html"), sessions_page.payload(con), gen)
     hourly_page.write(os.path.join(out_dir, "hourly.html"), hourly_page.payload(con), gen)
+    skills_page.write(os.path.join(out_dir, "skills.html"), skills_page.payload(), gen)
     return path
 
 
