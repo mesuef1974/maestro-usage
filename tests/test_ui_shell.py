@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import tempfile
+from pathlib import Path
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
@@ -74,6 +75,9 @@ class UiShellTest(unittest.TestCase):
             css = re.sub(r"/\*.*?\*/", "", open(path, encoding="utf-8").read(), flags=re.S)  # بلا التعليقات
             self.assertIn("--brand:", css)
             self.assertLess(css.index("--brand:"), css.index(".app{"))  # التوكنات قبل الغلاف
+            for f in ("NotoKufiArabic.ttf", "NotoNaskhArabic.ttf", "Inter.ttf"):  # الخطوط تُنسخ بجانب الأسلوب ويشير إليها @font-face
+                self.assertTrue((Path(d) / "assets" / "fonts" / f).is_file(), f)
+                self.assertIn("fonts/" + f, css)
         self.assertNotIn("letter-spacing", css)
 
     def test_component_css_uses_tokens_not_literal_colors(self):

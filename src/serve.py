@@ -20,6 +20,7 @@ import run_cycle  # noqa: E402
 import usage_db  # noqa: E402
 
 PAGES = {"/": "index.html", "/sessions.html": "roles.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
+FONT_RE = re.compile(r"^/assets/fonts/[A-Za-z]+\.ttf$")
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 
@@ -72,6 +73,8 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
                 name, ctype = PAGES[path], "text/html; charset=utf-8"
             elif path == "/assets/platform.css":
                 name, ctype = "assets/platform.css", "text/css; charset=utf-8"
+            elif FONT_RE.match(path):
+                name, ctype = path[1:], "font/ttf"
             else:
                 m = CSV_RE.match(path)
                 if not m:

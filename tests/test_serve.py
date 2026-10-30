@@ -24,6 +24,11 @@ class TestServe(unittest.TestCase):
         os.makedirs(os.path.join(self.tmp, "assets"))
         with open(os.path.join(self.tmp, "assets", "platform.css"), "w", encoding="utf-8") as f:
             f.write(":root{--brand:#0b6e75}")
+        os.makedirs(os.path.join(self.tmp, "assets", "fonts"))
+        with open(os.path.join(self.tmp, "assets", "fonts", "Inter.ttf"), "wb") as f:
+            f.write(b"\x00\x01\x00\x00")
+        with open(os.path.join(self.tmp, "assets", "fonts", "OFL-Inter.txt"), "w", encoding="utf-8") as f:
+            f.write("ترخيص")
         with open(os.path.join(self.tmp, "report1_x.csv"), "w", encoding="utf-8") as f:
             f.write("a,b\n1,2\n")
         with open(os.path.join(self.tmp, "secret.txt"), "w", encoding="utf-8") as f:
@@ -60,6 +65,12 @@ class TestServe(unittest.TestCase):
         self.assertEqual(self.req("GET", "/assets/../secret.txt")[0], 404)
         self.assertIn("ساعة".encode(), self.req("GET", "/hourly.html")[1])
         for bad in ("/secret.txt", "/../x", "/report1_x.csv/../secret.txt", "/%2e%2e/secret.txt"):
+            self.assertEqual(self.req("GET", bad)[0], 404, bad)
+
+    def test_serves_only_ttf_fonts(self):
+        code, body = self.req("GET", "/assets/fonts/Inter.ttf")
+        self.assertEqual((code, body[:2]), (200, b"\x00\x01"))
+        for bad in ("/assets/fonts/OFL-Inter.txt", "/assets/fonts/missing.ttf", "/assets/fonts/../../secret.txt", "/assets/fonts/%2e%2e/secret.txt"):
             self.assertEqual(self.req("GET", bad)[0], 404, bad)
 
     def test_refresh_runs_cycle_for_own_host(self):

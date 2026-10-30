@@ -5,22 +5,26 @@ import html
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 
 import pages
 
 SRC = Path(__file__).resolve().parent
 CSS_DIR = SRC / "css"
+FONT_DIR = SRC / "fonts"
 ASSET_URL = "assets/platform.css"
 SEC_RE = re.compile(r"<!--@sec (\w+)-->(.*?)<!--@/sec-->", re.S)
 
-# علامة «ميزان»: قوس مقياس ومؤشّر. الألوان من توكنات الهوية؛ نسخة الأيقونة تحمل ألوانًا ثابتة لأنها صورة مستقلة.
-LOGO = ('<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="8" fill="var(--brand)"/>'
-        '<path d="M7 21a9 9 0 0 1 18 0" fill="none" stroke="var(--on-brand)" stroke-width="2.4" stroke-linecap="round"/>'
-        '<path d="M16 21l4.5-6" stroke="var(--on-brand)" stroke-width="2.4" stroke-linecap="round"/><circle cx="16" cy="21" r="1.8" fill="var(--on-brand)"/></svg>')
-FAVICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0b6e75"/>'
-           '<path d="M7 21a9 9 0 0 1 18 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>'
-           '<path d="M16 21l4.5-6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="16" cy="21" r="1.8" fill="#fff"/></svg>')
+# علامة «ميزان»: تميمة مبنية بالبكسل (أصلية، مستوحاة من فكرة تميمة المساعد لا نسخة منها): جسم نحاسي بعينين وذراعين وأربع أرجل،
+# وإبرة صغيرة فوق الرأس ترمز إلى المقياس. الألوان من توكنات الهوية؛ نسخة الأيقونة تحمل ألوانًا ثابتة لأنها صورة مستقلة.
+_MASCOT = ('<path d="M16 9L21 3" stroke="%(a)s" stroke-width="2.4" stroke-linecap="round" fill="none"/>'
+           '<rect x="4" y="9" width="24" height="14" rx="2.5" fill="%(b)s"/>'
+           '<rect x="1" y="13" width="4" height="5" rx="1" fill="%(b)s"/><rect x="27" y="13" width="4" height="5" rx="1" fill="%(b)s"/>'
+           '<rect x="8" y="23" width="4" height="5" rx="1" fill="%(b)s"/><rect x="20" y="23" width="4" height="5" rx="1" fill="%(b)s"/>'
+           '<rect x="10" y="13" width="2.6" height="5" rx="1.3" fill="%(e)s"/><rect x="19.4" y="13" width="2.6" height="5" rx="1.3" fill="%(e)s"/>')
+LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">%s</svg>' % (_MASCOT % dict(b="var(--brand)", a="var(--accent)", e="var(--surface)"))
+FAVICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#f6f3ee"/>%s</svg>' % (_MASCOT % dict(b="#a8541a", a="#9a6b00", e="#f6f3ee"))
 FAVICON_LINK = '<link rel="icon" href="data:image/svg+xml,%s">' % FAVICON.replace("<", "%3C").replace(">", "%3E").replace("#", "%23").replace('"', "'")
 
 
@@ -39,6 +43,11 @@ def write_assets(out_dir):
     d.mkdir(parents=True, exist_ok=True)
     path = d / "platform.css"
     write(str(path), css_text())
+    fonts = d / "fonts"
+    fonts.mkdir(exist_ok=True)
+    for f in FONT_DIR.glob("*"):  # الخطوط ونصوص ترخيصها (OFL) بجانب الأسلوب
+        if f.suffix in (".ttf", ".txt") and not (fonts / f.name).exists():
+            shutil.copyfile(f, fonts / f.name)
     return path
 
 
