@@ -60,3 +60,40 @@ LIVE_TEMPLATES = {"dashboard.html", "sessions.html", "hourly.html"}  # قوال�
 
 def for_template(template):
     return [p for p in PAGES if p["template"] == template]
+
+
+# مفاتيح الحمولة التي يقرؤها JS كل قسم من قوالب اللوحة؛ ما لا يطلبه أيّ قسم في الصفحة يُستبدل بفارغ من النوع نفسه فتخفّ الصفحة.
+# القوالب غير المذكورة هنا (sessions وhourly وskills) تبقى حمولتها كاملة لأن كل أقسامها تقرأ المصفوفة الكبيرة نفسها.
+DATA_NEEDS = {
+    "dashboard.html": {
+        "limits": {"plan", "plan_label", "plan_renew_day"}, "tiles": {"a"}, "h1": {"a"}, "h2": {"a"}, "h3": {"plan"},
+        "h4": {"b", "sessions"}, "h5": {"a", "changes"}, "h6": {"startup"},
+    },
+}
+DATA_ALWAYS = {"models", "threshold", "min_turns", "first_day", "last_day"}  # صغيرة ويقرؤها الغلاف والمرشِّحات في كل صفحة
+
+
+def prune_data(data, template, sections):
+    """يُبقي من حمولة القالب ما تطلبه أقسام الصفحة، ويُفرغ الباقي (قائمة ← [] وقاموس ← {}) كي لا يتعطّل JS يقرأه."""
+    needs = DATA_NEEDS.get(template)
+    if needs is None:
+        return data
+    keep = set(DATA_ALWAYS)
+    for sec in sections:
+        keep |= needs.get(sec, set())
+    return {k: (v if k in keep or not isinstance(v, (list, dict)) else type(v)()) for k, v in data.items()}
+
+
+# قوائم الكائنات الكبيرة المنتظمة التي تُضمَّن بصيغة أعمدة (المفاتيح مرة واحدة)؛ `unpack` في ui_common.js تعيدها.
+PACK_KEYS = {"dashboard.html": ("a", "b", "plan"), "sessions.html": ("c",), "hourly.html": ("h", "plan")}
+
+
+def pack_data(data, template):
+    out = dict(data)
+    for k in PACK_KEYS.get(template, ()):
+        rows = out.get(k)
+        if isinstance(rows, list) and len(rows) >= 20 and all(isinstance(r, dict) for r in rows):
+            cols = list(rows[0])
+            if all(list(r) == cols for r in rows):
+                out[k] = {"$cols": cols, "rows": [[r[c] for c in cols] for r in rows]}
+    return out

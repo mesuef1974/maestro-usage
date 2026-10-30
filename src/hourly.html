@@ -94,6 +94,7 @@ __SHELL_CLOSE__
 (function(){
 var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
+D=unpack(D);
 
 var LAST=D.last_day,FIRST=D.first_day,WIN=D.window,AL=D.alert/100,MAXSEL=8,H1=36e5,WINS=[D.window,250000];
 var S={from:null,to:LAST,preset:"7",models:new Set(D.models.map(function(_,i){return i})),unnum:false,bk:"h",mode:"cum",scale:"abs",win:D.window,idle:true,q:"",sel:null,slots:{}};

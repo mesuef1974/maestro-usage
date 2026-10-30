@@ -2,6 +2,8 @@ var NS="http://www.w3.org/2000/svg";
 var MCOL=["--s1","--s2","--s3","--s4","--s5","--s6","--oth"];
 var ORIG_AR={human:"إنسان",peer:"جلسة أخرى (peer)",scheduled:"مجدول",sdk:"SDK",task_notification:"إشعار مهمة",system:"نظام",sub:"وكيل فرعي",unknown:"بلا أصل مسجّل"};
 /* قالب واحد يخدم عدّة صفحات تحذف أقسامًا: العنصر الغائب يُرجَع عنصرًا وهميًّا غير مربوط فتمرّ الكتابة فيه دون خطأ */
+/* الحمولة الكبيرة تُضمَّن بصيغة أعمدة {"$cols":[مفاتيح],"rows":[[قيم]]} لتقليل الحجم؛ تُعاد هنا إلى قائمة كائنات */
+function unpack(d){Object.keys(d).forEach(function(k){var v=d[k];if(v&&v.$cols){var c=v.$cols;d[k]=v.rows.map(function(r){var o={};for(var i=0;i<c.length;i++)o[c[i]]=r[i];return o})}});return d}
 var $=function(s,r){return (r||document).querySelector(s)||document.createElement("div")};
 function css(v){return "var("+v+")"}
 

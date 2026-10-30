@@ -84,6 +84,7 @@ __SHELL_CLOSE__
 (function(){
 var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
+D=unpack(D);
 
 var LAST=D.last_day,FIRST=D.first_day;
 var S={from:null,to:LAST,preset:"30",models:new Set(D.models.map(function(_,i){return i})),unnum:false,q:"",

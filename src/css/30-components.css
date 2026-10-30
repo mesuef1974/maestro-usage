@@ -23,7 +23,7 @@
 .reset,.more,.exp,.mini{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);padding:.25rem var(--sp-3);color:var(--ink2);font-size:var(--t-sm)}
 .reset:hover,.more:hover,.exp:hover,.mini:hover{background:var(--hover);color:var(--ink);border-color:var(--accent)}
 .more{margin-block-start:var(--sp-2)}
-.mini{padding:.05rem var(--sp-2);font-size:var(--t-xs)}
+.mini{padding:.05rem var(--sp-2);font-size:var(--t-xs);min-block-size:1.5rem;min-inline-size:1.5rem}  /* 24px: حدّ WCAG 2.2 (2.5.8) على سطح المكتب */
 .mini[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .tog{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--t-sm);color:var(--ink2);min-block-size:28px}
 .tag{display:inline-block;border:1px solid var(--line);border-radius:var(--r-pill);padding:0 var(--sp-2);font-size:var(--t-xs);color:var(--ink2);margin-inline-start:var(--sp-1)}

@@ -58,13 +58,13 @@ class TestDashboard(unittest.TestCase):
 
     def test_render_embeds_valid_json_and_escapes(self):
         self.data["sessions"][0]["label"] = "</script><b>"
-        page = dashboard.render(self.data, "<p>ساكن</p>", "الآن")
+        page = dashboard.render(self.data, "<p>ساكن</p>", "الآن", "heavy.html")  # صفحة فيها قسم الجلسات فلا تُقلَّم حمولتها
         m = re.search(r'<script type="application/json" id="data">(.*?)</script>', page, re.S)
         got = json.loads(m.group(1))
         self.assertEqual(got["sessions"][0]["label"], "</script><b>")
         self.assertNotIn("__DATA__", page)
         self.assertNotIn("__STATIC__", page)
-        self.assertIn("ساكن", page)
+        self.assertIn("ساكن", dashboard.render(self.data, "<p>ساكن</p>", "الآن", "data.html"))  # الجزء الساكن في صفحة البيانات فقط
 
     def test_payload_has_only_numbers_and_known_names(self):
         """الحقول النصية الوحيدة: اليوم/الوقت، أصل الدور المعروف، اسم الجلسة المشتق من الرقم والمعرّف والمجلد، ومفاتيح الإعداد."""

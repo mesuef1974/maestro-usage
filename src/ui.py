@@ -115,6 +115,7 @@ def render(page_file, data, parts):
     page = pages.BY_FILE[page_file]
     html_ = (SRC / page["template"]).read_text(encoding="utf-8")
     html_ = select_sections(html_, page["sections"])
+    data = pages.pack_data(pages.prune_data(data, page["template"], page["sections"]), page["template"])
     head = (SRC / "ui_theme_head.js").read_text(encoding="utf-8")  # يطبّق السمة المحفوظة قبل الرسم فلا وميض
     assert "<head>" in html_
     html_ = html_.replace("<head>", "<head><script>" + head.strip() + "</script>", 1)

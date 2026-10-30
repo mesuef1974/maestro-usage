@@ -90,5 +90,26 @@ class UiShellTest(unittest.TestCase):
             self.assertLessEqual(len(literals), 4, (name, literals))  # الألوان من التوكنات؛ يُسمح بحفنة (ظلّ وطباعة)
 
 
+
+class TestPayloadSlimming(unittest.TestCase):
+    def test_prune_empties_unneeded_keys_by_section(self):
+        data = {"models": ["m"], "a": [{"x": 1}], "b": [{"y": 1}], "sessions": {"1": {}}, "plan": [{"t": 1}], "threshold": 3}
+        got = pages.prune_data(data, "dashboard.html", ["filters", "h4"])
+        self.assertEqual((got["a"], got["plan"]), ([], []))
+        self.assertEqual(got["b"], [{"y": 1}])
+        self.assertEqual(got["models"], ["m"])
+        got = pages.prune_data(data, "dashboard.html", ["h1"])
+        self.assertEqual((got["b"], got["sessions"]), ([], {}))
+        self.assertIs(pages.prune_data(data, "skills.html", ["tbl"]), data)  # قالب بلا خريطة حاجات يبقى كاملًا
+
+    def test_pack_data_columnar_roundtrip_shape(self):
+        rows = [{"s": i, "d": "2026-10-01", "t": i * 2} for i in range(30)]
+        got = pages.pack_data({"c": rows, "x": [1]}, "sessions.html")
+        self.assertEqual(got["c"]["$cols"], ["s", "d", "t"])
+        self.assertEqual(got["c"]["rows"][3], [3, "2026-10-01", 6])
+        self.assertEqual(got["x"], [1])
+        ragged = rows[:-1] + [{"s": 1}]
+        self.assertEqual(pages.pack_data({"c": ragged}, "sessions.html")["c"], ragged)  # صفوف غير منتظمة لا تُعبّأ
+
 if __name__ == "__main__":
     unittest.main()
