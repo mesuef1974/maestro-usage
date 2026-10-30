@@ -2,8 +2,12 @@
 
 يقرأ نسب الجلسة (5 ساعات) والأسبوع (كل النماذج) والأسبوع (Fable) مع أوقات التصفير، وعدّاد الطلبات والجلسات لـ24 ساعة و7 أيام،
 ويحفظها في plan_snapshots (المصدر cli_usage) وcli_usage_counts. لا يحفظ نص التوصيات ولا أسماء الأدوات.
-التشغيل: python src\\usage_cli.py [--db ...] ؛ مصمَّم للمهمة المجدولة MaestroUsageSnapshot كل 5 دقائق.
-رمز الخروج: 0 سُجّلت لقطة، 1 فشل التشغيل أو التحليل، 2 بيانات قديمة (آخر معلوم) فلم تُسجَّل.
+التشغيل: python src\\usage_cli.py [--db ...] [--force] ؛ مصمَّم للمهمة المجدولة MaestroUsageSnapshot التي تستدعيه كل دقيقة.
+التكيّف (يقرّره السكربت من القاعدة، فلا حالة خارجها): لا يشغّل claude إلا إذا حان موعد اللقطة، والموعد:
+- كل 5 دقائق عادةً؛ وكل دقيقة ما دام آخر لقطتين مختلفتين في إحدى النسب (القفزات المتتالية)؛
+- وفورًا بعد انتهاء النافذة الخمس ساعات المسجَّلة في آخر لقطة (لتحديد بداية النافذة الجديدة)؛
+- وبعد نوم الجهاز تحين اللقطة فورًا لأن العمر تجاوز الفاصل. --force يتجاوز الفحص.
+رمز الخروج: 0 سُجّلت لقطة أو لم يحن الموعد (skip)، 1 فشل التشغيل أو التحليل، 2 بيانات قديمة (آخر معلوم) فلم تُسجَّل.
 """
 import argparse
 import os
@@ -20,6 +24,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CWD = os.path.join(ROOT, "data", "usage_cli_cwd")
 LOG = os.path.join(ROOT, "data", "usage_cli.log")
 TIMEOUT_SEC = 150
+BASE_SEC = 300      # الفاصل العادي بين لقطتين
+HOT_SEC = 60        # الفاصل ما دامت النسب تتغيّر بين آخر لقطتين
+SLACK_SEC = 30      # سماح لتفاوت إقلاع المهمة (تُستدعى كل دقيقة)
+RESET_LAG_SEC = 20  # لقطة فور انتهاء النافذة بعد هذه المهلة
 FIXED_ZONES = {"Asia/Qatar": 3}  # احتياط إن غابت قاعدة المناطق الزمنية في ويندوز
 MONTHS = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
 WINDOWS = (("five", r"Current session"), ("seven", r"Current week \(all models\)"), ("fable", r"Current week \(Fable\)"))
@@ -81,6 +89,28 @@ def record(con, p, ts=None):
     return cur.rowcount
 
 
+def _epoch(ts):
+    """«2026-10-29T19:23:17Z» (وقد يحمل أجزاء ثانية) ← ثوانٍ منذ 1970 UTC."""
+    return datetime.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc).timestamp()
+
+
+def due(con, now=None):
+    """(هل حان موعد لقطة، السبب: first | window_reset | hot | base)؛ القرار من آخر لقطتين cli_usage."""
+    now = (now or datetime.now(timezone.utc)).timestamp()
+    rows = con.execute("SELECT ts, five_hour_pct, seven_day_pct, fable_pct, five_hour_resets_at FROM plan_snapshots "
+                       "WHERE source='cli_usage' ORDER BY ts DESC LIMIT 2").fetchall()
+    if not rows:
+        return True, "first"
+    last = rows[0]
+    last_ts = _epoch(last[0])
+    if last[4]:
+        reset = _epoch(last[4])
+        if last_ts < reset <= now - RESET_LAG_SEC:
+            return True, "window_reset"
+    hot = len(rows) > 1 and tuple(last[1:4]) != tuple(rows[1][1:4])
+    return now - last_ts >= (HOT_SEC if hot else BASE_SEC) - SLACK_SEC, "hot" if hot else "base"
+
+
 def run_claude():
     exe = shutil.which("claude") or os.path.join(os.path.expanduser("~"), ".local", "bin", "claude.exe")
     os.makedirs(CWD, exist_ok=True)
@@ -100,7 +130,15 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--db")
     ap.add_argument("--text-file", help="تحليل نص محفوظ بدل تشغيل claude (للاختبار اليدوي)")
+    ap.add_argument("--force", action="store_true", help="تجاوز فحص الموعد وأخذ لقطة الآن")
     a = ap.parse_args(argv)
+    con = usage_db.connect(a.db)
+    why = "forced"
+    if not (a.force or a.text_file):
+        ok, why = due(con)
+        if not ok:
+            print("skip " + why)
+            return 0
     try:
         if a.text_file:
             with open(a.text_file, encoding="utf-8") as f:
@@ -120,8 +158,8 @@ def main(argv=None):
         _log("fail parse")
         print("fail")
         return 1
-    n = record(usage_db.connect(a.db), p)
-    line = "five=%s seven=%s fable=%s %s" % (p.get("five"), p.get("seven"), p.get("fable"), "recorded" if n else "duplicate")
+    n = record(con, p)
+    line = "five=%s seven=%s fable=%s %s why=%s" % (p.get("five"), p.get("seven"), p.get("fable"), "recorded" if n else "duplicate", why)
     _log(line)
     print(line)
     return 0

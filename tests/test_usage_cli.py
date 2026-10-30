@@ -88,5 +88,78 @@ class TestUsageCli(unittest.TestCase):
             self.assertEqual(fh.read().count("\n"), 3)
 
 
+class TestDue(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.db = os.path.join(self.tmp, "u.sqlite3")
+        self.con = usage_db.connect(self.db)
+        self.old_log = usage_cli.LOG
+        usage_cli.LOG = os.path.join(self.tmp, "usage_cli.log")
+
+    def tearDown(self):
+        usage_cli.LOG = self.old_log
+        self.con.close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def snap(self, ts, five, seven=7.0, fable=0.0, resets=None):
+        self.con.execute("INSERT INTO plan_snapshots(ts, session_key, five_hour_pct, five_hour_resets_at, seven_day_pct, "
+                         "source, fable_pct) VALUES (?,NULL,?,?,?,'cli_usage',?)", (ts, five, resets, seven, fable))
+        self.con.commit()
+
+    def at(self, hhmmss):
+        h, m, s = (int(x) for x in hhmmss.split(":"))
+        return datetime(2026, 10, 30, h, m, s, tzinfo=timezone.utc)
+
+    def test_first_snapshot_is_always_due(self):
+        self.assertEqual(usage_cli.due(self.con, self.at("10:00:00")), (True, "first"))
+
+    def test_base_interval_five_minutes_with_slack(self):
+        self.snap("2026-10-30T10:00:00Z", 1.0)
+        self.snap("2026-10-30T10:05:00Z", 1.0)
+        self.assertEqual(usage_cli.due(self.con, self.at("10:07:00")), (False, "base"))
+        self.assertEqual(usage_cli.due(self.con, self.at("10:09:31")), (True, "base"))
+
+    def test_hot_interval_one_minute_while_percentages_move(self):
+        self.snap("2026-10-30T10:00:00Z", 1.0)
+        self.snap("2026-10-30T10:05:00Z", 2.0)
+        self.assertEqual(usage_cli.due(self.con, self.at("10:05:20")), (False, "hot"))
+        self.assertEqual(usage_cli.due(self.con, self.at("10:06:00")), (True, "hot"))
+        self.snap("2026-10-30T10:06:00Z", 2.0)       # لا تغيّر ← يعود إلى الفاصل العادي
+        self.assertEqual(usage_cli.due(self.con, self.at("10:07:30")), (False, "base"))
+
+    def test_weekly_or_fable_change_also_counts_as_movement(self):
+        self.snap("2026-10-30T10:00:00Z", 1.0, seven=7.0)
+        self.snap("2026-10-30T10:05:00Z", 1.0, seven=8.0)
+        self.assertEqual(usage_cli.due(self.con, self.at("10:06:00")), (True, "hot"))
+
+    def test_window_reset_triggers_immediate_snapshot_once(self):
+        self.snap("2026-10-30T10:00:00Z", 4.0, resets="2026-10-30T10:03:00Z")
+        self.assertEqual(usage_cli.due(self.con, self.at("10:03:10")), (False, "base"))   # قبل مهلة 20 ثانية
+        self.assertEqual(usage_cli.due(self.con, self.at("10:03:25")), (True, "window_reset"))
+        self.snap("2026-10-30T10:03:30Z", 0.0)       # لقطة بعد التصفير بلا resets_at جديد ← لا تكرار
+        self.assertEqual(usage_cli.due(self.con, self.at("10:03:50")), (False, "hot"))
+
+    def test_after_sleep_snapshot_is_due_immediately(self):
+        self.snap("2026-10-30T00:00:00Z", 0.0)
+        self.assertEqual(usage_cli.due(self.con, self.at("03:16:30")), (True, "base"))
+
+    def test_main_skips_without_running_claude_unless_forced(self):
+        self.snap(usage_db.now_iso(), 1.0)
+
+        def boom():
+            raise AssertionError("لا يجوز تشغيل claude عند عدم حلول الموعد")
+        real = usage_cli.run_claude
+        usage_cli.run_claude = boom
+        try:
+            self.assertEqual(usage_cli.main(["--db", self.db]), 0)
+            self.assertFalse(os.path.exists(usage_cli.LOG))
+            usage_cli.run_claude = lambda: SAMPLE
+            self.assertEqual(usage_cli.main(["--db", self.db, "--force"]), 0)
+        finally:
+            usage_cli.run_claude = real
+        with open(usage_cli.LOG, encoding="utf-8") as fh:
+            self.assertIn("why=forced", fh.read())
+
+
 if __name__ == "__main__":
     unittest.main()
