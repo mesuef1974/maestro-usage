@@ -163,3 +163,7 @@
 - بأمر المالك (لا يستخدمها حاليًا) أُرشفت من ‎~/.claude: skills/fixing-accessibility وcommands/django-app وexplain-code وlesson إلى skills_archive؛ سُجّل الحدث في config_changes بمفتاح startup_skills_archived (أثره يُقاس بعد 20 جلسة جديدة). وافقت 0101 على الثلاث دون lesson، والمالك قرّر.
 - رأي 0101 (#19): توصيات الصفحة مقبولة؛ مهارات schoolos-* ملفات مشروع تمرّ بحوكمة 0301 فلا تُعدَّل مباشرة؛ name-only لـmessaging وpreview-8500 بشرط قياس الالتزام؛ أكبر مكسب نقل flow.md (≈1.8 ألف) من CLAUDE.md إلى المهارة؛ باقي التنفيذ دفعة واحدة بعد دراسة ≈11-05. أُرسل ذلك إلى 0301 (#122).
 - صلح: الصفحة تقرأ اسم المهارة المؤرشفة من مجلدها (SKILL.md).
+
+## 2026-10-30 — تنظيف مفاتيح skillOverrides بأمر المالك، وتبيّن أن flow.md لا يُستورد أصلًا
+- حُذفت من ‎~/.claude/settings.json عشرة مفاتيح بلا أثر (token-shield:* السبعة وdjango-app وexplain-code وlesson): 52 → 42، وبقية الملف مطابقة (نسخة احتياطية في Temp\settings.backup.json)؛ حدث startup_skill_overrides_cleanup في config_changes.
+- نقل flow.md من CLAUDE.md: غير لازم، فـCLAUDE.md المنصّة يقول إنه لا يُستورد عند البدء (W-20261026-004)؛ كانت توصية الصفحة مبنية على فرضية قديمة وصُحّحت (ملاحظة schoolos-flow). وبه صحّحت البند 3 لـ0301.

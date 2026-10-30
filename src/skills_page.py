@@ -62,8 +62,8 @@ CURATION = {
     "schoolos-deploy": ("دمج PR المعتمدة والنشر خارج الدوام والتحقق والتراجع (جلسة 0601).", "keep", ["schoolos-git-safety"],
                         "name-only؛ 3 استدعاءات. تتجاور مع git-safety لكن الأولى للنشر والثانية لأوامر git."),
     "schoolos-feedback-intake": ("استقبال ملاحظات المستخدمين وفرزها (مهمة 0201).", "keep", [], "name-only أصلًا."),
-    "schoolos-flow": ("مراحل سير العمل 01..08 ومن يسلّم لمن (v2.23).", "keep", ["flow.md المستورد في CLAUDE.md"],
-                      "7 استدعاءات. مكرَّرة مع flow.md المستورد في CLAUDE.md المنصّة (≈1.8 ألف توكن)؛ الأفضل المهارة عند الطلب لا الاستيراد الدائم."),
+    "schoolos-flow": ("مراحل سير العمل 01..08 ومن يسلّم لمن (v2.23).", "keep", ["docs/governance/flow.md (مرجع لا استيراد)"],
+                      "7 استدعاءات. flow.md لا يُستورد عند البدء أصلًا (W-20261026-004 في CLAUDE.md المنصّة) فالنقل منفَّذ؛ المهارة والملف مرجعان لا تكرار في السياق."),
     "schoolos-git-safety": ("أمان أوامر git في مستودع SchoolOS و‎.claude.", "nameonly", ["schoolos-deploy"], "3 استدعاءات."),
     "schoolos-load-test": ("اختبارات حمل Locust.", "nameonly", [], "0 استدعاء بالأداة."),
     "schoolos-messaging": ("قواعد الرسائل بين جلسات SchoolOS.", "nameonly", [], "0 استدعاء بالأداة، لكن الخطّافات تفرض مضمونها؛ الاسم يكفي."),
@@ -116,7 +116,7 @@ VIRTUAL = [
     ("Azkia-ux", "مفتاح override فقط", 0, "تجربة مستخدم أزكية.", "keep", [], "name-only؛ استدعاء واحد."),
     ("token-shield:* (7 مهارات)", "إضافة معطّلة", 0, "حماية التوكنز: advisor وmonthly وoptimize وstart وstats وtoken-audit وtoken-shield.", "clean",
      ["anthropic-skills:explain-usage", "صفحات maestro_usage"],
-     "الإضافة معطّلة؛ المفاتيح السبعة في skillOverrides بلا أثر. استُعملت token-audit ثلاث مرات في أكتوبر. maestro_usage أدقّ منها."),
+     "الإضافة معطّلة؛ حُذفت مفاتيحها السبعة من skillOverrides بأمر المالك 2026-10-30. استُعملت token-audit ثلاث مرات في أكتوبر. maestro_usage أدقّ منها."),
 ]
 
 
