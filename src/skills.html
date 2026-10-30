@@ -30,10 +30,11 @@ __CSS__
 </style>
 </head>
 <body>
-<div class="page">
-<nav class="nav" aria-label="صفحات المنصة"><a href="index.html">الاستهلاك</a><a href="sessions.html">الأدوار والجلسات</a><a href="hourly.html">الجلسات بالساعة</a><a href="skills.html" aria-current="page">حصر المهارات</a></nav>
+__SHELL_OPEN__
+<header class="pagehead">
 <h1>حصر المهارات</h1>
-<p class="sub">كل مهارة وأمر محلي أو مزامَن أو مضمَّن: فائدتها واستعمالها الفعلي وتكرارها مع غيرها وتوصية الإبقاء أو الإخفاء أو الأرشفة. الاستعمال من مسح سجلات الجلسات (<span id="files"></span> ملف، آخر مسح <span id="scan"></span>) والتوصيات حكم يدوي مبني عليها؛ لا يُغيَّر أي إعداد من هذه الصفحة. وُلّدت في <span id="gen">__STAMP__</span>.</p>
+<details class="about"><summary>عن هذه الصفحة</summary><p class="sub">كل مهارة وأمر محلي أو مزامَن أو مضمَّن: فائدتها واستعمالها الفعلي وتكرارها مع غيرها وتوصية الإبقاء أو الإخفاء أو الأرشفة. الاستعمال من مسح سجلات الجلسات (<span id="files"></span> ملف، آخر مسح <span id="scan"></span>) والتوصيات حكم يدوي مبني عليها؛ لا يُغيَّر أي إعداد من هذه الصفحة. وُلّدت في <span id="gen">__STAMP__</span>.</p></details>
+</header>
 
 <section class="tiles dense" id="tiles" aria-label="ملخص الحصر"></section>
 
@@ -46,14 +47,14 @@ __CSS__
   <button type="button" class="mini" id="reset">إعادة الضبط</button>
 </div>
 
-<section class="card" id="tbl" aria-labelledby="ht">
+<section class="card" id="tbl" data-group="الحصر" aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">الجدول</h2><span class="sub" id="tsum"></span></div>
   <p class="sub">انقر عنوان عمود للترتيب. «استدعاءات» عبر أداة Skill أو أمر مائل. «توكن الآن» و«بعد التوصية» تقدير لكلفة سطرها في قائمة السياق (أحرف ÷ <span id="cpt"></span>)؛ المطفأة بلا كلفة.</p>
   <div class="wrap" id="rows"></div>
   <p class="note">0 استدعاء لا يعني عدم النفع: قد تُقرأ المهارة مباشرة، أو تحيل إليها تعليمات النظام، أو تُطلب في مهام نادرة. لذلك الاسم وحده (name-only) أول خيار قبل الأرشفة.</p>
 </section>
 
-<section class="card" aria-labelledby="hg">
+<section class="card" data-group="ملاحق" aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">استُعملت سابقًا وليست في الحصر</h2><span class="sub" id="gsum"></span></div>
   <p class="sub">أسماء وردت في السجلات بالأداة أو بأمر مائل ولا ملف محلي لها الآن (حذفت أو أُعيدت تسميتها أو إضافات قديمة). للعلم لا للإجراء.</p>
   <div class="wrap" id="gone" style="max-block-size:320px"></div>
@@ -67,7 +68,7 @@ __CSS__
 <dt>التكرار</dt><dd>تداخل في الموضوع بين مهارتين أو أكثر؛ العمود «الأفضل/ملاحظة» يبيّن أيّها يُحتفظ به ولماذا. مهارات «أزكية» (schoolos-*) تخدم مشروعًا واحدًا وتتجاور بالتصميم لا بالتكرار.</dd>
 </dl>
 </details>
-</div>
+__SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
 <script type="application/json" id="data">__DATA__</script>
 <script>

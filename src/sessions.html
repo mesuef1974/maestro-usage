@@ -21,16 +21,18 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
 </style>
 </head>
 <body>
-<div class="page">
-<nav class="nav" aria-label="صفحات المنصة"><a href="index.html">الاستهلاك</a><a href="sessions.html" aria-current="page">الأدوار والجلسات</a><a href="hourly.html">الجلسات بالساعة</a><a href="skills.html">حصر المهارات</a></nav>
+__SHELL_OPEN__
+<header class="pagehead">
 <h1>الأدوار والجلسات</h1>
-<p class="sub">استهلاك كل دور (الرقم) وضغطه ومساره اليومي وكلفة إيقاظه ومن بدأ أدواره. الدور الواحد قد يضمّ جلسات كثيرة فيُجمَع بالرقم ويُفصَّل بالجلسة. قياس بالتوكن، وأيام التقارير بالتوقيت العالمي. وُلّدت في <span id="gen">__STAMP__</span>؛ أرقام فقط بلا نصوص محادثات.</p>
+<details class="about"><summary>عن هذه الصفحة</summary><p class="sub">استهلاك كل دور (الرقم) وضغطه ومساره اليومي وكلفة إيقاظه ومن بدأ أدواره. الدور الواحد قد يضمّ جلسات كثيرة فيُجمَع بالرقم ويُفصَّل بالجلسة. قياس بالتوكن، وأيام التقارير بالتوقيت العالمي. وُلّدت في <span id="gen">__STAMP__</span>؛ أرقام فقط بلا نصوص محادثات.</p></details>
 <div class="live">
   <button type="button" id="refresh" class="refresh">تحديث فوري</button>
   <span id="age" class="sub"></span>
   <span id="rmsg" class="sub" role="status"></span>
 </div>
+</header>
 
+<details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
 <div class="filters" role="group" aria-label="المرشِّحات">
   <div class="seg" id="presets" role="group" aria-label="الفترة">
     <button type="button" data-p="7">7 أيام</button>
@@ -46,17 +48,18 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <label class="tog"><input type="checkbox" id="unnum"> إظهار غير المرقّمة (فئات بحسب المجلد)</label>
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
+</details>
 
 <section class="tiles dense" id="tiles" aria-label="ملخص الأدوار الظاهرة"></section>
 
-<section class="card" aria-labelledby="hg">
+<section class="card" data-group="نظرة عامة" aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">بحسب نظام نافذة السياق</h2><span class="sub" id="gsum"></span></div>
   <p class="sub">نظام النافذة الذي قرأته عملية الجلسة عند بدئها (افتراضي، 250 ألفًا، مليون). بدء العملية معروف للجلسات الملتقطة من 30/10 فقط؛ لغيرها يُستدلّ بما يُجزم به وإلا «غير محدد». لا تتأثر هذه البطاقة بمرشِّح النظام.</p>
   <div class="wrap" id="rg" style="max-block-size:none"></div>
   <p class="note" id="gnote"></p>
 </section>
 
-<section class="card" aria-labelledby="hr">
+<section class="card" data-group="الأدوار" aria-labelledby="hr">
   <div class="cardhead"><h2 id="hr">ترتيب الأدوار</h2><span class="sub" id="rsum"></span></div>
   <p class="sub">اختر المقياس. النسبة المعروضة هي حصة الدور من إجمالي كل الجلسات في الفترة (بما فيها غير المرقّمة، ولو أُخفيت). انقر دورًا لعرض تفاصيله.</p>
   <div class="metrics" id="metrics" role="group" aria-label="المقياس"></div>
@@ -70,7 +73,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <div class="wrap" id="roles" style="max-block-size:520px"></div>
 </section>
 
-<section class="card" id="detail" aria-labelledby="hd">
+<section class="card" id="detail" data-group="التفصيل والمقارنة" aria-labelledby="hd">
   <div class="cardhead"><h2 id="hd">تفاصيل</h2><span class="sub" id="dsum"></span></div>
   <div class="pick"><label>الدور أو الجلسة <select id="pa" aria-label="اختيار الدور أو الجلسة"></select></label></div>
   <div id="dbody"></div>
@@ -95,7 +98,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
 <dt>الحصة من الإجمالي</dt><dd>مقسومة على كل الجلسات في الفترة والنماذج المحدّدة، لا على الأدوار الظاهرة فقط.</dd>
 </dl>
 </details>
-</div>
+__SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
 <script type="application/json" id="data">__DATA__</script>
 <script>

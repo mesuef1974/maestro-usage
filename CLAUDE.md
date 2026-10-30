@@ -14,7 +14,7 @@ python -m pytest tests -q && ruff check src tests
 ## البنية
 - `usage_ingest.py` يقرأ `~/.claude/projects/**/*.jsonl` سطرًا سطرًا إلى `usage_turns`؛ `statusline_collector.py` الحصة؛ `usage_db.py` والمخطط `schema/schema.sql`. القاعدة خارج المستودع: `C:\Users\mesue\.maestro\flow_usage.sqlite3` (نسخها في `backups\`).
 - التحليل: `regime.py` و`study.py` و`startup_cost.py` و`role_groups.py`.
-- `reports.build(con)` تكتب CSV وأربع صفحات (dashboard وsessions_page وhourly_page وskills_page)، كل منها وحدة `payload` + قالب `.html` يُملأ بـ`ui.render` (علامات `__CSS__` و`__LIB__` و`__DATA__` و`__STAMP__`) ويُكتب بـ`ui.write`. صفحة جديدة: وحدة وقالب وسطر في `reports.build` ومسار في `serve.PAGES` ورابط `.nav` في الصفحات الأربع واختبار.
+- `reports.build(con)` تكتب CSV وأربع صفحات (dashboard وsessions_page وhourly_page وskills_page)، كل منها وحدة `payload` + قالب `.html` يُملأ بـ`ui.render` (علامات `__SHELL_OPEN__` و`__SHELL_CLOSE__` و`__CSS__` و`__LIB__` و`__DATA__` و`__STAMP__`) ويُكتب بـ`ui.write`. صفحة جديدة: وحدة وقالب وسطر في `reports.build` ومسار في `serve.PAGES` وإدخال في `ui.NAV` و`ui.ACTIVE` (الغلاف والتنقّل الموحّد يأتيان من `ui.shell`، لا تكتب `<nav>` يدويًّا) ووسم `data-group` على الأقسام لفهرس «في هذه الصفحة» واختبار. تدقيق الواجهات: `python scripts/ux_audit.py --label <اسم>` ثم `--compare before after` (التقرير `docs/ux_audit.md`).
 - `data/` و`reports/` خارج git عمدًا.
 
 ## القواعد الصلبة

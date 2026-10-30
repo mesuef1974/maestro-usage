@@ -37,16 +37,18 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
 </style>
 </head>
 <body>
-<div class="page">
-<nav class="nav" aria-label="صفحات المنصة"><a href="index.html">الاستهلاك</a><a href="sessions.html">الأدوار والجلسات</a><a href="hourly.html" aria-current="page">الجلسات بالساعة</a><a href="skills.html">حصر المهارات</a></nav>
+__SHELL_OPEN__
+<header class="pagehead">
 <h1>الجلسات بالساعة</h1>
-<p class="sub">منحنى التوكنات التراكمي وضغط السياق % لكل دور من أدوار المشروع على محور زمني ساعي. الساعات بالتوقيت العالمي UTC (الدوحة = +3). الضغط % = سياق الردّ ÷ <span id="win"></span> توكن، وهي <b>نافذة افتراضية نفترضها = 100%</b> (الافتراضي مليون توكن، ويمكن التبديل إلى 250 ألفًا وهي قيمة autoCompactWindow التي كانت مفعّلة حتى 2026-10-30 03:04Z، ثم رُفعت إلى مليون؛ والجلسات التي بدأت قبل ذلك بقيت على 250 ألفًا لأن الإعداد يُقرأ عند بدء الجلسة) وليست قياسًا لنافذة النموذج الفعلية. وُلّدت في <span id="gen">__STAMP__</span>؛ أرقام فقط بلا نصوص محادثات.</p>
+<details class="about"><summary>عن هذه الصفحة</summary><p class="sub">منحنى التوكنات التراكمي وضغط السياق % لكل دور من أدوار المشروع على محور زمني ساعي. الساعات بالتوقيت العالمي UTC (الدوحة = +3). الضغط % = سياق الردّ ÷ <span id="win"></span> توكن، وهي <b>نافذة افتراضية نفترضها = 100%</b> (الافتراضي مليون توكن، ويمكن التبديل إلى 250 ألفًا وهي قيمة autoCompactWindow التي كانت مفعّلة حتى 2026-10-30 03:04Z، ثم رُفعت إلى مليون؛ والجلسات التي بدأت قبل ذلك بقيت على 250 ألفًا لأن الإعداد يُقرأ عند بدء الجلسة) وليست قياسًا لنافذة النموذج الفعلية. وُلّدت في <span id="gen">__STAMP__</span>؛ أرقام فقط بلا نصوص محادثات.</p></details>
 <div class="live">
   <button type="button" id="refresh" class="refresh">تحديث فوري</button>
   <span id="age" class="sub"></span>
   <span id="rmsg" class="sub" role="status"></span>
 </div>
+</header>
 
+<details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
 <div class="filters" role="group" aria-label="المرشِّحات">
   <div class="seg" id="presets" role="group" aria-label="الفترة">
     <button type="button" data-p="2">يومان</button>
@@ -61,10 +63,11 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <label class="tog"><input type="checkbox" id="unnum"> إظهار غير المرقّمة (فئات بحسب المجلد)</label>
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
+</details>
 
 <section class="tiles dense" id="tiles" aria-label="ملخص"></section>
 
-<section class="card" aria-labelledby="hq">
+<section class="card" data-group="الحصة" aria-labelledby="hq">
   <div class="cardhead"><h2 id="hq">الحصة الأسبوعية للخطة</h2><span class="sub" id="qsum"></span></div>
   <div class="qgrid">
     <div id="quota"></div>
@@ -73,7 +76,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <p class="warn" id="qwarn" role="note"></p>
 </section>
 
-<section class="card" aria-labelledby="hp">
+<section class="card" data-group="الأدوار والعرض" aria-labelledby="hp">
   <div class="cardhead"><h2 id="hp">الأدوار والعرض</h2><span class="sub" id="psum"></span></div>
   <div class="ctl">
     <div class="seg" id="mode" role="group" aria-label="نوع التوكنات"><button type="button" data-v="cum">تراكمي</button><button type="button" data-v="per">لكل فترة</button></div>
@@ -92,7 +95,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <div class="rchips" id="rchips" role="group" aria-label="اختيار الأدوار (حتى ثمانية)"></div>
 </section>
 
-<section class="card" aria-labelledby="ht">
+<section class="card" data-group="الإجمالي" aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">الإجمالي: توكنات كل دور</h2><span class="sub" id="tsum"></span></div>
   <div class="legend" id="tleg"></div>
   <div class="chart" id="tchart"></div>
@@ -103,7 +106,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
   <div class="chart" id="pchart"></div>
 </section>
 
-<section aria-labelledby="hr">
+<section data-group="لكل دور" aria-labelledby="hr">
   <div class="cardhead"><h2 id="hr">رسم مستقل لكل دور</h2><span class="sub" id="rsum"></span></div>
   <div class="legend2" id="leg2"></div>
   <div class="rgrid" id="rgrid"></div>
@@ -121,7 +124,7 @@ h3{font-size:.95rem;margin:.9rem 0 .2rem}
 <dt>الحصة الأسبوعية</dt><dd>تُسجَّل لقطاتها آليًّا من أمر /usage (كل 5 دقائق، وكل دقيقة عند تغيّر النسب، وفورًا بعد انتهاء النافذة الخمسية) بلا استهلاك توكنات، وتُضاف إليها لقطات statusLine وget_usage اليدوية إن وُجدت. النسب أعداد صحيحة مُقرَّبة وزمن التصفير مقرَّب إلى الدقيقة، والفجوات في الخط تعني نوم الحاسوب لا غياب استهلاك. القراءة الحيّة تعمل عند التقديم من الخادم المحلي، ومن ملف مباشر تُعرض لقطة آخر بناء.</dd>
 </dl>
 </details>
-</div>
+__SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
 <script type="application/json" id="data">__DATA__</script>
 <script>
