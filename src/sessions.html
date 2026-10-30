@@ -186,6 +186,12 @@ function tilesInto(box,items){
   clear(box);
   items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));box.appendChild(d)});
 }
+function startTile(){
+  var c=D.startup;
+  if(!c||c.med==null)return ["كلفة بدء الجلسة","—","لا جلسات جديدة بعد"];
+  var dl=c.prev_med!=null?c.med-c.prev_med:null;
+  return ["كلفة بدء الجلسة",compact(c.med,1),"وسيط آخر "+c.n+" جلسة"+(dl!=null?" · "+(dl>0?"+":"−")+compact(Math.abs(dl),1):"")+(c.share!=null?" · "+pct(c.share,0)+" من متوسط الردّ":"")];
+}
 function renderTiles(){
   var roles={};VR.forEach(function(r){roles[roleOf(r)]=1});
   tilesInto($("#tiles"),[
@@ -194,7 +200,8 @@ function renderTiles(){
     ["قراءة الذاكرة",compact(V.cr),pct(share(V.cr,T.cr))+" من الإجمالي"],
     ["كتابة الذاكرة",compact(V.cc),pct(share(V.cc,T.cc))+" من الإجمالي"],
     ["متوسط السياق للردّ",compact(V.ctx),"توكن · فوق العتبة "+pct(V.ov)],
-    ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة"]]);
+    ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة"],
+    startTile()]);
 }
 
 /* ---------- نظام نافذة السياق ---------- */

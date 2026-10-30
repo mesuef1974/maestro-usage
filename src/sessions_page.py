@@ -13,6 +13,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402  (مجموعات النماذج والعتبة نفسها)
 import regime  # noqa: E402
+import startup_cost  # noqa: E402
 import role_groups  # noqa: E402
 import ui  # noqa: E402
 
@@ -97,7 +98,7 @@ def payload(con):
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in dashboard.MODEL_GROUPS] + [dashboard.OTHER_NAME], threshold=dashboard.THRESHOLD,
                 regimes=regime.NAMES, wake_gap=WAKE_GAP_SEC, drop_ratio=DROP_RATIO, drop_min=DROP_MIN_PREV,
-                first_day=first, last_day=last, roles=roles, sessions=sess, c=rows)
+                first_day=first, last_day=last, roles=roles, sessions=sess, c=rows, startup=startup_cost.current(con))
 
 
 def render(data, stamp):

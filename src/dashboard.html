@@ -89,6 +89,19 @@ __CSS__
   <details><summary>عرض الجدول اليومي</summary><div class="wrap" id="t5d"></div></details>
 </section>
 
+<section class="card" aria-labelledby="h6" id="sc" hidden>
+  <div class="cardhead"><h2 id="h6">كلفة بدء الجلسة</h2><span class="sub" id="c6sum"></span></div>
+  <p class="sub">سياق أول ردّ في كل جلسة جديدة (ما يُحمَّل قبل أن تكتب شيئًا: التعليمات والمهارات والذاكرة والإعدادات). الجلسات المستأنفة مستبعدة. لا يتأثر بالمرشِّحات.</p>
+  <section class="tiles" id="t6tiles" aria-label="مؤشرات كلفة البدء"></section>
+  <h2 style="font-size:.95rem">وسيط سياق البدء يوميًّا (توكن)</h2>
+  <div class="chart" id="c6"></div>
+  <h2 style="font-size:.95rem;margin-block-start:1rem">أثر كل تعديل في مصادر السياق الثابت</h2>
+  <div class="wrap" id="t6"></div>
+  <p class="warn" id="n6"></p>
+  <h2 style="font-size:.95rem;margin-block-start:1rem">حسب المجلد (آخر 30 يومًا)</h2>
+  <div class="wrap" id="t6f"></div>
+</section>
+
 <details class="static card"><summary>الجداول الساكنة والتحفظات (التقارير 1 إلى 5)</summary>
 __STATIC__
 </details>
@@ -297,6 +310,43 @@ function render5(){
     {k:"sh",l:"نسبة فوق العتبة",n:1,f:function(r){return pct(r.sh)}},{k:"cr",l:"قراءة ذاكرة",n:1,f:function(r){return compact(r.cr,2)}}],rows);
 }
 
+/* ---------- 6: كلفة بدء الجلسة ---------- */
+var FXV={pending:"معلّق",lower:"انخفاض",higher:"ارتفاع",inconclusive:"غير حاسم"};
+function signed(v){return v==null?"—":(v>0?"+":v<0?"−":"")+compact(Math.abs(v),1)}
+function renderStartup(){
+  var sc=D.startup,box=$("#sc");
+  if(!sc||!sc.cur||!sc.cur.n){box.hidden=true;return}
+  box.hidden=false;
+  var c=sc.cur,dl=c.prev_med!=null?c.med-c.prev_med:null;
+  $("#c6sum").textContent="آخر "+c.n+" جلسة جديدة";
+  var tb=$("#t6tiles");clear(tb);
+  [["وسيط البدء الآن",compact(c.med,1),"توكن"+(dl!=null?" · "+signed(dl)+" عن "+c.prev_n+" قبلها":"")],
+   ["حصته من متوسط السياق",c.share!=null?pct(c.share,0):"—","متوسط ردّ آخر 7 أيام "+compact(c.avg7,0)],
+   ["الأرضية (الشريحة 5%)",compact(c.floor,1),"أقل ما بلغه البدء مؤخرًا"],
+   ["تعديلات مرصودة",num(sc.fx.length),sc.baseline?"منذ خط الأساس "+sc.baseline.slice(0,10):"لا خط أساس بعد"]
+  ].forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));tb.appendChild(d)});
+  var dd=sc.daily,days=eachDay(dd[0].d,LAST>dd[dd.length-1].d?LAST:dd[dd.length-1].d),byd={};
+  dd.forEach(function(r){byd[r.d]=r});
+  var med=days.map(function(d){return byd[d]?byd[d].med:null}),xi=days.map(function(_,i){return i});
+  var marks=sc.fx.map(function(f){var ix=days.indexOf(f.ts.slice(0,10));return ix>=0?{x:ix,label:f.label+" ("+dm(f.ts.slice(0,10))+")"}:null}).filter(Boolean);
+  var mx=Math.max.apply(null,med.filter(function(x){return x!=null}).concat([1]));
+  drawLines($("#c6"),{label:"وسيط سياق البدء",xs:xi,x0:0,x1:days.length-1,ml:58,ymax:niceMax(mx),markers:marks,
+    xfmt:function(v){return dm(days[Math.round(v)])},yfmt:function(v){return compact(v,0)},tfmt:function(v){return compact(v,1)+" توكن"},
+    title:function(i){var r=byd[days[i]];return days[i]+(r?" · "+r.n+" جلسة · "+compact(r.p25,0)+"–"+compact(r.p75,0):"")},
+    series:[{name:"الوسيط",c:"--s7",v:med}]});
+  var rows=sc.fx.slice().reverse().map(function(f){return {ts:f.ts.slice(0,16).replace("T"," "),label:f.label,sz:f.size0!=null?num(f.size0)+" ← "+num(f.size1)+" بايت":"يدوي",
+    nb:f.nb,na:f.na,mb:f.mb,ma:f.ma,delta:f.delta,v:f.verdict+(f.overlap?"*":"")}});
+  var n6=$("#n6");
+  if(!rows.length){clear($("#t6"));n6.textContent="لا تعديل مرصودًا بعد. تُسجَّل بصمات المصادر كل دقيقة؛ أي تعديل لاحق يظهر هنا بزمنه ويُقاس أثره تلقائيًّا.";}
+  else{
+    drawTable($("#t6"),[{k:"ts",l:"الزمن (UTC)"},{k:"label",l:"المصدر"},{k:"sz",l:"الحجم"},{k:"nb",l:"جلسات قبل",n:1,f:function(r){return num(r.nb)}},{k:"na",l:"جلسات بعد",n:1,f:function(r){return num(r.na)}},
+      {k:"mb",l:"وسيط قبل",n:1,f:function(r){return r.mb==null?"—":compact(r.mb,1)}},{k:"ma",l:"وسيط بعد",n:1,f:function(r){return r.ma==null?"—":compact(r.ma,1)}},
+      {k:"delta",l:"الفرق",n:1,f:function(r){return signed(r.delta)}},{k:"v",l:"الحكم",f:function(r){var b=r.v.replace("*","");return (FXV[b]||b)+(r.v.slice(-1)==="*"?"*":"")}}],rows);
+    n6.textContent="الحكم: «انخفاض/ارتفاع» عند فرق وسيطين ≥ "+num(sc.min_delta)+" توكن وأكبر من ضعفي الخطأ المعياري؛ «معلّق» حتى "+sc.min_n+" جلسة على الأقل في كل جانب (النافذة "+sc.k+" جلسة). * النافذة قُصّت بتعديل لاحق في النطاق نفسه. الترابط ظاهري؛ ويتأثر بإصدار Claude Code وبنوع الجلسات.";
+  }
+  drawTable($("#t6f"),[{k:"f",l:"المجلد"},{k:"n",l:"جلسات",n:1,f:function(r){return num(r.n)}},{k:"med",l:"وسيط البدء",n:1,f:function(r){return compact(r.med,1)}}],c.folders);
+}
+
 /* ---------- الربط ---------- */
 var pending=false;
 function render(){
@@ -317,8 +367,8 @@ function init(){
   setPreset("30");loadView();buildChips();initRefresh(saveView);
   bindFilters();
   $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.sk="ratio";S.sd=-1;S.lim=25;setPreset("30");buildChips();render()});
-  var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(render,120)});
-  render();renderLimits();
+  var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){render();renderStartup()},120)});
+  render();renderLimits();renderStartup();
   /* رسم الحصة حيّ: عند التقديم من الخادم المحلي تُسحب اللقطات كل دقيقة بدل انتظار إعادة بناء الصفحة؛ من ملف مباشر تبقى لقطة آخر بناء */
   if(location.protocol!=="file:"){
     var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;render3();renderLimits()}}).catch(function(){})};

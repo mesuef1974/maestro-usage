@@ -7,6 +7,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import startup_cost  # noqa: E402
 import ui  # noqa: E402
 
 THRESHOLD = 300_000  # يطابق reports.CTX_THRESHOLD
@@ -72,7 +73,7 @@ def payload(con, label_fn, not_applied_mark, min_turns):
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in MODEL_GROUPS] + [OTHER_NAME], threshold=THRESHOLD, min_turns=min_turns,
                 first_day=first, last_day=last, a=fact_a, b=fact_b, sessions=sessions, plan=plan, changes=changes,
-                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY)
+                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, startup=startup_cost.payload(con))
 
 
 def render(data, static_html, stamp):

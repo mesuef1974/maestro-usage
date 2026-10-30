@@ -130,3 +130,29 @@ CREATE TABLE IF NOT EXISTS agent_starts (
     last_seen  TEXT NOT NULL,
     PRIMARY KEY (session_id, started_at)
 );
+
+-- كلفة بدء الجلسة: سياق أول ردّ رئيس لكل جلسة (إدخال + كتابة ذاكرة + قراءتها)؛ صف لكل جلسة، يبقى لو حُذفت السجلات.
+CREATE TABLE IF NOT EXISTS startup_samples (
+    session_key           TEXT PRIMARY KEY,
+    ts                    TEXT NOT NULL,
+    ctx                   INTEGER NOT NULL,
+    input_tokens          INTEGER,
+    cache_creation_tokens INTEGER,
+    cache_read_tokens     INTEGER,
+    model                 TEXT,
+    origin                TEXT,
+    folder                TEXT,                      -- آخر مكوّن من مجلد العمل (تسمية folder_label)
+    proj                  TEXT,                      -- مجلد المشروع في ~/.claude/projects
+    cc_version            TEXT                       -- إصدار Claude Code من أول سطر ذي إصدار في السجل
+);
+CREATE INDEX IF NOT EXISTS ix_startup_samples_ts ON startup_samples(ts);
+
+-- بصمات مصادر السياق الثابت (إعدادات البدء، التعليمات، المهارات، الذاكرة). تُحفظ البصمة والحجم فقط، لا المحتوى.
+-- الصف الأول لكل بند خط الأساس، وكل صف بعده تغيير مكتشف آليًّا بزمنه.
+CREATE TABLE IF NOT EXISTS config_fingerprints (
+    ts    TEXT NOT NULL,
+    item  TEXT NOT NULL,
+    sha   TEXT NOT NULL,
+    bytes INTEGER NOT NULL,
+    PRIMARY KEY (item, ts)
+);
