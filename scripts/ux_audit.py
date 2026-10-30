@@ -13,7 +13,10 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = "http://127.0.0.1:8790/"
-PAGES = ["index.html", "sessions.html", "hourly.html", "skills.html"]
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
+import pages  # noqa: E402
+
+PAGES = [p["file"] for p in pages.PAGES]  # كل صفحات السجلّ
 VIEWS = {"mobile": (375, 812), "tablet": (768, 1024), "laptop": (1024, 768), "desktop": (1440, 900)}
 WEIGHT = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
 CATS = [("accessibility", "الوصول", "CRITICAL"), ("touch", "اللمس والتفاعل", "CRITICAL"), ("performance", "الأداء", "HIGH"),
@@ -230,7 +233,10 @@ def compare(a, b):
     A = json.load(open(os.path.join(ROOT, "docs", "ux_audit", a + ".json"), encoding="utf-8"))["summary"]
     B = json.load(open(os.path.join(ROOT, "docs", "ux_audit", b + ".json"), encoding="utf-8"))["summary"]
     print("الإجمالي %s → %s (%+.1f)" % (A["overall"], B["overall"], B["overall"] - A["overall"]))
-    for name in PAGES:
+    new = [n for n in B["pages"] if n not in A["pages"]]
+    if new:
+        print("صفحات جديدة (بلا مقابل قبل): %d، متوسط درجاتها %.1f" % (len(new), sum(B["pages"][n]["total"] for n in new) / len(new)))
+    for name in (n for n in PAGES if n in A["pages"] and n in B["pages"]):  # المشتركة فقط
         pa, pb = A["pages"][name], B["pages"][name]
         print("%-14s %5.1f → %5.1f  ارتفاع %6d → %6d  تحكّمات %3d → %3d  جداول %2d → %2d" % (
             name, pa["total"], pb["total"], pa["metrics"]["height"], pb["metrics"]["height"], pa["metrics"]["controls"], pb["metrics"]["controls"],
