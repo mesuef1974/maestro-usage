@@ -1,0 +1,41 @@
+/* الاستجابة وإمكانية الوصول: شريط علوي دون 1024px، أهداف لمس 44px مع الشاشات الضيّقة أو المؤشر الخشن، وإيقاف الحركة عند الطلب. */
+@media (max-width:1023px){
+  .app{display:block}
+  .side{display:contents}
+  .brand{display:none}
+  .navgroup,.toc-title,.toc .tg{display:none}
+  .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:.2rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
+  .nav ul{display:flex;gap:var(--sp-1)}
+  .nav li{flex:none}
+  .toc{padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0;overflow:visible;flex:none;border:0}
+  .toc ol{display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
+  .toc li{flex:none}
+  .toc a{border:1px solid var(--line);border-radius:var(--r-pill);padding-inline:var(--sp-3);white-space:nowrap;background:var(--surface)}
+  .sidefoot{padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0}
+  .themebtn{inline-size:fit-content}
+  main [id]{scroll-margin-block-start:6rem}
+}
+@media (max-width:640px){
+  .brow{grid-template-columns:1fr;gap:.2rem}
+  .brow .x{white-space:normal}
+  h1{font-size:var(--t-lg)}
+  .row2,.qgrid{grid-template-columns:1fr}
+  input[type=search]{inline-size:100%}
+  .card,.limits{padding-inline:var(--sp-4)}
+}
+@media (max-width:640px),(pointer:coarse){
+  button,.chip,.rchip,.nav a,.toc a,summary,select,.seg button,.mini,.reset,.refresh,.exp,.more{min-block-size:var(--tap)}
+  input:not([type=checkbox]):not([type=radio]){min-block-size:var(--tap)}
+  input[type=checkbox],input[type=radio]{inline-size:1.5rem;block-size:1.5rem}
+  th button,td button,.mini{min-block-size:var(--tap);min-inline-size:var(--tap)}
+  summary{padding-block:var(--sp-3)}
+  .wrap{max-block-size:70vh}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important;scroll-behavior:auto!important}
+}
+@media print{
+  .side,.nav,.toc,.sidefoot,.filterbox,.live{display:none}
+  .app{display:block}
+  .card,.limits,.tiles{break-inside:avoid;border-color:#999}
+}

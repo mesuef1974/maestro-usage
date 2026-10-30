@@ -1,0 +1,48 @@
+/* البيانات: الرسوم وأشرطة الصفوف والجداول والأدلّة. الألوان من --s1..--s8 فقط (لوحة محقَّقة)، والنص بألوان النص لا بلون السلسلة. */
+.chart{inline-size:100%;position:relative;opacity:1;transition:opacity var(--dur)}
+.chart svg{display:block;max-inline-size:100%;touch-action:pan-y}
+.chart.busy{opacity:.5}
+svg text{font-family:var(--font-num);fill:var(--ink2);font-size:11px;font-variant-numeric:tabular-nums}
+svg .grid{stroke:var(--grid);stroke-width:1}
+svg .axis{stroke:var(--line);stroke-width:1}
+svg .hov{fill:var(--hover)}
+.legend,.legend2{display:flex;flex-wrap:wrap;gap:.3rem var(--sp-4);font-size:var(--t-sm);color:var(--ink2);margin-block:var(--sp-1)}
+.legend2{margin-block:var(--sp-1) var(--sp-3)}
+.legend2 span{white-space:nowrap}
+.legend i{display:inline-block;inline-size:14px;block-size:2px;margin-inline-end:var(--sp-2);vertical-align:middle}
+.bars{display:grid;gap:var(--sp-2)}
+.brow{display:grid;grid-template-columns:minmax(7rem,13rem) 1fr minmax(6.5rem,11rem);gap:var(--sp-3);align-items:center;padding-block:.15rem;border-radius:var(--r-sm);cursor:default}
+.brow:hover,.brow:focus-visible{background:var(--hover)}
+.brow.sel{background:var(--hover);outline:1px solid var(--line)}
+.brow .n{font-size:var(--t-sm);overflow-wrap:anywhere;min-inline-size:0}
+.brow .t{block-size:14px;background:var(--chip);border-radius:3px;position:relative;min-inline-size:0}
+.brow .f{position:absolute;inset-block:0;inset-inline-start:0;border-radius:0 4px 4px 0;min-inline-size:2px}
+html[dir="rtl"] .brow .f{border-radius:4px 0 0 4px}
+.brow .x{font:var(--t-sm)/1.4 var(--font-num);color:var(--ink);text-align:start;white-space:nowrap}
+.wrap{overflow-x:auto;max-block-size:420px;border:1px solid var(--line);border-radius:var(--r-sm)}
+table{border-collapse:collapse;inline-size:100%;font-size:var(--t-sm);line-height:1.5}
+th,td{padding:.35rem var(--sp-3);text-align:start;border-block-end:1px solid var(--grid);white-space:nowrap}
+td{font-family:var(--font-num)}
+th{background:var(--raised);position:sticky;top:0;font-weight:700;color:var(--ink2)}
+th button{all:unset;cursor:pointer;display:inline-flex;gap:var(--sp-1);align-items:center;min-block-size:28px;min-inline-size:28px}
+th button:focus-visible{outline:2px solid var(--focus)}
+th[aria-sort="ascending"] button::after{content:"▲";font-size:.65rem}
+th[aria-sort="descending"] button::after{content:"▼";font-size:.65rem}
+td.num{font-variant-numeric:tabular-nums}
+tr.sel td{background:var(--hover)}
+.cmp td:nth-child(2),.cmp td:nth-child(3){font-weight:700}
+/* الحصة الأسبوعية */
+.qgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-4)}
+.qbar{block-size:14px;background:var(--chip);border-radius:3px;position:relative;margin-block:var(--sp-2)}
+.qbar i{position:absolute;inset-block:0;inset-inline-start:0;background:var(--brand);border-radius:3px}
+.qrow{display:flex;justify-content:space-between;gap:var(--sp-4);font-size:var(--t-sm);border-block-end:1px solid var(--grid);padding-block:.2rem}
+.qrow b{font-family:var(--font-num);font-weight:700}
+/* بطاقات الأدوار (الساعة) */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:var(--sp-4)}
+.rgrid>*{min-inline-size:0}
+.rcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);min-inline-size:0}
+.rhead{display:flex;flex-wrap:wrap;gap:.2rem var(--sp-3);align-items:baseline;margin-block-end:var(--sp-1)}
+.rhead h3{margin:0;display:inline-flex;gap:var(--sp-2);align-items:center}
+.rstat{display:flex;flex-wrap:wrap;gap:.1rem var(--sp-4);font-size:var(--t-xs);color:var(--ink2)}
+.rstat b{color:var(--ink);font-weight:700}
+.xlist{font-size:var(--t-xs);color:var(--ink3);margin-block:var(--sp-1) 0}

@@ -1,0 +1,24 @@
+/* الأساس: إعادة ضبط، الطباعة العربية (بلا letter-spacing، ارتفاع سطر ≥1.6)، الروابط، التركيز، عناصر النماذج الخام. */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:var(--t-base)/var(--lh-body) var(--font);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-weight:700;text-wrap:balance}
+h1{font-size:var(--t-xl);line-height:var(--lh-tight);margin:0}
+h2{font-size:var(--t-md);line-height:var(--lh-tight);margin:0}
+h3{font-size:var(--t-base);line-height:var(--lh-tight);margin:var(--sp-4) 0 var(--sp-1)}
+p{margin:0}
+a{color:var(--brand-ink);text-underline-offset:.2em}
+bdi,.ltr{unicode-bidi:isolate}
+.ltr{direction:ltr;display:inline-block}
+.sub{color:var(--ink2);font-size:var(--t-sm);margin:0}
+.note,.src{color:var(--ink3);font-size:var(--t-xs);margin:var(--sp-2) 0 0}
+.warn{color:var(--warn);font-size:var(--t-sm);margin:var(--sp-2) 0 0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input:not([type=checkbox]):not([type=radio]),select{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.25rem .6rem;min-block-size:32px}
+input[type=checkbox],input[type=radio]{inline-size:1.25rem;block-size:1.25rem;accent-color:var(--brand)}
+details{margin-block-start:var(--sp-3)}
+summary{cursor:pointer;color:var(--ink2);font-size:var(--t-sm);min-block-size:28px;display:list-item}
+.empty{color:var(--ink3);padding:var(--sp-5) 0;text-align:center}
+.sr{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

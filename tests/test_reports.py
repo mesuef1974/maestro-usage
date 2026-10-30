@@ -1,5 +1,6 @@
 """اختبار التقارير 1-3 على قاعدة صناعية بأرقام معروفة."""
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -81,7 +82,10 @@ class TestReports(unittest.TestCase):
         self.assertIn('dir="rtl"', html)
         # بلا موارد خارجية: الرابط الوحيد المسموح هو مساحة أسماء SVG (نص لا طلب)
         self.assertEqual(html.replace("http://www.w3.org/2000/svg", "").count("http"), 0)
-        for bad in ("<link", "@import", "XMLHttpRequest", "src=\"http", "<script src"):
+        links = re.findall(r"<link[^>]*>", html)  # الرابطان المحلّيان فقط: أيقونة data: والأسلوب المركزي من assets/
+        self.assertEqual(len(links), 2, links)
+        self.assertTrue(all('href="data:image/svg+xml' in ln or 'href="assets/platform.css?v=' in ln for ln in links), links)
+        for bad in ("@import", "XMLHttpRequest", "src=\"http", "<script src"):
             self.assertNotIn(bad, html)
         # الطلب الوحيد المسموح: زر التحديث الفوري نحو الخادم المحلي بمسار نسبي
         # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري والقراءة الحيّة للقطات الحصة

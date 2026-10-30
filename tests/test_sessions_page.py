@@ -104,11 +104,14 @@ class TestSessionsPage(unittest.TestCase):
     def test_build_writes_sessions_page_without_external_resources(self):
         out = os.path.join(self.tmp, "out")
         reports.build(self.con, out)
-        with open(os.path.join(out, "sessions.html"), encoding="utf-8") as f:
+        with open(os.path.join(out, "roles.html"), encoding="utf-8") as f:
             html = f.read()
         self.assertEqual(html.replace("http://www.w3.org/2000/svg", "").count("http"), 0)
         self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"'))
-        for bad in ("<link", "@import", "XMLHttpRequest", "<script src"):
+        links = re.findall(r"<link[^>]*>", html)  # الرابطان المحلّيان فقط: أيقونة data: والأسلوب المركزي من assets/
+        self.assertEqual(len(links), 2, links)
+        self.assertTrue(all('href="data:image/svg+xml' in ln or 'href="assets/platform.css?v=' in ln for ln in links), links)
+        for bad in ("@import", "XMLHttpRequest", "<script src"):
             self.assertNotIn(bad, html)
 
 

@@ -101,9 +101,9 @@ def payload(con):
                 first_day=first, last_day=last, roles=roles, sessions=sess, c=rows, startup=startup_cost.current(con))
 
 
-def render(data, stamp):
-    return ui.render("sessions.html", data, {"__STAMP__": stamp})
+def render(data, stamp, page="roles.html"):
+    return ui.render(page, data, {"__STAMP__": stamp})
 
 
-def write(path, data, stamp):
-    ui.write(path, render(data, stamp))
+def write(path, data, stamp, page="roles.html"):
+    ui.write(path, render(data, stamp, page))

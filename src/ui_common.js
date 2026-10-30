@@ -1,7 +1,8 @@
 var NS="http://www.w3.org/2000/svg";
 var MCOL=["--s1","--s2","--s3","--s4","--s5","--s6","--oth"];
 var ORIG_AR={human:"إنسان",peer:"جلسة أخرى (peer)",scheduled:"مجدول",sdk:"SDK",task_notification:"إشعار مهمة",system:"نظام",sub:"وكيل فرعي",unknown:"بلا أصل مسجّل"};
-var $=function(s,r){return (r||document).querySelector(s)};
+/* قالب واحد يخدم عدّة صفحات تحذف أقسامًا: العنصر الغائب يُرجَع عنصرًا وهميًّا غير مربوط فتمرّ الكتابة فيه دون خطأ */
+var $=function(s,r){return (r||document).querySelector(s)||document.createElement("div")};
 function css(v){return "var("+v+")"}
 
 /* ---------- أدوات ---------- */
@@ -257,39 +258,6 @@ function bindFilters(){
   var b=document.createElement("button");b.type="button";b.className="themebtn";
   b.addEventListener("click",function(){var t=ORDER[(ORDER.indexOf(get())+1)%3];try{if(t==="auto")localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}apply(t)});
   nav.appendChild(b);apply(get());
-})();
-
-/* ---------- «في هذه الصفحة»: فهرس الأقسام مجمَّعًا بـ data-group، مع تمييز القسم الظاهر (aria-current=location)؛ يُعاد بناؤه حين يظهر قسم مخفي ---------- */
-(function(){
-  var box=document.getElementById("toc"),main=document.getElementById("main");
-  if(!box||!main)return;
-  var links=[],io=null,t=null,last="";
-  function build(){
-    var secs=[].filter.call(main.children,function(e){return e.tagName==="SECTION"&&!e.hidden&&e.querySelector("h2[id]")&&!e.classList.contains("tiles")});
-    var sig=secs.map(function(e){return e.querySelector("h2[id]").id}).join("|");
-    if(sig===last)return;last=sig;
-    var ol=document.createElement("ol"),grp=null;links=[];
-    secs.forEach(function(sec){
-      var g=sec.dataset.group||"";
-      if(g&&g!==grp){var li=document.createElement("li");li.className="tg";li.setAttribute("aria-hidden","true");li.textContent=g;ol.appendChild(li)}
-      grp=g||grp;
-      var h=sec.querySelector("h2[id]"),a=document.createElement("a"),li2=document.createElement("li");
-      a.href="#"+h.id;a.textContent=h.firstChild?h.firstChild.textContent.trim()||h.textContent.trim():h.textContent.trim();a.dataset.sec=h.id;
-      li2.appendChild(a);ol.appendChild(li2);links.push([a,sec]);
-    });
-    var head=box.querySelector(".toc-title");box.textContent="";if(head)box.appendChild(head);box.appendChild(ol);
-    if(io)io.disconnect();
-    if("IntersectionObserver" in window){
-      io=new IntersectionObserver(function(es){
-        es.forEach(function(e){if(e.isIntersecting)links.forEach(function(l){if(l[1]===e.target)mark(l[0])})});
-      },{rootMargin:"-10% 0px -70% 0px"});
-      links.forEach(function(l){io.observe(l[1])});
-    }
-  }
-  function mark(a){links.forEach(function(l){if(l[0]===a)l[0].setAttribute("aria-current","location");else l[0].removeAttribute("aria-current")})}
-  function later(){clearTimeout(t);t=setTimeout(build,120)}
-  build();
-  new MutationObserver(later).observe(main,{attributes:true,attributeFilter:["hidden"],subtree:true});
 })();
 
 /* ---------- المرشِّحات: مطويّة افتراضيًّا في الشاشات الضيّقة، وملخّصها يعرض الفترة الحالية ---------- */

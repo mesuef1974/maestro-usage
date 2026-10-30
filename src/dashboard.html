@@ -4,31 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>استهلاك Claude Code</title>
-<style>
-__CSS__
-</style>
+__ASSETS__
 </head>
 <body>
 __SHELL_OPEN__
-<header class="pagehead">
-<h1>استهلاك Claude Code</h1>
-<details class="about"><summary>عن هذه الصفحة</summary><p class="sub">قياس بالتوكن لا بالدولار (الخطة اشتراك ثابت). أيام التقارير بالتوقيت العالمي. وُلّدت في <span id="gen">__STAMP__</span> من القاعدة المحلية؛ أرقام فقط بلا نصوص محادثات.</p></details>
-<div class="live">
-  <button type="button" id="refresh" class="refresh">تحديث فوري</button>
-  <span id="age" class="sub"></span>
-  <span id="rmsg" class="sub" role="status"></span>
-</div>
-</header>
+__PAGEHEAD__
 
-<section class="limits" id="limits" data-group="نظرة عامة" aria-labelledby="hl" hidden>
-  <div class="lh"><h2 id="hl">حدود استهلاك الخطة<span id="lplan"></span></h2><a href="#h3">عرض الرسم ↓</a></div>
+<!--@sec limits--><section class="limits" id="limits" aria-labelledby="hl" hidden>
+  <div class="lh"><h2 id="hl">حدود استهلاك الخطة<span id="lplan"></span></h2><a href="plan.html">الحصة الأسبوعية</a></div>
   <div class="lrow" id="lr5"><div class="lt"><span class="ln">حدّ الخمس ساعات</span><span><span class="lr" id="lr5r"></span><span class="lp" id="lr5p"></span></span></div><div class="lb" role="progressbar" aria-label="حدّ الخمس ساعات" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr5f"></span></div></div>
   <div class="lrow" id="lr7"><div class="lt"><span class="ln">الأسبوعي · كل النماذج</span><span><span class="lr" id="lr7r"></span><span class="lp" id="lr7p"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr7f"></span></div></div>
   <div class="lrow" id="lrn" hidden><div class="lt"><span class="ln">تجديد الاشتراك الشهري</span><span><span class="lr" id="lrnr"></span><span class="lp" id="lrnp"></span></span></div></div>
   <p class="note" id="lnote"></p>
 </section>
-
-<details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
+<!--@/sec-->
+<!--@sec filters--><details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
 <div class="filters" role="group" aria-label="المرشِّحات">
   <div class="seg" id="presets" role="group" aria-label="الفترة">
     <button type="button" data-p="7">7 أيام</button>
@@ -42,25 +32,24 @@ __SHELL_OPEN__
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
 </details>
-
-<section class="tiles" id="tiles" aria-label="ملخص الفترة"></section>
-
-<section class="card" data-group="الاستهلاك" aria-labelledby="h1">
+<!--@/sec-->
+<!--@sec tiles--><section class="tiles" id="tiles" aria-label="ملخص الفترة"></section>
+<!--@/sec-->
+<!--@sec h1--><section class="card" aria-labelledby="h1">
   <div class="cardhead"><h2 id="h1">قراءة الذاكرة المؤقتة يوميًّا حسب النموذج</h2><span class="sub" id="c1sum"></span></div>
   <p class="sub">كل عمود يوم، وارتفاعه توكنز قراءة الذاكرة (cache read) مكدَّسةً بحسب النموذج. هذه القراءة هي معظم الاستهلاك.</p>
   <div class="chart" id="c1"></div>
   <details><summary>عرض الجدول</summary><div class="wrap" id="t1"></div></details>
 </section>
-
-<div class="grid2">
-<section class="card" aria-labelledby="h2">
+<!--@/sec-->
+<!--@sec h2--><section class="card" aria-labelledby="h2">
   <div class="cardhead"><h2 id="h2">من بدأ الدور؟</h2></div>
   <p class="sub">حصة كل أصل دور من قراءة الذاكرة في الفترة. الأصل يسجّله Claude Code نفسه على سطر المستخدم؛ الوكلاء الفرعيون بلا أصل.</p>
   <div class="bars" id="c2"></div>
   <details><summary>عرض الجدول</summary><div class="wrap" id="t2"></div></details>
 </section>
-
-<section class="card" data-group="الخطة والسياق" aria-labelledby="h3">
+<!--@/sec-->
+<!--@sec h3--><section class="card" aria-labelledby="h3">
   <div class="cardhead"><h2 id="h3">حصة الخطة</h2><span class="sub" id="c3sum"></span></div>
   <p class="sub">نسبة المستخدَم من نافذة الخمس ساعات والنافذة الأسبوعية (كل النماذج) من لقطات /usage الآلية.</p>
   <div class="legend" id="l3"></div>
@@ -68,9 +57,8 @@ __SHELL_OPEN__
   <details><summary>عرض الجدول</summary><div class="wrap" id="t3"></div></details>
   <p class="note" id="n3"></p>
 </section>
-</div>
-
-<section class="card" aria-labelledby="h4">
+<!--@/sec-->
+<!--@sec h4--><section class="card" aria-labelledby="h4">
   <div class="cardhead"><h2 id="h4">أسوأ الجلسات سياقًا</h2><span class="sub" id="c4sum"></span></div>
   <p class="sub">الجلسات الأكثر ردودًا بسياق فوق <span id="thr"></span> توكن (السياق = إدخال + كتابة ذاكرة + قراءة ذاكرة للردّ الواحد).</p>
   <div class="bars" id="c4"></div>
@@ -79,8 +67,8 @@ __SHELL_OPEN__
   <div class="wrap" id="t4"></div>
   <button type="button" class="more" id="more4"></button>
 </section>
-
-<section class="card" data-group="التغييرات وأثرها" aria-labelledby="h5">
+<!--@/sec-->
+<!--@sec h5--><section class="card" aria-labelledby="h5">
   <div class="cardhead"><h2 id="h5">قبل وبعد autoCompactWindow</h2><span class="sub" id="c5sum"></span></div>
   <p class="sub">سياق الردّ يومًا بيوم قبل ضبط نافذة الضغط التلقائي وبعده. لا يتأثر هذا القسم بمرشِّح الفترة (آخر 28 يومًا)، ويتأثر بمرشِّح النماذج.</p>
   <div class="grid2">
@@ -91,8 +79,8 @@ __SHELL_OPEN__
   <p class="warn" id="n5"></p>
   <details><summary>عرض الجدول اليومي</summary><div class="wrap" id="t5d"></div></details>
 </section>
-
-<section class="card" aria-labelledby="h6" id="sc" hidden>
+<!--@/sec-->
+<!--@sec h6--><section class="card" aria-labelledby="h6" id="sc" hidden>
   <div class="cardhead"><h2 id="h6">كلفة بدء الجلسة</h2><span class="sub" id="c6sum"></span></div>
   <p class="sub">سياق أول ردّ في كل جلسة جديدة (ما يُحمَّل قبل أن تكتب شيئًا: التعليمات والمهارات والذاكرة والإعدادات). الجلسات المستأنفة مستبعدة. لا يتأثر بالمرشِّحات.</p>
   <section class="tiles" id="t6tiles" aria-label="مؤشرات كلفة البدء"></section>
@@ -105,12 +93,12 @@ __SHELL_OPEN__
   <div class="wrap" id="t6f"></div>
 </section>
 
-<details class="static card"><summary>الجداول الساكنة والتحفظات (التقارير 1 إلى 5)</summary>
+<!--@/sec--><!--@sec static--><details class="static card"><summary>الجداول الساكنة والتحفظات (التقارير 1 إلى 5)</summary>
 __STATIC__
 </details>
 
 <p class="src">ملفات CSV بجانب هذه الصفحة: report1_session_model_day.csv، report2_worst_context.csv، report3_before_after.csv، report4_weekly_quota_by_day.csv، report5_scheduled_cycle.csv، report5_origins.csv.</p>
-__SHELL_CLOSE__
+<!--@/sec-->__SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
 <script type="application/json" id="data">__DATA__</script>
 <script>
@@ -129,7 +117,10 @@ function selA(rangeOn){return D.a.filter(function(r){return S.models.has(r.m)&&(
 function sum(rows,k){return rows.reduce(function(a,r){return a+r[k]},0)}
 
 /* ---------- البطاقات ---------- */
+/* قالب واحد لعدّة صفحات: كل رسم يُجرى فقط إن كان قسمه في هذه الصفحة */
+function has(id){return !!document.getElementById(id)}
 function renderTiles(){
+  if(!has("tiles"))return;
   var rows=selA(true),turns=sum(rows,"t"),cr=sum(rows,"cr"),inp=sum(rows,"i"),cc=sum(rows,"cc"),out=sum(rows,"u"),over=sum(rows,"v");
   var ctx=turns?(inp+cc+cr)/turns:null,tot=inp+cc+cr+out;
   var box=$("#tiles");clear(box);
@@ -147,6 +138,7 @@ function renderTiles(){
 
 /* ---------- 1: قراءة الذاكرة يوميًا حسب النموذج ---------- */
 function render1(){
+  if(!has("c1"))return;
   var from=S.from,to=S.to,days=eachDay(from,to>LAST?LAST:to);
   var idx={};days.forEach(function(d,i){idx[d]=i});
   var series=[];
@@ -167,6 +159,7 @@ function render1(){
 
 /* ---------- 2: أصل الدور ---------- */
 function render2(){
+  if(!has("c2"))return;
   var rows=selA(true),by={};
   rows.forEach(function(r){var o=by[r.g]||(by[r.g]={o:r.g,t:0,i:0,cc:0,cr:0,out:0});o.t+=r.t;o.i+=r.i;o.cc+=r.cc;o.cr+=r.cr;o.out+=r.u});
   var list=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.cr-a.cr});
@@ -194,6 +187,7 @@ function limitRow(id,pct,resetIso,withDay,now){
   b.setAttribute("aria-valuenow",String(Math.round(v)));
 }
 function renderLimits(){
+  if(!has("limits"))return;
   var box=$("#limits"),last=null;
   D.plan.forEach(function(p){if((p.f!=null||p.w!=null)&&(!last||p.ts>last.ts))last=p});
   if(!last){box.hidden=true;return}
@@ -219,6 +213,7 @@ function renderLimits(){
 
 /* ---------- 3: حصة الخطة ---------- */
 function render3(){
+  if(!has("c3"))return;
   var pts=D.plan.filter(function(p){var d=p.ts.slice(0,10);return inRange(d)}).sort(function(a,b){return a.ts<b.ts?-1:1});
   var box=$("#c3");
   $("#c3sum").textContent=pts.length+" لقطة";
@@ -257,6 +252,7 @@ function sessionAgg(){
     o.name=se.label;o.dcount=Object.keys(o.days).length;o.ratio=o.out?o.cr/o.out:null;o.share=o.t?o.v/o.t:0;return o});
 }
 function render4(){
+  if(!has("c4"))return;
   var all=sessionAgg();
   $("#thr").textContent=num(D.threshold);$("#minturns").textContent=D.min_turns;$(".thr2").textContent=compact(D.threshold,0);
   var worst=all.filter(function(r){return r.v>0}).sort(function(a,b){return b.v-a.v||b.mx-a.mx}).slice(0,10);
@@ -277,6 +273,7 @@ function render4(){
 
 /* ---------- 5: قبل/بعد ---------- */
 function render5(){
+  if(!has("c5a"))return;
   var ch=D.changes.filter(function(c){return c.key==="autoCompactWindow"&&c.applied}).sort(function(a,b){return a.ts<b.ts?-1:1});
   var c=ch.length?ch[ch.length-1]:null;
   var days28=eachDay(addDays(LAST,-27)>FIRST?addDays(LAST,-27):FIRST,LAST);
@@ -317,6 +314,7 @@ function render5(){
 var FXV={pending:"معلّق",lower:"انخفاض",higher:"ارتفاع",inconclusive:"غير حاسم"};
 function signed(v){return v==null?"—":(v>0?"+":v<0?"−":"")+compact(Math.abs(v),1)}
 function renderStartup(){
+  if(!has("sc"))return;
   var sc=D.startup,box=$("#sc");
   if(!sc||!sc.cur||!sc.cur.n){box.hidden=true;return}
   box.hidden=false;

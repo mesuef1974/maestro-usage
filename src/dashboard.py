@@ -76,9 +76,9 @@ def payload(con, label_fn, not_applied_mark, min_turns):
                 plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, startup=startup_cost.payload(con))
 
 
-def render(data, static_html, stamp):
-    return ui.render("dashboard.html", data, {"__STAMP__": stamp, "__STATIC__": static_html})
+def render(data, static_html, stamp, page="index.html"):
+    return ui.render(page, data, {"__STAMP__": stamp, "__STATIC__": static_html})
 
 
-def write(path, data, static_html, stamp):
-    ui.write(path, render(data, static_html, stamp))
+def write(path, data, static_html, stamp, page="index.html"):
+    ui.write(path, render(data, static_html, stamp, page))

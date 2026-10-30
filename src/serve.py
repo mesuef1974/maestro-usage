@@ -1,7 +1,7 @@
 """خادم محلي اختياري للّوحة: يقدّم reports\\index.html ويشغّل دورة تحميل فورية عند ضغط «تحديث فوري».
 
 يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8790]
-المسارات: GET / (اللوحة) وGET /sessions.html (الأدوار والجلسات)، GET /hourly.html (الجلسات بالساعة)، GET /skills.html (حصر المهارات)،GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
+المسارات: GET / وكل صفحة في pages.PAGES، GET /assets/platform.css (الأسلوب المركزي)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
 """
 import argparse
 import json
@@ -14,11 +14,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
+import pages  # noqa: E402
 import reports  # noqa: E402
 import run_cycle  # noqa: E402
 import usage_db  # noqa: E402
 
-PAGES = {"/": "index.html", "/index.html": "index.html", "/sessions.html": "sessions.html", "/hourly.html": "hourly.html", "/skills.html": "skills.html"}
+PAGES = {"/": "index.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 
@@ -69,6 +70,8 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
                 return self._send(200, body, "application/json")
             if path in PAGES:
                 name, ctype = PAGES[path], "text/html; charset=utf-8"
+            elif path == "/assets/platform.css":
+                name, ctype = "assets/platform.css", "text/css; charset=utf-8"
             else:
                 m = CSV_RE.match(path)
                 if not m:

@@ -1,0 +1,24 @@
+/* قواعد خاصة بصفحات بعينها (تبقى هنا لا في القوالب كي يبقى الأسلوب مركزيًّا). */
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:var(--sp-4)}
+.row2>*{min-inline-size:0}
+.pick label{display:flex;flex-wrap:wrap;gap:var(--sp-2);max-inline-size:100%;min-inline-size:0}
+.pick select{inline-size:min(100%,38rem)}
+.metrics{display:flex;flex-wrap:wrap;gap:var(--sp-1)}
+.metrics .mini{padding:.15rem var(--sp-3);font-size:var(--t-sm)}
+.ctl{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);align-items:center;margin-block:var(--sp-2)}
+.filters2{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);align-items:center;margin-block:var(--sp-3)}
+/* حصر المهارات */
+#tbl .wrap{max-block-size:none;overflow-x:auto}
+#tbl table{table-layout:auto;min-inline-size:1100px}
+#tbl td{white-space:normal;vertical-align:top;line-height:1.5;min-inline-size:0;font-family:var(--font)}
+#tbl td.nw,#tbl th{white-space:nowrap}
+#tbl td.b{min-inline-size:15rem;max-inline-size:22rem}
+#tbl td.nt{min-inline-size:17rem;max-inline-size:26rem;color:var(--ink2)}
+#tbl td.k{font-weight:700;direction:ltr;text-align:right;word-break:break-all;min-inline-size:11rem;font-family:var(--font-num)}
+.rec{display:inline-flex;align-items:center;gap:var(--sp-2);font-weight:700;white-space:nowrap}
+.dot{inline-size:.7rem;block-size:.7rem;border-radius:50%;display:inline-block;flex:none}
+.dups{display:flex;flex-wrap:wrap;gap:.2rem}
+.dups span{border:1px solid var(--line);background:var(--chip);border-radius:var(--r-sm);padding:0 .35rem;font-size:var(--t-xs);direction:ltr}
+.zero{color:var(--warn)}
+.sav{color:var(--good);font-weight:700}
+.gone td{white-space:nowrap}

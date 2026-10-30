@@ -1,0 +1,36 @@
+/* ميزان — الرموز (tokens): المصدر الوحيد للون والطباعة والمسافة والاستدارة. لا قيمة حرفية خارج هذا الملف إلا في ملفات الرسوم (تمرّ عبر var).
+   الهوية: ورق بارد وحبر كحلي ولون واحد للعلامة (فيروزي بترولي) لا يُستعمل في البيانات؛ ألوان السلاسل s1..s8 من لوحة محقَّقة للعمى اللوني ولا تُغيَّر هنا.
+   الأسماء القديمة (--ink --ink2 --ink3 --line --grid --surface --chip --focus --warn --hover --oth) باقية لأن JS الرسوم يقرؤها. */
+:root{
+  color-scheme:light;
+  --bg:#f1f3f5;--surface:#fff;--raised:#f7f8fa;--chip:#eceff2;--hover:#0f1b2a0d;
+  --ink:#0f1b2a;--ink2:#465363;--ink3:#617080;
+  --line:#d3d9df;--grid:#e3e7eb;
+  --brand:#0b6e75;--brand-ink:#075359;--brand-soft:#e0f0f1;--on-brand:#fff;
+  --focus:#1f6fd0;--warn:#955700;--bad:#b3261e;--good:#18794e;
+  --s1:#2a78d6;--s2:#eb6834;--s3:#15a070;--s4:#b87800;--s5:#d0507f;--s6:#008300;--s7:#6250d6;--s8:#e34948;--oth:#8f8e88;
+  --font:"Dubai","Segoe UI Variable Text","Segoe UI","Noto Sans Arabic",Tahoma,sans-serif;
+  --font-num:"Segoe UI Variable Text","Segoe UI","Dubai",Tahoma,sans-serif;
+  --t-xs:.75rem;--t-sm:.875rem;--t-base:1rem;--t-md:1.125rem;--t-lg:1.375rem;--t-xl:1.75rem;--t-2xl:2.25rem;
+  --lh-body:1.7;--lh-tight:1.3;--lh-num:1.15;
+  --sp-1:.25rem;--sp-2:.5rem;--sp-3:.75rem;--sp-4:1rem;--sp-5:1.5rem;--sp-6:2rem;--sp-7:3rem;
+  --r-sm:4px;--r-md:8px;--r-pill:999px;
+  --side-w:15.5rem;--page-w:1200px;--tap:44px;
+  --ease:cubic-bezier(.2,0,0,1);--dur:150ms;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0b1118;--surface:#141b25;--raised:#192230;--chip:#1c2532;--hover:#ffffff12;
+  --ink:#e8edf3;--ink2:#b3bdc9;--ink3:#8d99a7;
+  --line:#2b3644;--grid:#222c39;
+  --brand:#4dc3cb;--brand-ink:#7fd8de;--brand-soft:#123239;--on-brand:#06242a;
+  --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--oth:#85847d;}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0b1118;--surface:#141b25;--raised:#192230;--chip:#1c2532;--hover:#ffffff12;
+  --ink:#e8edf3;--ink2:#b3bdc9;--ink3:#8d99a7;
+  --line:#2b3644;--grid:#222c39;
+  --brand:#4dc3cb;--brand-ink:#7fd8de;--brand-soft:#123239;--on-brand:#06242a;
+  --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--oth:#85847d;}

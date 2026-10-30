@@ -12,8 +12,10 @@ from datetime import date, datetime, timedelta, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402
 import hourly_page  # noqa: E402
+import pages  # noqa: E402
 import sessions_page  # noqa: E402
 import skills_page  # noqa: E402
+import ui  # noqa: E402
 import usage_db  # noqa: E402
 
 REPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports")
@@ -285,14 +287,22 @@ def build(con, out_dir=REPORTS_DIR):
                  '(هـ) الوكلاء الفرعيون بلا أصل فلا يدخلون هذا العدّ.</p>')
     parts.append(source("جدول usage_turns (العمود turn_origin) وربط الأرقام من sessions.number", stamp))
 
-    path = os.path.join(out_dir, "index.html")
-    data = dashboard.payload(con, session_label, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY)
     gen = datetime.now().strftime("%Y-%m-%d %H:%M")
-    dashboard.write(path, data, "".join(parts), gen)
-    sessions_page.write(os.path.join(out_dir, "sessions.html"), sessions_page.payload(con), gen)
-    hourly_page.write(os.path.join(out_dir, "hourly.html"), hourly_page.payload(con), gen)
-    skills_page.write(os.path.join(out_dir, "skills.html"), skills_page.payload(), gen)
-    return path
+    ui.write_assets(out_dir)
+    static = "".join(parts)
+    payloads = {"dashboard.html": dashboard.payload(con, session_label, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY),
+                "sessions.html": sessions_page.payload(con), "hourly.html": hourly_page.payload(con), "skills.html": skills_page.payload()}
+    for p in pages.PAGES:  # صفحة لكل سطر في السجلّ؛ القالب الواحد يخدم عدّة صفحات (الأقسام في pages.py)
+        target, data = os.path.join(out_dir, p["file"]), payloads[p["template"]]
+        if p["template"] == "dashboard.html":
+            dashboard.write(target, data, static, gen, p["file"])
+        elif p["template"] == "sessions.html":
+            sessions_page.write(target, data, gen, p["file"])
+        elif p["template"] == "hourly.html":
+            hourly_page.write(target, data, gen, p["file"])
+        else:
+            skills_page.write(target, data, gen, p["file"])
+    return os.path.join(out_dir, "index.html")
 
 
 if __name__ == "__main__":

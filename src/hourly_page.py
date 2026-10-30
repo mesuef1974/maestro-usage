@@ -68,9 +68,9 @@ def plan_rows(con):
         "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, fable_pct, plan, source FROM plan_snapshots ORDER BY ts")]
 
 
-def render(data, stamp):
-    return ui.render("hourly.html", data, {"__STAMP__": stamp})
+def render(data, stamp, page="hourly.html"):
+    return ui.render(page, data, {"__STAMP__": stamp})
 
 
-def write(path, data, stamp):
-    ui.write(path, render(data, stamp))
+def write(path, data, stamp, page="hourly.html"):
+    ui.write(path, render(data, stamp, page))

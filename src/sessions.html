@@ -4,35 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الأدوار والجلسات</title>
-<style>
-__CSS__
-h3{font-size:.95rem;margin:.9rem 0 .2rem}
-.tiles.dense{grid-template-columns:repeat(auto-fit,minmax(138px,1fr));margin-block:.4rem .8rem}
-.tile .v{font-size:1.45rem}
-.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:1rem}
-.row2>*{min-inline-size:0}
-.pick label{display:flex;flex-wrap:wrap;max-inline-size:100%;min-inline-size:0}
-.pick select{inline-size:min(100%,38rem)}
-.metrics{display:flex;flex-wrap:wrap;gap:.3rem}
-.metrics .mini{padding:.15rem .6rem;font-size:.82rem}
-.defs dt{font-weight:600;margin-block-start:.6rem}
-.defs dd{margin:0;color:var(--ink2);font-size:.88rem}
-@media (max-width:640px){.row2{grid-template-columns:1fr}.search{inline-size:100%}}
-</style>
+__ASSETS__
 </head>
 <body>
 __SHELL_OPEN__
-<header class="pagehead">
-<h1>الأدوار والجلسات</h1>
-<details class="about"><summary>عن هذه الصفحة</summary><p class="sub">استهلاك كل دور (الرقم) وضغطه ومساره اليومي وكلفة إيقاظه ومن بدأ أدواره. الدور الواحد قد يضمّ جلسات كثيرة فيُجمَع بالرقم ويُفصَّل بالجلسة. قياس بالتوكن، وأيام التقارير بالتوقيت العالمي. وُلّدت في <span id="gen">__STAMP__</span>؛ أرقام فقط بلا نصوص محادثات.</p></details>
-<div class="live">
-  <button type="button" id="refresh" class="refresh">تحديث فوري</button>
-  <span id="age" class="sub"></span>
-  <span id="rmsg" class="sub" role="status"></span>
-</div>
-</header>
+__PAGEHEAD__
 
-<details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
+<!--@sec filters--><details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
 <div class="filters" role="group" aria-label="المرشِّحات">
   <div class="seg" id="presets" role="group" aria-label="الفترة">
     <button type="button" data-p="7">7 أيام</button>
@@ -48,45 +26,45 @@ __SHELL_OPEN__
   <label class="tog"><input type="checkbox" id="unnum"> إظهار غير المرقّمة (فئات بحسب المجلد)</label>
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
-</details>
+</details><!--@/sec-->
 
-<section class="tiles dense" id="tiles" aria-label="ملخص الأدوار الظاهرة"></section>
+<!--@sec tiles--><section class="tiles dense" id="tiles" aria-label="ملخص الأدوار الظاهرة"></section><!--@/sec-->
 
-<section class="card" data-group="نظرة عامة" aria-labelledby="hg">
+<!--@sec rg--><section class="card" aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">بحسب نظام نافذة السياق</h2><span class="sub" id="gsum"></span></div>
   <p class="sub">نظام النافذة الذي قرأته عملية الجلسة عند بدئها (افتراضي، 250 ألفًا، مليون). بدء العملية معروف للجلسات الملتقطة من 30/10 فقط؛ لغيرها يُستدلّ بما يُجزم به وإلا «غير محدد». لا تتأثر هذه البطاقة بمرشِّح النظام.</p>
   <div class="wrap" id="rg" style="max-block-size:none"></div>
   <p class="note" id="gnote"></p>
-</section>
+</section><!--@/sec-->
 
-<section class="card" data-group="الأدوار" aria-labelledby="hr">
+<!--@sec rank--><section class="card" aria-labelledby="hr">
   <div class="cardhead"><h2 id="hr">ترتيب الأدوار</h2><span class="sub" id="rsum"></span></div>
   <p class="sub">اختر المقياس. النسبة المعروضة هي حصة الدور من إجمالي كل الجلسات في الفترة (بما فيها غير المرقّمة، ولو أُخفيت). انقر دورًا لعرض تفاصيله.</p>
   <div class="metrics" id="metrics" role="group" aria-label="المقياس"></div>
   <div class="bars" id="rank" style="margin-block-start:.6rem"></div>
   <button type="button" class="more" id="rmore"></button>
-</section>
+</section><!--@/sec-->
 
-<section class="card" aria-labelledby="ht">
+<!--@sec roles--><section class="card" aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">كل الأدوار</h2><span class="sub" id="tsum"></span></div>
   <p class="sub">انقر عنوان عمود للترتيب. «ذاكرة» = cache. أعمدة «بدأه» نسبة الردود بحسب من بدأ الدور.</p>
   <div class="wrap" id="roles" style="max-block-size:520px"></div>
-</section>
+</section><!--@/sec-->
 
-<section class="card" id="detail" data-group="التفصيل والمقارنة" aria-labelledby="hd">
+<!--@sec detail--><section class="card" id="detail" aria-labelledby="hd">
   <div class="cardhead"><h2 id="hd">تفاصيل</h2><span class="sub" id="dsum"></span></div>
   <div class="pick"><label>الدور أو الجلسة <select id="pa" aria-label="اختيار الدور أو الجلسة"></select></label></div>
   <div id="dbody"></div>
-</section>
+</section><!--@/sec-->
 
-<section class="card" id="cmp" aria-labelledby="hc">
+<!--@sec cmp--><section class="card" id="cmp" aria-labelledby="hc">
   <div class="cardhead"><h2 id="hc">مقارنة بين اثنين</h2><span class="sub" id="csum"></span></div>
   <p class="sub">الأول هو المحدَّد في «تفاصيل». اختر الثاني (دورًا أو جلسة) أو انقر «قارن» في جدول الأدوار.</p>
   <div class="pick"><label>قارِن مع <select id="pb" aria-label="اختيار المقارَن به"></select></label></div>
   <div id="cbody"></div>
-</section>
+</section><!--@/sec-->
 
-<details class="card defs"><summary>التعريفات والتحفظات</summary>
+<!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
 <dl>
 <dt>الدور والجلسة</dt><dd>الدور هو الرقم (0101…0801) كما يسجّله Claude Code في عنوان الجلسة؛ تحمله جلسات كثيرة. الجلسة هي معرّف CLI (ثمانية أحرف). الجلسات بلا رقم لا تُجمع في سلّة واحدة: تُسمّى فئات بحسب مجلد العمل (بلا رقم · مراقب MonitorWidget، مستودع shschool_mvp، مدير التسليم، أشجار عمل git، أخرى) وتُخفى افتراضيًّا؛ ومثلها أي رقم خارج 01xx–08xx. الفئة تجمع جلسات كثيرة فليست دورًا واحدًا.</dd>
 <dt>سياق الردّ</dt><dd>إدخال + كتابة ذاكرة + قراءة ذاكرة للردّ الواحد. مقاييس الضغط (متوسط السياق، أكبر سياق، نسبة فوق العتبة، هبوط السياق، الإيقاظ) تُحسب من ردود الخيط الرئيس فقط، دون الوكلاء الفرعيين لأن سياقاتهم مستقلة وصغيرة. أما الاستهلاك (ردود، قراءة، كتابة، مخرجات) فيشمل الجميع، والوكلاء الفرعيون يظهرون أصلًا باسم «وكيل فرعي».</dd>
@@ -97,7 +75,7 @@ __SHELL_OPEN__
 <dt>من بدأ الدور</dt><dd>الأصل يسجّله Claude Code على سطر المستخدم: إنسان، جلسة أخرى (peer)، مجدول، SDK، إشعار مهمة، نظام. «بلا أصل مسجّل» ردود قديمة لا أصل لها.</dd>
 <dt>الحصة من الإجمالي</dt><dd>مقسومة على كل الجلسات في الفترة والنماذج المحدّدة، لا على الأدوار الظاهرة فقط.</dd>
 </dl>
-</details>
+</details><!--@/sec-->
 __SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
 <script type="application/json" id="data">__DATA__</script>
@@ -323,7 +301,11 @@ function fillSelect(sel,c,withNone,cur){
 }
 
 /* ---------- اختيار وتنقّل ---------- */
-function choose(e){S.sel=e;if(same(S.cmp,e))S.cmp=null;render();focusDetail()}
+function choose(e){
+  S.sel=e;if(same(S.cmp,e))S.cmp=null;
+  if(!document.getElementById("detail")){saveView();location.href="compare.html#detail";return} /* التفصيل في صفحة أخرى: يُمرَّر الاختيار بالجلسة المتصفّحية */
+  render();focusDetail()
+}
 function compareWith(e){
   if(!S.sel||same(S.sel,e)){S.sel=e;render();return}
   S.cmp=e;render();var c=$("#cmp");if(c.scrollIntoView)c.scrollIntoView({block:"start"});
