@@ -27,7 +27,9 @@ MIN_N = 15
 MIN_DELTA = 3_000  # فرق الوسيط الأدنى (توكن) ليُعدّ أثرًا
 SE_MULT = 2.0
 SETTINGS_KEYS = ("enabledPlugins", "skillOverrides", "env", "model", "autoCompactWindow", "claudeMdExcludes", "hooks",
-                 "statusLine", "outputStyle", "agent", "effortLevel")  # مفاتيح تؤثر في سياق البدء؛ permissions خارجها لأنها تتغيّر بكل موافقة
+                 "statusLine", "outputStyle", "agent", "effortLevel", "syncClaudeAiSkills", "syncClaudeAiPlugins", "disableClaudeAiConnectors",
+                 "disableBundledSkills", "includeGitInstructions", "skillListingBudgetFraction", "skillListingMaxDescChars",
+                 "disableSkillShellExecution")  # مفاتيح تؤثر في سياق البدء؛ permissions خارجها لأنها تتغيّر بكل موافقة
 RECENT_DAYS = 14
 ITEM_NAMES = {"settings:startup": "إعدادات البدء", "claudemd:global": "CLAUDE.md العام", "skills:user": "مهارات المستخدم",
               "memory:core": "ذاكرة core"}
