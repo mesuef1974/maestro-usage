@@ -27,6 +27,13 @@ __PAGEHEAD__
 <!--@/sec-->
 <!--@sec tiles--><section class="tiles" id="tiles" aria-label="ملخص الفترة"></section>
 <!--@/sec-->
+<!--@sec month--><section class="card" aria-labelledby="hm">
+  <div class="cardhead"><h2 id="hm">توكنز كل شهر</h2><span class="sub" id="cmsum"></span></div>
+  <p class="sub">مجموع التوكنز (إدخال وكتابة ذاكرة وقراءة ذاكرة ومخرجات) لكل شهر ميلادي بتوقيت UTC. الشهر الأخير جزئي حتى آخر يوم في القاعدة. لا حدّ شهريًّا معلنًا للخطة، فالأشرطة تقارن الأشهر ببعضها لا بسقف.</p>
+  <div class="bars" id="cm"></div>
+  <details><summary>عرض الجدول</summary><div class="wrap" id="tm"></div></details>
+</section>
+<!--@/sec-->
 <!--@sec h1--><section class="card" aria-labelledby="h1">
   <div class="cardhead"><h2 id="h1">قراءة الذاكرة المؤقتة يوميًّا حسب النموذج</h2><span class="sub" id="c1sum"></span></div>
   <p class="sub">كل عمود يوم، وارتفاعه توكنز قراءة الذاكرة (cache read) مكدَّسةً بحسب النموذج. هذه القراءة هي معظم الاستهلاك.</p>
@@ -119,6 +126,24 @@ function renderTiles(){
 
 
 
+
+/* ---------- توكنز كل شهر ---------- */
+function renderMonth(){
+  if(!has("cm"))return;
+  var by={};
+  D.a.forEach(function(r){var k=r.d.slice(0,7),o=by[k]||(by[k]={k:k,t:0,i:0,cc:0,cr:0,out:0});o.t+=r.t;o.i+=r.i;o.cc+=r.cc;o.cr+=r.cr;o.out+=r.u});
+  var list=Object.keys(by).sort().map(function(k){var o=by[k];o.tot=o.i+o.cc+o.cr+o.out;
+    o.part=k===LAST.slice(0,7);o.days=o.part?+LAST.slice(8,10):new Date(Date.UTC(+k.slice(0,4),+k.slice(5,7),0)).getUTCDate();return o});
+  var top=list.reduce(function(a,o){return o.tot>a?o.tot:a},0);
+  $("#cmsum").textContent=list.length+" أشهر · حتى "+LAST;
+  barRows($("#cm"),list.map(function(o){
+    return {name:o.k+(o.part?" (حتى يوم "+o.days+")":""),val:o.tot,text:compact(o.tot)+" · "+compact(o.tot/o.days)+"/يوم",
+      tip:[{name:"المجموع",value:compact(o.tot,2)},{name:"المتوسط اليومي",value:compact(o.tot/o.days,2)},{name:"قراءة الذاكرة",value:pct(o.tot?o.cr/o.tot:null)},
+           {name:"الردود",value:num(o.t)},{name:"نسبته إلى أعلى شهر",value:pct(top?o.tot/top:null)}]}}),"--s1");
+  drawTable($("#tm"),[{k:"k",l:"الشهر",f:function(r){return r.k+(r.part?" *":"")}},{k:"days",l:"أيام",n:1,f:function(r){return num(r.days)}},
+    {k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},{k:"cc",l:"كتابة ذاكرة",n:1,f:function(r){return num(r.cc)}},{k:"cr",l:"قراءة ذاكرة",n:1,f:function(r){return num(r.cr)}},
+    {k:"out",l:"مخرجات",n:1,f:function(r){return num(r.out)}},{k:"tot",l:"المجموع",n:1,f:function(r){return num(r.tot)}}],list);
+}
 
 /* ---------- 1: قراءة الذاكرة يوميًا حسب النموذج ---------- */
 function render1(){
@@ -267,7 +292,7 @@ function renderStartup(){
 var pending=false;
 function render(){
   document.querySelectorAll(".chart").forEach(function(c){c.classList.add("busy")});
-  renderTiles();render1();render2();render4();render5();
+  renderTiles();renderMonth();render1();render2();render4();render5();
   requestAnimationFrame(function(){document.querySelectorAll(".chart").forEach(function(c){c.classList.remove("busy")})});
 }
 /* ---------- التحديث الفوري وعمر البيانات ---------- */

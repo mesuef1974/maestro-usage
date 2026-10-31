@@ -64,6 +64,14 @@ class TestDashboard(unittest.TestCase):
         self.assertNotIn("__STATIC__", page)
         self.assertIn("ساكن", dashboard.render(self.data, "<p>ساكن</p>", "الآن", "data.html"))  # الجزء الساكن في صفحة البيانات فقط
 
+    def test_index_has_month_bars_with_needed_data(self):
+        """الصفحة الرئيسية فيها قسم توكنز كل شهر وحمولتها تحمل المصفوفة a التي يجمّع منها JS الأشهر."""
+        page = dashboard.render(self.data, "", "الآن", "index.html")
+        self.assertIn('id="cm"', page)
+        self.assertIn("function renderMonth", page)
+        m = re.search(r'<script type="application/json" id="data">(.*?)</script>', page, re.S)
+        self.assertTrue(json.loads(m.group(1))["a"])
+
     def test_payload_has_only_numbers_and_known_names(self):
         """الحقول النصية الوحيدة: اليوم/الوقت، أصل الدور المعروف، اسم الجلسة المشتق من الرقم والمعرّف والمجلد، ومفاتيح الإعداد."""
         for r in self.data["a"]:
