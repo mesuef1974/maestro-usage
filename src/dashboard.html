@@ -51,7 +51,7 @@ __PAGEHEAD__
 <!--@/sec-->
 <!--@sec h3--><section class="card" aria-labelledby="h3">
   <div class="cardhead"><h2 id="h3">حصة الخطة</h2><span class="sub" id="c3sum"></span></div>
-  <p class="sub">نسبة المستخدَم من نافذة الخمس ساعات والنافذة الأسبوعية (كل النماذج) من لقطات /usage الآلية.</p>
+  <p class="sub">نسبة المستخدَم من النافذة الأسبوعية (كل النماذج) من لقطات /usage الآلية؛ نافذة الخمس ساعات تُرسم فقط إن سجّلتها آخر لقطة (أُزيلت من الخطة 2026-10-31).</p>
   <div class="legend" id="l3"></div>
   <div class="chart" id="c3"></div>
   <details><summary>عرض الجدول</summary><div class="wrap" id="t3"></div></details>
@@ -206,6 +206,8 @@ function renderLimits(){
     $("#lrnr").textContent=WD[nx.getDay()]+" "+nx.getDate()+"/"+(nx.getMonth()+1)+"/"+nx.getFullYear();
     $("#lrnp").textContent=left<=1?"اليوم أو غدًا":"بعد "+left+" يومًا";
   }
+  /* حدّ الخمس ساعات أُزيل عن الخطة (2026-10-31): يُخفى الصف ما دامت آخر لقطة بلا قيمة له، ويعود إن عادت */
+  $("#lr5").hidden=last.f==null;
   limitRow("lr5",last.f,last.fr,false,now);
   limitRow("lr7",last.w,last.wr,true,now);
   var age=Math.max(0,Math.round((now-Date.parse(last.ts))/6e4));
@@ -219,25 +221,26 @@ function render3(){
   var box=$("#c3");
   $("#c3sum").textContent=pts.length+" لقطة";
   var lg=$("#l3");clear(lg);
-  [["خمس ساعات","--s1"],["أسبوعي (كل النماذج)","--s2"]].forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
-  var rl=mk("span");rl.textContent="┆ تصفير النافذة الخمسية";lg.appendChild(rl);
   var last=pts.length?pts[pts.length-1]:null;
+  var five=!!(last&&last.f!=null); /* سلسلة الخمس ساعات تُرسم فقط إن كانت آخر لقطة تحملها؛ تاريخها القديم يبقى في الجدول */
+  (five?[["خمس ساعات","--s1"]]:[]).concat([["أسبوعي (كل النماذج)","--s2"]]).forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
+  if(five){var rl=mk("span");rl.textContent="┆ تصفير النافذة الخمسية";lg.appendChild(rl)}
   $("#n3").textContent=pts.length<5?"اللقطات قليلة بعد ("+pts.length+")؛ تتراكم مع الأيام.":"المصدر: لقطات تُسجَّل آليًّا من أمر /usage بلا استهلاك توكنات"+(last?" (آخر مصدر: "+last.src+")":"")+"، وتُحدَّث هنا كل دقيقة عند التقديم من الخادم المحلي.";
   if(!pts.length){clear(box);box.appendChild(mk("div",{class:"empty"},"لا لقطات لحصة الخطة في هذه الفترة."));clear($("#t3"));return}
   var ms=pts.map(function(p){return Date.parse(p.ts)}),x0=Math.min.apply(null,ms),x1=Math.max.apply(null,ms);
   if(x1-x0<36e5){x0-=18e5;x1+=18e5}
   var span=x1-x0,two=span<2*864e5;
   /* المحور يتكيّف مع القيم (حدّ أدنى 20% وأقصى 100%) فلا تنضغط نسب صغيرة كـ2% و8% في خط مسطّح */
-  var vmax=Math.max.apply(null,pts.reduce(function(a,p){return a.concat([p.f,p.w])},[]).filter(function(v){return v!=null}).concat([10]));
+  var vmax=Math.max.apply(null,pts.reduce(function(a,p){return a.concat([five?p.f:null,p.w])},[]).filter(function(v){return v!=null}).concat([10]));
   /* تصفير النافذة الخمسية: خطوط رأسية عند الأزمنة المسجّلة (مقرَّبة إلى 5 دقائق)، وينقطع الخط عند فجوة أطول من 20 دقيقة (نوم الحاسوب) */
-  var rs={};pts.forEach(function(p){if(p.fr){var t=Math.round(Date.parse(p.fr)/3e5)*3e5;if(t>x0&&t<x1)rs[t]=1}});
+  var rs={};pts.forEach(function(p){if(five&&p.fr){var t=Math.round(Date.parse(p.fr)/3e5)*3e5;if(t>x0&&t<x1)rs[t]=1}});
   var resets=Object.keys(rs).map(function(t){return {x:Number(t)}});
   drawLines(box,{label:"خط حصة الخطة",xs:ms,x0:x0,x1:x1,ymax:Math.min(100,niceMax(vmax)),ml:40,gap:12e5,vlines:resets,
     yfmt:function(v){return Math.round(v)+"%"},
     xfmt:function(v){var d=new Date(v),h=d.toISOString().slice(11,16);return two?h+" "+dm(ymd(v)):dm(ymd(v))},
     tfmt:function(v){return v.toFixed(0)+"%"},endLabel:function(v){return v.toFixed(0)+"%"},
     title:function(i){return pts[i].ts.replace("T"," ").replace("Z"," UTC")+" · "+pts[i].src},
-    series:[{name:"خمس ساعات",c:"--s1",v:pts.map(function(p){return p.f})},{name:"أسبوعي (كل النماذج)",c:"--s2",v:pts.map(function(p){return p.w})}]});
+    series:(five?[{name:"خمس ساعات",c:"--s1",v:pts.map(function(p){return p.f})}]:[]).concat([{name:"أسبوعي (كل النماذج)",c:"--s2",v:pts.map(function(p){return p.w})}])});
   drawTable($("#t3"),[{k:"ts",l:"الوقت (UTC)"},{k:"src",l:"المصدر"},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],pts.slice().reverse());
 }
 

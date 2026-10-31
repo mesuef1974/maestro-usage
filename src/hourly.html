@@ -337,7 +337,7 @@ function renderQuota(){
     ["المتبقي أسبوعيًّا",p.w==null?"—":num(100-p.w,1)+"%"],
     ["المستهلك أسبوعيًّا (Fable)",p.fa==null?"—":num(p.fa,1)+"%"],
     ["إعادة الضبط الأسبوعية",p.wr?dq(Date.parse(p.wr))+" (الدوحة)":"—"],
-    ["نافذة الخمس ساعات",p.f==null?"—":(p.fr&&Date.parse(p.fr)<Date.now()?"انتهت نافذتها (الرقم قديم)":num(p.f,1)+"% حتى "+dq(Date.parse(p.fr)))]];
+    ["نافذة الخمس ساعات",p.f==null?"أُزيلت من الخطة":(p.fr&&Date.parse(p.fr)<Date.now()?"انتهت نافذتها (الرقم قديم)":num(p.f,1)+"% حتى "+dq(Date.parse(p.fr)))]];
   var bar=mk("div",{class:"qbar",role:"img","aria-label":"المستهلك أسبوعيًّا "+(p.w==null?"غير معروف":num(p.w,1)+"%")}),i=mk("i");i.style.inlineSize=Math.max(0,Math.min(100,p.w||0))+"%";bar.appendChild(i);box.appendChild(bar);
   rows.forEach(function(r){var d=mk("div",{class:"qrow"});d.appendChild(mk("span",null,r[0]));d.appendChild(mk("b",null,r[1]));box.appendChild(d)});
   $("#qsum").textContent=num(n)+" لقطة";
