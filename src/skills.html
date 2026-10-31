@@ -36,12 +36,7 @@ __PAGEHEAD__
 
 <!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
 <p class="sub">الاستعمال من مسح سجلات الجلسات (<span id="files"></span> ملف، آخر مسح <span id="scan"></span>). لا يُغيَّر أي إعداد من هذه الصفحة.</p>
-<dl>
-<dt>التوصيات</dt><dd>أبقِ: تبقى كما هي. اسم فقط (name-only): يبقى اسمها في القائمة بلا وصفها فتُستدعى بالاسم وتُوفَّر كلفة الوصف. أطفئ (off): لا تظهر في القائمة أصلًا. أرشف: تنقل إلى ‎~/.claude/skills_archive. نظِّف: مفاتيح بلا أثر تُحذف من skillOverrides.</dd>
-<dt>الكلفة بالتوكن</dt><dd>سطر المهارة في القائمة = الاسم + الوصف (مفعّلة)، أو الاسم (name-only)، أو صفر (off). الأحرف ÷ 3.5 تقدير تقريبي؛ لا يقيس أثر الأداء الفعلي لكل مهارة إلا قياس بدء الجلسات قبل/بعد التغيير (صفحة الاستهلاك).</dd>
-<dt>الاستعمال</dt><dd>عدّ لأداة Skill ولأوامر الشرطة المائلة في سجلات الجلسات المحلية فقط. استدعاءات الوكلاء الفرعيين ضمن الجلسة نفسها. ما يُقرأ من ملف المهارة دون الأداة لا يُعدّ.</dd>
-<dt>التكرار</dt><dd>تداخل في الموضوع بين مهارتين أو أكثر؛ العمود «الأفضل/ملاحظة» يبيّن أيّها يُحتفظ به ولماذا. مهارات «أزكية» (schoolos-*) تخدم مشروعًا واحدًا وتتجاور بالتصميم لا بالتكرار.</dd>
-</dl>
+__DEFS__
 </details><!--@/sec-->
 __SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
@@ -166,7 +161,7 @@ function render(){renderTable()}
 
 $("#files").textContent=num(D.files||0);
 $("#scan").textContent=D.scanned_at?D.scanned_at.slice(0,10):"—";
-$("#cpt").textContent=String(D.cpt);
+$("#cpt").textContent=String(D.cpt);fillDefs({cpt:String(D.cpt)});
 buildFilters();buildSources();renderTiles();renderGone();render();
 $("#q").addEventListener("input",function(){S.q=this.value;render()});
 $("#src").addEventListener("change",function(){S.src=this.value;render()});

@@ -65,16 +65,7 @@ __PAGEHEAD__
 </section><!--@/sec-->
 
 <!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
-<dl>
-<dt>الدور والجلسة</dt><dd>الدور هو الرقم (0101…0801) كما يسجّله Claude Code في عنوان الجلسة؛ تحمله جلسات كثيرة. الجلسة هي معرّف CLI (ثمانية أحرف). الجلسات بلا رقم لا تُجمع في سلّة واحدة: تُسمّى فئات بحسب مجلد العمل (بلا رقم · مراقب MonitorWidget، مستودع shschool_mvp، مدير التسليم، أشجار عمل git، أخرى) وتُخفى افتراضيًّا؛ ومثلها أي رقم خارج 01xx–08xx. الفئة تجمع جلسات كثيرة فليست دورًا واحدًا.</dd>
-<dt>سياق الردّ</dt><dd>إدخال + كتابة ذاكرة + قراءة ذاكرة للردّ الواحد. مقاييس الضغط (متوسط السياق، أكبر سياق، نسبة فوق العتبة، هبوط السياق، الإيقاظ) تُحسب من ردود الخيط الرئيس فقط، دون الوكلاء الفرعيين لأن سياقاتهم مستقلة وصغيرة. أما الاستهلاك (ردود، قراءة، كتابة، مخرجات) فيشمل الجميع، والوكلاء الفرعيون يظهرون أصلًا باسم «وكيل فرعي».</dd>
-<dt>نظام نافذة السياق</dt><dd>إعداد autoCompactWindow يُقرأ عند بدء عملية الجلسة لا عند كل ردّ. التصنيف الدقيق يلزمه وقت بدء العملية (من claude agents، معروف للجلسات الملتقطة منذ 30/10)؛ وإلا يُجزم فقط بما لا يحتمل غيره: ردّ قبل 29/10 افتراضي، وجلسة وُلدت بعد 29/10 وردّها قبل 30/10 03:04Z على 250 ألفًا، وما سوى ذلك «غير محدد». تغيير 29/10 مسجَّل بيوم فقط، فجلسة بدأت صباحه قبل التعديل قد تُحسب 250 ألفًا وهي افتراضية. الجلسة المستأنفة تُصنَّف بحسب آخر بدء ملتقط.</dd>
-<dt>العتبة</dt><dd>ردود سياقها فوق <span id="thr"></span> توكن.</dd>
-<dt>كلفة الإيقاظ</dt><dd>الردّ الذي يأتي بعد فجوة تزيد على ساعة عن الردّ السابق في الجلسة نفسها (الردّ الأول في الجلسة لا يُعدّ إيقاظًا). كتابة الذاكرة عنده هي ما أُعيد بناؤه من السياق بعد انتهاء صلاحية الذاكرة المؤقتة. تقدير مبني على الأوقات المسجّلة.</dd>
-<dt>هبوط السياق (تقدير للضغط أو المسح)</dt><dd>ردّ سياقه أقل من نصف سياق الردّ السابق في الجلسة نفسها، وكان السابق <span id="dmin"></span> توكن فأكثر. لا يسجّل Claude Code الضغط التلقائي في السجلات التي نقرؤها، فالعدد استدلال؛ وقد يفوته ضغطٌ صغير ويعدّ تغييرًا آخر في السياق. المسح الكامل (/clear) يبدأ غالبًا جلسةً جديدة فلا يظهر هنا.</dd>
-<dt>من بدأ الدور</dt><dd>الأصل يسجّله Claude Code على سطر المستخدم: إنسان، جلسة أخرى (peer)، مجدول، SDK، إشعار مهمة، نظام. «بلا أصل مسجّل» ردود قديمة لا أصل لها.</dd>
-<dt>الحصة من الإجمالي</dt><dd>مقسومة على كل الجلسات في الفترة والنماذج المحدّدة، لا على الأدوار الظاهرة فقط.</dd>
-</dl>
+__DEFS__
 </details><!--@/sec-->
 __SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
@@ -166,7 +157,7 @@ function tipRows(a){
 /* ---------- البطاقات العامة ---------- */
 function tilesInto(box,items){
   clear(box);
-  items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));box.appendChild(d)});
+  items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));if(t[3])d.appendChild(mk("div",{class:"dl"},t[3]));box.appendChild(d)});
 }
 function startTile(){
   var c=D.startup;
@@ -176,13 +167,15 @@ function startTile(){
 }
 function renderTiles(){
   var roles={};VR.forEach(function(r){roles[roleOf(r)]=1});
+  /* دلتا الفترة: تجميع الفترة السابقة المساوية بالمرشِّحات نفسها (النماذج والنظام والظهور) */
+  var P=prevRange(),PV=P?agg(D.c.filter(function(r){return S.models.has(r.m)&&inPrev(r.d,P)&&S.rg.has(r.x)&&vis(r.s)})):null;
   tilesInto($("#tiles"),[
     ["الأدوار الظاهرة",num(Object.keys(roles).length),num(V.sc)+" جلسة نشطة في الفترة"],
-    ["الردود",num(V.t),pct(share(V.t,T.t))+" من إجمالي الفترة"],
-    ["قراءة الذاكرة",compact(V.cr),pct(share(V.cr,T.cr))+" من الإجمالي"],
-    ["كتابة الذاكرة",compact(V.cc),pct(share(V.cc,T.cc))+" من الإجمالي"],
-    ["متوسط السياق للردّ",compact(V.ctx),"توكن · فوق العتبة "+pct(V.ov)],
-    ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة"],
+    ["الردود",num(V.t),pct(share(V.t,T.t))+" من إجمالي الفترة",deltaText(V.t,PV&&PV.t)],
+    ["قراءة الذاكرة",compact(V.cr),pct(share(V.cr,T.cr))+" من الإجمالي",deltaText(V.cr,PV&&PV.cr)],
+    ["كتابة الذاكرة",compact(V.cc),pct(share(V.cc,T.cc))+" من الإجمالي",deltaText(V.cc,PV&&PV.cc)],
+    ["متوسط السياق للردّ",compact(V.ctx),"توكن · فوق العتبة "+pct(V.ov),deltaText(V.ctx,PV&&PV.ctx)],
+    ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة",deltaText(V.wc,PV&&PV.wc)],
     startTile()]);
 }
 
@@ -449,7 +442,7 @@ function render(){
   base();
   if(!S.sel){var g=roleGroups(),best=null;Object.keys(g).forEach(function(k){if(D.roles[k].p&&(best==null||g[k].cr>g[best].cr))best=k});if(best!=null)S.sel=ent("r",Number(best))}
   renderTiles();renderRegimes();renderRank();renderRoles();renderDetail();renderCompare();
-  $("#thr").textContent=num(D.threshold);$("#dmin").textContent=num(D.drop_min);
+  fillDefs({threshold:num(D.threshold),drop_min:num(D.drop_min)});
   requestAnimationFrame(function(){document.querySelectorAll(".chart").forEach(function(c){c.classList.remove("busy")})});
 }
 function saveView(){try{sessionStorage.setItem("mu_sess",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models),u:S.unnum,q:S.q,mt:S.metric,dm:S.dm,s:encode(S.sel),c:encode(S.cmp)}))}catch(e){}}

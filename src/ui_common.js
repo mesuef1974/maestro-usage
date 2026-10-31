@@ -241,6 +241,12 @@ function buildChips(){
   });
 }
 function inRange(day){return day>=S.from&&day<=S.to}
+/* دلتا الفترة: فترة سابقة مساوية الطول متّصلة قبل S.from؛ لا دلتا عند «الكل» أو إن لم تكتمل السابقة في القاعدة أو كان سابقها صفرًا */
+function prevRange(){if(S.preset==="all"||!S.from)return null;var n=Math.round((Date.parse(S.to+"T00:00:00Z")-Date.parse(S.from+"T00:00:00Z"))/864e5)+1,pf=addDays(S.from,-n);return pf>=FIRST?{from:pf,to:addDays(S.from,-1),n:n}:null}
+function inPrev(day,p){return !!p&&day>=p.from&&day<=p.to}
+function deltaText(cur,prev){if(cur==null||prev==null||!(prev>0)||isNaN(cur))return "";var r=cur/prev-1;return (r>0?"▲ +":r<0?"▼ −":"= ")+pct(Math.abs(r),0)+" عن الفترة السابقة"}
+/* فراغات التعريفات (من سجلّ المقاييس) تُملأ بأرقام الحمولة */
+function fillDefs(m){Object.keys(m).forEach(function(k){[].forEach.call(document.querySelectorAll('[data-fill="'+k+'"]'),function(e){e.textContent=m[k]})})}
 function bindFilters(){
   [].forEach.call($("#presets").children,function(b){b.addEventListener("click",function(){setPreset(b.dataset.p);render()})});
   function custom(){var f=$("#from").value,t=$("#to").value;if(!f||!t||f>t)return;S.from=f;S.to=t;S.preset="custom";syncInputs();render()}

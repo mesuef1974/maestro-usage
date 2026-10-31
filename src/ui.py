@@ -8,6 +8,7 @@ import re
 import shutil
 from pathlib import Path
 
+import metrics
 import pages
 
 SRC = Path(__file__).resolve().parent
@@ -125,8 +126,8 @@ def render(page_file, data, parts):
     top, bottom = shell(page_file)
     assets = FAVICON_LINK + '<link rel="stylesheet" href="%s?v=%s">' % (ASSET_URL, css_hash())
     for token, value in (("__ASSETS__", assets), ("__PAGEHEAD__", pagehead(page, page["template"], parts.get("__STAMP__", ""))), ("__SHELL_OPEN__", top), ("__SHELL_CLOSE__", bottom),
-                         ("__LIB__", lib_js()), *parts.items(), ("__DATA__", embed_json(data))):
-        if token in ("__STATIC__", "__STAMP__") and token not in html_:
+                         ("__LIB__", lib_js()), ("__DEFS__", metrics.defs_html(page_file)), *parts.items(), ("__DATA__", embed_json(data))):
+        if token in ("__STATIC__", "__STAMP__", "__DEFS__") and token not in html_:
             continue  # قسم هذا الجزء ليس في هذه الصفحة
         assert token in html_, token
         html_ = html_.replace(token, value, 1)

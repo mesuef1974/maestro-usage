@@ -75,16 +75,7 @@ __PAGEHEAD__
 </section><!--@/sec-->
 
 <!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
-<dl>
-<dt>التوكنات</dt><dd>لكل ردّ: إدخال + كتابة ذاكرة + قراءة ذاكرة + مخرجات، من كل الردود بما فيها الوكلاء الفرعيون. هي «ما عولج» لا «ما جرى تسعيره»؛ وقراءة الذاكرة وحدها نحو 98% منه. التراكمي يبدأ من الصفر عند بداية الفترة المحدّدة.</dd>
-<dt>ضغط السياق %</dt><dd>أكبر سياق لردّ في الخيط الرئيس خلال الساعة (أو اليوم عند التجميع باليوم)، مقسومًا على نافذة افتراضية قدرها <span id="win2"></span> توكن = 100%. النافذة الفعلية للنموذج قد تختلف، فالنسبة مؤشر مقارن لا نسبة فعلية. الفترات التي لا ردّ رئيسًا فيها بلا نقطة ضغط (الخط ينقطع). العتبة <span id="al"></span>%.</dd>
-<dt>عبور العتبة</dt><dd>أول فترة يبلغ فيها الضغط العتبة بعد فترة نشطة سابقة أقل منها (أو أول فترة نشطة).</dd>
-<dt>هبوط السياق (تقدير الضغط أو المسح)</dt><dd>ردّ سياقه أقل من نصف سياق الردّ السابق في الجلسة نفسها، وكان السابق <span id="dmin"></span> توكن فأكثر. لا يسجّل Claude Code الضغط في السجلات التي نقرؤها، فالعلامة استدلال لا عدّ؛ والمسح الكامل (/clear) يبدأ غالبًا جلسة جديدة فلا يظهر هنا.</dd>
-<dt>الجلسات بلا رقم</dt><dd>مخفية افتراضيًّا؛ مفتاح «إظهار غير المرقّمة» يضيفها كفئات بحسب مجلد العمل (مراقب، مستودع shschool_mvp، مدير التسليم، أشجار عمل git، أخرى) وأي رقم خارج 01xx–08xx. الفئة تجمع جلسات كثيرة، فهي ليست «دورًا» واحدًا.</dd>
-<dt>الفترات الخاملة</dt><dd>فترات بلا أي ردّ للدور (توكنات = 0). تظليلها اختياري.</dd>
-<dt>المقياس</dt><dd>«موحّد»: محور التوكنات واحد لكل رسوم الأدوار فتُقارَن الأحجام. «نسبي»: لكل دور محوره الخاص (النسبة من أعلى قيمة له) فيُقارَن الشكل.</dd>
-<dt>الحصة الأسبوعية</dt><dd>تُسجَّل لقطاتها آليًّا من أمر /usage (كل 5 دقائق، وكل دقيقة عند تغيّر النسب، وفورًا بعد انتهاء النافذة الخمسية) بلا استهلاك توكنات، وتُضاف إليها لقطات statusLine وget_usage اليدوية إن وُجدت. النسب أعداد صحيحة مُقرَّبة وزمن التصفير مقرَّب إلى الدقيقة، والفجوات في الخط تعني نوم الحاسوب لا غياب استهلاك. القراءة الحيّة تعمل عند التقديم من الخادم المحلي، ومن ملف مباشر تُعرض لقطة آخر بناء.</dd>
-</dl>
+__DEFS__
 </details><!--@/sec-->
 __SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
@@ -311,13 +302,16 @@ function drawRole(box,n,a,absMax){
 /* ---------- البطاقات ---------- */
 function tilesInto(box,items){
   clear(box);
-  items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));box.appendChild(d)});
+  items.forEach(function(t){var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));if(t[3])d.appendChild(mk("div",{class:"dl"},t[3]));box.appendChild(d)});
 }
 function visibleRoles(){return D.rp.filter(function(p){return S.unnum||p}).length}
 function renderTiles(){
+  /* دلتا الفترة: توكنات الفترة السابقة المساوية بالمرشِّحات نفسها (النماذج وغير المرقّمة) */
+  var P=prevRange(),ptok=null;
+  if(P){var plo=Date.parse(P.from+"T00:00:00Z")/H1,phi=Date.parse(P.to+"T00:00:00Z")/H1+23;ptok=0;D.h.forEach(function(r){if(S.models.has(r.m)&&r.h>=plo&&r.h<=phi&&(S.unnum||D.rp[r.r]))ptok+=r.k})}
   var mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC":"—";
   tilesInto($("#tiles"),[
-    ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة"],
+    ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة",deltaText(TILE.tokens,ptok)],
     ["الأدوار النشطة",num(TILE.roles),"من "+num(visibleRoles())+(S.unnum?" دورًا وفئة":" دورًا من أدوار المشروع")],
     ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة"],
     ["أعلى ضغط",TILE.n?pct(TILE.max,1):"—",who],
@@ -414,7 +408,7 @@ function exportCsv(){
 function syncSegs(){
   [["#mode","mode"],["#scale","scale"],["#bk","bk"],["#wsel","win"]].forEach(function(p){
     [].forEach.call($(p[0]).children,function(b){b.setAttribute("aria-pressed",String(b.dataset.v===String(S[p[1]])))})});
-  $("#win").textContent=num(WIN);$("#win2").textContent=num(WIN);
+  $("#win").textContent=num(WIN);fillDefs({window:num(WIN)});
   $("#idle").checked=S.idle;
 }
 function render(){
@@ -437,7 +431,7 @@ function loadView(){
   }catch(e){}
 }
 function init(){
-  $("#al").textContent=D.alert;$("#dmin").textContent=num(D.drop_min);
+  fillDefs({alert:D.alert,drop_min:num(D.drop_min)});
   setPreset("7");loadView();buildChips();initRefresh(saveView);bindFilters();
   $("#q").value=S.q;$("#unnum").checked=S.unnum;
   $("#unnum").addEventListener("change",function(){S.unnum=this.checked;render()});

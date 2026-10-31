@@ -49,6 +49,8 @@
 .static p{margin:var(--sp-2) 0}
 .defs dt{font-weight:700;margin-block-start:var(--sp-3)}
 .defs dd{margin:0;color:var(--ink2);font-size:var(--t-sm)}
+.defs dt .mu{color:var(--ink3);font-weight:400;font-size:var(--t-xs);margin-inline-start:var(--sp-2)}  /* الوحدة · المصدر · النافذة من سجلّ المقاييس */
+.tile .dl{color:var(--ink3);font-size:var(--t-xs)}  /* دلتا الفترة: محايدة اللون (الزيادة ليست حُكمًا) */
 /* حدود الخطة (مقياس) */
 .limits{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-block:var(--sp-4);min-inline-size:0}
 .limits .lh{display:flex;flex-wrap:wrap;gap:var(--sp-1) var(--sp-4);justify-content:space-between;align-items:baseline;margin-block-end:var(--sp-3)}

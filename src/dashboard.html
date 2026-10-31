@@ -101,7 +101,7 @@ __PAGEHEAD__
   <div class="wrap" id="t6f"></div>
 </section>
 
-<!--@/sec--><!--@sec static--><details class="static card"><summary>الجداول الساكنة والتحفظات (التقارير 1 إلى 5)</summary>
+<!--@/sec--><!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>__DEFS__</details><!--@/sec--><!--@sec static--><details class="static card"><summary>الجداول الساكنة والتحفظات (التقارير 1 إلى 5)</summary>
 __STATIC__
 </details>
 
@@ -132,13 +132,15 @@ function renderTiles(){
   if(!has("tiles"))return;
   var rows=selA(true),turns=sum(rows,"t"),cr=sum(rows,"cr"),inp=sum(rows,"i"),cc=sum(rows,"cc"),out=sum(rows,"u"),over=sum(rows,"v");
   var ctx=turns?(inp+cc+cr)/turns:null,tot=inp+cc+cr+out;
+  /* دلتا الفترة: الصفوف نفسها للفترة السابقة المساوية بالنماذج المحدّدة */
+  var P=prevRange(),pr=P?D.a.filter(function(r){return S.models.has(r.m)&&inPrev(r.d,P)}):[],pt=sum(pr,"t"),pcr=sum(pr,"cr"),pov=sum(pr,"v"),pctx=pt?(sum(pr,"i")+sum(pr,"cc")+pcr)/pt:null;
   var box=$("#tiles");clear(box);
-  [["الردود",num(turns),"في الفترة المحدّدة"],
-   ["قراءة الذاكرة",compact(cr),tot?pct(cr/tot)+" من كل التوكنز":"—"],
-   ["متوسط السياق للردّ",compact(ctx),"توكن"],
-   ["ردود سياقها فوق "+compact(D.threshold,0),pct(turns?over/turns:null),num(over)+" ردًّا"]
+  [["الردود",num(turns),"في الفترة المحدّدة",deltaText(turns,pt)],
+   ["قراءة الذاكرة",compact(cr),tot?pct(cr/tot)+" من كل التوكنز":"—",deltaText(cr,pcr)],
+   ["متوسط السياق للردّ",compact(ctx),"توكن",deltaText(ctx,pctx)],
+   ["ردود سياقها فوق "+compact(D.threshold,0),pct(turns?over/turns:null),num(over)+" ردًّا",deltaText(turns?over/turns:null,pt?pov/pt:null)]
   ].forEach(function(t){
-    var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));box.appendChild(d);
+    var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));if(t[3])d.appendChild(mk("div",{class:"dl"},t[3]));box.appendChild(d);
   });
 }
 
@@ -401,7 +403,7 @@ function renderStartup(){
 var pending=false;
 function render(){
   document.querySelectorAll(".chart").forEach(function(c){c.classList.add("busy")});
-  renderTiles();renderMonth();render1();render2();render3();render4();render5();
+  fillDefs({threshold:num(D.threshold)});renderTiles();renderMonth();render1();render2();render3();render4();render5();
   requestAnimationFrame(function(){document.querySelectorAll(".chart").forEach(function(c){c.classList.remove("busy")})});
 }
 /* ---------- التحديث الفوري وعمر البيانات ---------- */
