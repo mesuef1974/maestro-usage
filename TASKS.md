@@ -41,7 +41,7 @@ C:\Users\mesue\maestro_usage\
 ## المرحلة 2: مجمّع statusLine
 
 1. `src\statusline_collector.py`: يقرأ JSON من stdin، يُلحق سطر الأرقام فقط إلى `data\statusline_spool.jsonl`، يتحمّل غياب الحقول، لا يفشل أبدًا، سريع جدًّا، يطبع للشريط سطرًا قصيرًا.
-2. محمِّل `statusline_spool` إلى `statusline_samples` بتكرار آمن (أُلغي إدراج `plan_snapshots` مع حساب الحصة الأسبوعية).
+2. محمِّل `statusline_spool` إلى `statusline_samples` و`plan_snapshots` بتكرار آمن.
 3. اختبارات على JSON صناعي بنفس البنية الموثّقة (مع حقول ناقصة).
 4. اكتبي لـ0101 طلب التثبيت بالصندوق: نص `statusLine` الدقيق في settings.json، والخطر، والتراجع. لا تثبّتي بنفسك.
 

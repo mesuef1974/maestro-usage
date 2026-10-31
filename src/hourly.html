@@ -29,6 +29,15 @@ __PAGEHEAD__
 
 <!--@sec tiles--><section class="tiles dense" id="tiles" aria-label="ملخص"></section><!--@/sec-->
 
+<!--@sec hq--><section class="card" aria-labelledby="hq">
+  <div class="cardhead"><h2 id="hq">الحصة الأسبوعية للخطة</h2><span class="sub" id="qsum"></span></div>
+  <div class="qgrid">
+    <div id="quota"></div>
+    <div class="wrap" id="qtab" style="max-block-size:220px"></div>
+  </div>
+  <p class="warn" id="qwarn" role="note"></p>
+</section><!--@/sec-->
+
 <!--@sec hp--><section class="card" aria-labelledby="hp">
   <div class="cardhead"><h2 id="hp">الأدوار والعرض</h2><span class="sub" id="psum"></span></div>
   <div class="ctl">
@@ -74,6 +83,7 @@ __PAGEHEAD__
 <dt>الجلسات بلا رقم</dt><dd>مخفية افتراضيًّا؛ مفتاح «إظهار غير المرقّمة» يضيفها كفئات بحسب مجلد العمل (مراقب، مستودع shschool_mvp، مدير التسليم، أشجار عمل git، أخرى) وأي رقم خارج 01xx–08xx. الفئة تجمع جلسات كثيرة، فهي ليست «دورًا» واحدًا.</dd>
 <dt>الفترات الخاملة</dt><dd>فترات بلا أي ردّ للدور (توكنات = 0). تظليلها اختياري.</dd>
 <dt>المقياس</dt><dd>«موحّد»: محور التوكنات واحد لكل رسوم الأدوار فتُقارَن الأحجام. «نسبي»: لكل دور محوره الخاص (النسبة من أعلى قيمة له) فيُقارَن الشكل.</dd>
+<dt>الحصة الأسبوعية</dt><dd>تُسجَّل لقطاتها آليًّا من أمر /usage (كل 5 دقائق، وكل دقيقة عند تغيّر النسب، وفورًا بعد انتهاء النافذة الخمسية) بلا استهلاك توكنات، وتُضاف إليها لقطات statusLine وget_usage اليدوية إن وُجدت. النسب أعداد صحيحة مُقرَّبة وزمن التصفير مقرَّب إلى الدقيقة، والفجوات في الخط تعني نوم الحاسوب لا غياب استهلاك. القراءة الحيّة تعمل عند التقديم من الخادم المحلي، ومن ملف مباشر تُعرض لقطة آخر بناء.</dd>
 </dl>
 </details><!--@/sec-->
 __SHELL_CLOSE__
@@ -314,6 +324,27 @@ function renderTiles(){
     ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—"],
     ["هبوط السياق (تقدير)",num(ALL.drops),"ضغط أو مسح مُستدَل عليه"]]);
 }
+function dq(ms){return new Date(ms+3*H1).toISOString().slice(0,16).replace("T"," ")}
+function renderQuota(){
+  var box=$("#quota");clear(box);
+  var n=D.plan.length;
+  if(!n){box.appendChild(mk("div",{class:"empty"},"لا لقطات مسجّلة بعد."));$("#qsum").textContent="";$("#qwarn").textContent="لا توجد لقطات حصة؛ سجّلها بـ get_usage ثم python src\\record_usage.py.";clear($("#qtab"));return}
+  var p=D.plan[n-1],t=Date.parse(p.ts),ageH=(Date.now()-t)/H1;
+  var rows=[
+    ["آخر تحديث للقياس",dq(t)+" (الدوحة)"],
+    ["عمر القياس",ageH<1?"أقل من ساعة":ageH<48?num(ageH,1)+" ساعة":num(ageH/24,1)+" يومًا"],
+    ["المستهلك أسبوعيًّا",p.w==null?"—":num(p.w,1)+"%"],
+    ["المتبقي أسبوعيًّا",p.w==null?"—":num(100-p.w,1)+"%"],
+    ["المستهلك أسبوعيًّا (Fable)",p.fa==null?"—":num(p.fa,1)+"%"],
+    ["إعادة الضبط الأسبوعية",p.wr?dq(Date.parse(p.wr))+" (الدوحة)":"—"],
+    ["نافذة الخمس ساعات",p.f==null?"أُزيلت من الخطة":(p.fr&&Date.parse(p.fr)<Date.now()?"انتهت نافذتها (الرقم قديم)":num(p.f,1)+"% حتى "+dq(Date.parse(p.fr)))]];
+  var bar=mk("div",{class:"qbar",role:"img","aria-label":"المستهلك أسبوعيًّا "+(p.w==null?"غير معروف":num(p.w,1)+"%")}),i=mk("i");i.style.inlineSize=Math.max(0,Math.min(100,p.w||0))+"%";bar.appendChild(i);box.appendChild(bar);
+  rows.forEach(function(r){var d=mk("div",{class:"qrow"});d.appendChild(mk("span",null,r[0]));d.appendChild(mk("b",null,r[1]));box.appendChild(d)});
+  $("#qsum").textContent=num(n)+" لقطة";
+  var w=$("#qwarn");w.textContent=p.src==="cli_usage"?"اللقطات تُسجَّل آليًّا (كل 5 دقائق، وكل دقيقة عند تغيّر النسب) من أمر /usage بلا استهلاك توكنات (آخر مصدر: cli_usage). النسبة لحظية؛ الاتجاه يحتاج لقطات كافية ("+num(n)+" حاليًّا من كل المصادر).":"تنبيه: اللقطات قليلة ("+num(n)+" فقط) والمصدر الأخير ليس مهمة /usage الساعية؛ النسبة لحظية ولا تُبنى عليها اتجاهات.";
+  var last=D.plan.slice(-6).reverse();
+  drawTable($("#qtab"),[{k:"ts",l:"الوقت (الدوحة)",f:function(r){return dq(Date.parse(r.ts))}},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],last,null,null);
+}
 function renderChips(){
   var box=$("#rchips");clear(box);
   var sel=curSel(),q=S.q;
@@ -389,7 +420,7 @@ function syncSegs(){
 function render(){
   compute();CH=[];
   var sel=curSel();assignSlots(sel);SEL=sel;PMAX=adaptP(sel);
-  syncSegs();renderTiles();renderChips();legendTotal(sel);
+  syncSegs();renderTiles();renderQuota();renderChips();legendTotal(sel);
   $("#tsum").textContent=(S.mode==="cum"?"تراكمي من بداية الفترة":"لكل "+(S.bk==="h"?"ساعة":"يوم"))+" · "+(S.scale==="abs"?"مقياس موحّد":"نسبي")+" · "+num(B.nb)+" "+(S.bk==="h"?"ساعة":"يومًا");
   $("#prsum").textContent=sel.length?"العتبة "+D.alert+"% · النافذة "+compact(WIN)+" توكن = 100%"+(PMAX>100?" · المحور ممدود إلى "+PMAX+"% لأن سياقات تجاوزت النافذة":" · المحور حتى "+PMAX+"% (يتكيّف مع أعلى قيمة)")+(AL*100>PMAX+1e-6?" · العتبة خارج المحور لأن أعلى ضغط دونها":""):"";
   var jobs=renderRoleCards(sel); /* تُبنى البطاقات أولًا كي تُقاس عروض الرسوم بعد استقرار التخطيط وظهور شريط التمرير */
@@ -425,6 +456,11 @@ function init(){
   render();
 }
 init();
+/* بطاقة الحصة حيّة: عند التقديم من الخادم المحلي تُسحب اللقطات من القاعدة كل دقيقة بدل انتظار إعادة بناء الصفحة (كل 15 دقيقة)؛ من ملف مباشر تبقى لقطة آخر بناء */
+if(location.protocol!=="file:"){
+  if(has("hq")){var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;renderQuota()}}).catch(function(){})};
+  pullPlan();setInterval(pullPlan,60000)}
+}
 })();
 </script>
 </body>

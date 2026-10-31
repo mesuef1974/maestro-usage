@@ -10,6 +10,15 @@ __ASSETS__
 __SHELL_OPEN__
 __PAGEHEAD__
 
+<!--@sec limits--><section class="limits" id="limits" aria-labelledby="hl" hidden>
+  <div class="lh"><h2 id="hl">حدود استهلاك الخطة<span id="lplan"></span></h2><a href="plan.html">الحصة الأسبوعية</a></div>
+  <div class="lrow" id="lr5"><div class="lt"><span class="ln">حدّ الخمس ساعات</span><span><span class="lr" id="lr5r"></span><span class="lp" id="lr5p"></span></span></div><div class="lb" role="progressbar" aria-label="حدّ الخمس ساعات" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr5f"></span></div></div>
+  <div class="lrow" id="lr7"><div class="lt"><span class="ln">الأسبوعي · كل النماذج</span><span><span class="lr" id="lr7r"></span><span class="lp" id="lr7p"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr7f"></span></div></div>
+  <div class="lrow" id="lrf" hidden><div class="lt"><span class="ln">الأسبوعي · Fable</span><span><span class="lr" id="lrfr"></span><span class="lp" id="lrfp"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي لنموذج Fable" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lrff"></span></div></div>
+  <div class="lrow" id="lrn" hidden><div class="lt"><span class="ln">تجديد الاشتراك الشهري</span><span><span class="lr" id="lrnr"></span><span class="lp" id="lrnp"></span></span></div></div>
+  <p class="note" id="lnote"></p>
+</section>
+<!--@/sec-->
 <!--@sec filters--><details class="filterbox" id="fbox" open><summary>المرشِّحات<span id="fsum"></span></summary>
 <div class="filters" role="group" aria-label="المرشِّحات">
   <div class="seg" id="presets" role="group" aria-label="الفترة">
@@ -46,6 +55,15 @@ __PAGEHEAD__
   <p class="sub">حصة كل أصل دور من قراءة الذاكرة في الفترة. الأصل يسجّله Claude Code نفسه على سطر المستخدم؛ الوكلاء الفرعيون بلا أصل.</p>
   <div class="bars" id="c2"></div>
   <details><summary>عرض الجدول</summary><div class="wrap" id="t2"></div></details>
+</section>
+<!--@/sec-->
+<!--@sec h3--><section class="card" aria-labelledby="h3">
+  <div class="cardhead"><h2 id="h3">حصة الخطة</h2><span class="sub" id="c3sum"></span></div>
+  <p class="sub">نسبة المستخدَم من النافذة الأسبوعية (كل النماذج) من لقطات /usage الآلية؛ نافذة الخمس ساعات تُرسم فقط إن سجّلتها آخر لقطة (أُزيلت من الخطة 2026-10-31).</p>
+  <div class="legend" id="l3"></div>
+  <div class="chart" id="c3"></div>
+  <details><summary>عرض الجدول</summary><div class="wrap" id="t3"></div></details>
+  <p class="note" id="n3"></p>
 </section>
 <!--@/sec-->
 <!--@sec h4--><section class="card" aria-labelledby="h4">
@@ -87,7 +105,7 @@ __PAGEHEAD__
 __STATIC__
 </details>
 
-<p class="src">ملفات CSV بجانب هذه الصفحة: report1_session_model_day.csv، report2_worst_context.csv، report3_before_after.csv، report5_scheduled_cycle.csv، report5_origins.csv.</p>
+<p class="src">ملفات CSV بجانب هذه الصفحة: report1_session_model_day.csv، report2_worst_context.csv، report3_before_after.csv، report4_weekly_quota_by_day.csv، report5_scheduled_cycle.csv، report5_origins.csv.</p>
 <!--@/sec-->__SHELL_CLOSE__
 <div id="tip" role="status" aria-live="off"></div>
 <script type="application/json" id="data">__DATA__</script>
@@ -177,6 +195,83 @@ function render2(){
     tip:[{name:"حصة قراءة الذاكرة",value:pct(r.cr/tcr,2)},{name:"قراءة الذاكرة",value:compact(r.cr,2)},{name:"الردود",value:num(r.t)+" ("+pct(r.t/tt)+")"},{name:"كتابة الذاكرة",value:compact(r.cc,2)},{name:"المخرجات",value:compact(r.out,2)}]}}),"--s7");
   drawTable($("#t2"),[{k:"o",l:"أصل الدور",f:function(r){return ORIG_AR[r.o]||r.o}},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},{k:"cc",l:"كتابة ذاكرة",n:1,f:function(r){return num(r.cc)}},
     {k:"cr",l:"قراءة ذاكرة",n:1,f:function(r){return num(r.cr)}},{k:"s",l:"حصة %",n:1,f:function(r){return num(100*r.cr/tcr,1)}},{k:"out",l:"مخرجات",n:1,f:function(r){return num(r.out)}}],list);
+}
+
+/* ---------- بطاقة حدود الخطة (آخر لقطة، لا تتأثر بالمرشِّحات) ---------- */
+var WD=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+function clock(ms,withDay){
+  var d=new Date(Math.round(ms/3e5)*3e5),h=d.getHours(),m=d.getMinutes();
+  var t=(h%12||12)+":"+(m<10?"0":"")+m+" "+(h<12?"ص":"م");
+  return withDay?WD[d.getDay()]+" "+t:t;
+}
+function limitRow(id,pct,resetIso,withDay,now){
+  var ms=resetIso?Date.parse(resetIso):NaN,over=!isNaN(ms)&&ms<now;
+  var shown=pct!=null&&!over;
+  $("#"+id+"p").textContent=shown?Math.round(pct)+"%":"—";
+  $("#"+id+"r").textContent=isNaN(ms)?"":(over?"انتهت النافذة؛ بانتظار لقطة جديدة":"تتصفّر "+(withDay?"":"عند ")+clock(ms,withDay));
+  var f=$("#"+id+"f"),b=f.parentNode,v=shown?Math.min(100,Math.max(0,pct)):0;
+  f.style.inlineSize=v+"%";f.className="lf"+(v>=80?" hot":"");
+  b.setAttribute("aria-valuenow",String(Math.round(v)));
+}
+function renderLimits(){
+  if(!has("limits"))return;
+  var box=$("#limits"),last=null;
+  D.plan.forEach(function(p){if((p.f!=null||p.w!=null)&&(!last||p.ts>last.ts))last=p});
+  if(!last){box.hidden=true;return}
+  box.hidden=false;
+  $("#lplan").textContent=D.plan_label?" · "+D.plan_label:"";
+  var now=Date.now();
+  /* التجديد الشهري: أقرب يوم تجديد قادم (بتوقيت الجهاز)؛ يوم أكبر من طول الشهر يُقصّ إلى آخر يوم فيه */
+  var rn=$("#lrn"),rd=D.plan_renew_day;
+  rn.hidden=!rd;
+  if(rd){
+    var t=new Date(now),nx;
+    var at=function(y,m){var last=new Date(y,m+1,0).getDate();return new Date(y,m,Math.min(rd,last),23,59,59)};
+    nx=at(t.getFullYear(),t.getMonth());if(nx.getTime()<now)nx=at(t.getFullYear(),t.getMonth()+1);
+    var left=Math.ceil((nx.getTime()-now)/864e5);
+    $("#lrnr").textContent=WD[nx.getDay()]+" "+nx.getDate()+"/"+(nx.getMonth()+1)+"/"+nx.getFullYear();
+    $("#lrnp").textContent=left<=1?"اليوم أو غدًا":"بعد "+left+" يومًا";
+  }
+  /* حدّ الخمس ساعات أُزيل عن الخطة (2026-10-31): يُخفى الصف ما دامت آخر لقطة بلا قيمة له، ويعود إن عادت */
+  $("#lr5").hidden=last.f==null;
+  limitRow("lr5",last.f,last.fr,false,now);
+  limitRow("lr7",last.w,last.wr,true,now);
+  /* Fable: لقطات statusline لا تحمله (cli_usage وحدها)، فنأخذ أحدث لقطة فيها قيمته لا آخر لقطة عامة */
+  var lf=null;D.plan.forEach(function(p){if(p.fa!=null&&(!lf||p.ts>lf.ts))lf=p});
+  $("#lrf").hidden=!lf;
+  if(lf)limitRow("lrf",lf.fa,lf.far,true,now);
+  var age=Math.max(0,Math.round((now-Date.parse(last.ts))/6e4));
+  $("#lnote").textContent="آخر لقطة منذ "+(age<1?"أقل من دقيقة":age<120?age+" دقيقة":Math.round(age/60)+" ساعة")+" · المصدر: "+last.src+" · الأزمنة بتوقيت جهازك.";
+}
+
+/* ---------- 3: حصة الخطة ---------- */
+function render3(){
+  if(!has("c3"))return;
+  var pts=D.plan.filter(function(p){var d=p.ts.slice(0,10);return inRange(d)}).sort(function(a,b){return a.ts<b.ts?-1:1});
+  var box=$("#c3");
+  $("#c3sum").textContent=pts.length+" لقطة";
+  var lg=$("#l3");clear(lg);
+  var last=pts.length?pts[pts.length-1]:null;
+  var five=!!(last&&last.f!=null); /* سلسلة الخمس ساعات تُرسم فقط إن كانت آخر لقطة تحملها؛ تاريخها القديم يبقى في الجدول */
+  (five?[["خمس ساعات","--s1"]]:[]).concat([["أسبوعي (كل النماذج)","--s2"]]).forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
+  if(five){var rl=mk("span");rl.textContent="┆ تصفير النافذة الخمسية";lg.appendChild(rl)}
+  $("#n3").textContent=pts.length<5?"اللقطات قليلة بعد ("+pts.length+")؛ تتراكم مع الأيام.":"المصدر: لقطات تُسجَّل آليًّا من أمر /usage بلا استهلاك توكنات"+(last?" (آخر مصدر: "+last.src+")":"")+"، وتُحدَّث هنا كل دقيقة عند التقديم من الخادم المحلي.";
+  if(!pts.length){clear(box);box.appendChild(mk("div",{class:"empty"},"لا لقطات لحصة الخطة في هذه الفترة."));clear($("#t3"));return}
+  var ms=pts.map(function(p){return Date.parse(p.ts)}),x0=Math.min.apply(null,ms),x1=Math.max.apply(null,ms);
+  if(x1-x0<36e5){x0-=18e5;x1+=18e5}
+  var span=x1-x0,two=span<2*864e5;
+  /* المحور يتكيّف مع القيم (حدّ أدنى 20% وأقصى 100%) فلا تنضغط نسب صغيرة كـ2% و8% في خط مسطّح */
+  var vmax=Math.max.apply(null,pts.reduce(function(a,p){return a.concat([five?p.f:null,p.w])},[]).filter(function(v){return v!=null}).concat([10]));
+  /* تصفير النافذة الخمسية: خطوط رأسية عند الأزمنة المسجّلة (مقرَّبة إلى 5 دقائق)، وينقطع الخط عند فجوة أطول من 20 دقيقة (نوم الحاسوب) */
+  var rs={};pts.forEach(function(p){if(five&&p.fr){var t=Math.round(Date.parse(p.fr)/3e5)*3e5;if(t>x0&&t<x1)rs[t]=1}});
+  var resets=Object.keys(rs).map(function(t){return {x:Number(t)}});
+  drawLines(box,{label:"خط حصة الخطة",xs:ms,x0:x0,x1:x1,ymax:Math.min(100,niceMax(vmax)),ml:40,gap:12e5,vlines:resets,
+    yfmt:function(v){return Math.round(v)+"%"},
+    xfmt:function(v){var d=new Date(v),h=d.toISOString().slice(11,16);return two?h+" "+dm(ymd(v)):dm(ymd(v))},
+    tfmt:function(v){return v.toFixed(0)+"%"},endLabel:function(v){return v.toFixed(0)+"%"},
+    title:function(i){return pts[i].ts.replace("T"," ").replace("Z"," UTC")+" · "+pts[i].src},
+    series:(five?[{name:"خمس ساعات",c:"--s1",v:pts.map(function(p){return p.f})}]:[]).concat([{name:"أسبوعي (كل النماذج)",c:"--s2",v:pts.map(function(p){return p.w})}])});
+  drawTable($("#t3"),[{k:"ts",l:"الوقت (UTC)"},{k:"src",l:"المصدر"},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],pts.slice().reverse());
 }
 
 /* ---------- 4: أسوأ الجلسات سياقًا ---------- */
@@ -292,7 +387,7 @@ function renderStartup(){
 var pending=false;
 function render(){
   document.querySelectorAll(".chart").forEach(function(c){c.classList.add("busy")});
-  renderTiles();renderMonth();render1();render2();render4();render5();
+  renderTiles();renderMonth();render1();render2();render3();render4();render5();
   requestAnimationFrame(function(){document.querySelectorAll(".chart").forEach(function(c){c.classList.remove("busy")})});
 }
 /* ---------- التحديث الفوري وعمر البيانات ---------- */
@@ -309,7 +404,12 @@ function init(){
   bindFilters();
   $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.sk="ratio";S.sd=-1;S.lim=25;setPreset("30");buildChips();render()});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){render();renderStartup()},120)});
-  render();renderStartup();
+  render();renderLimits();renderStartup();
+  /* رسم الحصة حيّ: عند التقديم من الخادم المحلي تُسحب اللقطات كل دقيقة بدل انتظار إعادة بناء الصفحة؛ من ملف مباشر تبقى لقطة آخر بناء */
+  if(location.protocol!=="file:"){
+    if(has("c3")||has("limits")){var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;render3();renderLimits()}}).catch(function(){})};
+    pullPlan();setInterval(pullPlan,60000)}
+  }
 }
 init();
 })();

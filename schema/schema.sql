@@ -48,6 +48,30 @@ CREATE TABLE IF NOT EXISTS usage_turns (
 CREATE INDEX IF NOT EXISTS ix_turns_session ON usage_turns(session_key, ts);
 CREATE INDEX IF NOT EXISTS ix_turns_ts ON usage_turns(ts);
 
+CREATE TABLE IF NOT EXISTS plan_snapshots (
+    id                  INTEGER PRIMARY KEY,
+    ts                  TEXT NOT NULL,
+    session_key         TEXT,
+    five_hour_pct       REAL,
+    five_hour_resets_at TEXT,
+    seven_day_pct       REAL,
+    seven_day_resets_at TEXT,
+    source              TEXT NOT NULL,       -- statusline | get_usage | cli_usage
+    plan                TEXT,
+    fable_pct           REAL,                -- نافذة Fable الأسبوعية (cli_usage فقط)
+    fable_resets_at     TEXT
+);
+
+-- عدّاد الطلبات والجلسات على الجهاز كما يقرؤه claude -p "/usage" (للمطابقة مع قاعدتنا)
+CREATE TABLE IF NOT EXISTS cli_usage_counts (
+    id        INTEGER PRIMARY KEY,
+    ts        TEXT NOT NULL,
+    window    TEXT NOT NULL,             -- 24h | 7d
+    requests  INTEGER NOT NULL,
+    sessions  INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cli_usage_counts ON cli_usage_counts(ts, window);
+
 CREATE TABLE IF NOT EXISTS statusline_samples (
     id                    INTEGER PRIMARY KEY,
     ts                    TEXT NOT NULL,
@@ -92,6 +116,7 @@ SELECT session_key, COUNT(*) AS turns, SUM(cache_read_tokens) AS cache_read_toke
 FROM usage_turns GROUP BY session_key;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_statusline_samples ON statusline_samples(ts, session_key);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_plan_snapshots ON plan_snapshots(ts, session_key, source);
 
 -- تشغيلات الجلسات الحيّة من `claude agents --json`: صف لكل (جلسة، وقت بدء عملية)؛ تغيّر startedAt لجلسة = إعادة تشغيل/استئناف.
 -- يُحفظ رقم الجلسة (4 أرقام) لا الاسم الكامل، لأن الأسماء نصوص بشرية.

@@ -1,7 +1,7 @@
 """مجمّع statusLine: يقرأ JSON من stdin ويُلحق سطر أرقام ومعرّفات فقط إلى data\\statusline_spool.jsonl.
 
 قواعد: لا يفشل أبدًا (يبتلع كل خطأ ويسجّله في data\\statusline_errors.log)، لا يكتب SQLite، لا يحفظ نصًّا،
-يتحمّل غياب أي حقل، ولا يطبع شيئًا للشريط.
+يتحمّل غياب أي حقل، ويطبع للشريط سطرًا قصيرًا (نسبة الأسبوع والخمس ساعات إن وُجدتا).
 """
 import json
 import os
@@ -52,6 +52,10 @@ def extract(data):
         "v": 1,
         "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + "%03dZ" % (int(time.time() * 1000) % 1000),
         "session_key": _sid(data.get("session_id")),
+        "five_hour_pct": _num(_get(data, "rate_limits", "five_hour", "used_percentage")),
+        "five_hour_resets_at": _iso(_get(data, "rate_limits", "five_hour", "resets_at")),
+        "seven_day_pct": _num(_get(data, "rate_limits", "seven_day", "used_percentage")),
+        "seven_day_resets_at": _iso(_get(data, "rate_limits", "seven_day", "resets_at")),
         "context_size": _num(_get(data, "context_window", "context_window_size")),
         "context_used_pct": _num(_get(data, "context_window", "used_percentage")),
         "cu_input_tokens": _num(_get(cu, "input_tokens")),
@@ -62,6 +66,15 @@ def extract(data):
         "cache_warm": (1 if warm else 0) if isinstance(warm, bool) else None,
         "cost_usd": _num(_get(data, "cost", "total_cost_usd")),
     }
+
+
+def status_text(rec):
+    parts = []
+    if rec.get("seven_day_pct") is not None:
+        parts.append("7d %d%%" % round(rec["seven_day_pct"]))
+    if rec.get("five_hour_pct") is not None:
+        parts.append("5h %d%%" % round(rec["five_hour_pct"]))
+    return " | ".join(parts)
 
 
 def log_error(exc):
@@ -92,6 +105,7 @@ def main():
             raise ValueError("not an object")
         rec = extract(data)
         append_spool(rec)
+        out = status_text(rec)
     except Exception as exc:  # noqa: BLE001 — لا يفشل أبدًا
         log_error(exc)
     try:

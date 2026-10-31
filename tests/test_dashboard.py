@@ -28,6 +28,7 @@ class TestDashboard(unittest.TestCase):
         t("2", "sA", "2026-10-20T02:00:00Z", "claude-opus-4-8", 1, 5, 100000, 10, "scheduled")  # نموذج قديم → أخرى
         t("3", "sB", "2026-10-22T01:00:00Z", "claude-sonnet-5-5", 1, 0, 500000, 100, None)
         t("4", "sB", "2026-10-22T05:00:00Z", "model-غير-معروف", 1, 0, 200000, 50, "weird")
+        c.execute("INSERT INTO plan_snapshots(ts, five_hour_pct, seven_day_pct, source) VALUES ('2026-10-22T06:00:00Z',3,5,'get_usage')")
         c.commit()
         self.data = dashboard.payload(c, reports.session_label, reports.NOT_APPLIED_MARK, 50)
 
@@ -49,7 +50,8 @@ class TestDashboard(unittest.TestCase):
         self.assertEqual({r["g"] for r in self.data["a"]}, {"human", "scheduled", "unknown"})  # NULL وweird → unknown
         self.assertEqual(len(self.data["models"]), other + 1)
 
-    def test_changes(self):
+    def test_plan_and_changes(self):
+        self.assertEqual(self.data["plan"], [dict(ts="2026-10-22T06:00:00Z", f=3.0, fr=None, w=5.0, wr=None, fa=None, far=None, pl=None, src="get_usage")])
         applied = {(c["key"], c["new"]): c["applied"] for c in self.data["changes"]}
         self.assertFalse(applied[("CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", "25")])
         self.assertTrue(applied[("autoCompactWindow", "250000")])
@@ -71,6 +73,16 @@ class TestDashboard(unittest.TestCase):
         self.assertIn("function renderMonth", page)
         m = re.search(r'<script type="application/json" id="data">(.*?)</script>', page, re.S)
         self.assertTrue(json.loads(m.group(1))["a"])
+
+    def test_plan_payload_carries_fable(self):
+        self.con.execute("INSERT INTO plan_snapshots(ts, seven_day_pct, fable_pct, fable_resets_at, source) "
+                         "VALUES ('2026-10-23T06:00:00Z',12,2,'2026-11-04T17:00:00Z','cli_usage')")
+        self.con.commit()
+        data = dashboard.payload(self.con, reports.session_label, reports.NOT_APPLIED_MARK, 50)
+        last = data["plan"][-1]
+        self.assertEqual((last["fa"], last["far"]), (2.0, "2026-11-04T17:00:00Z"))
+        page = dashboard.render(data, "", "الآن", "index.html")
+        self.assertIn('id="lrf"', page)
 
     def test_payload_has_only_numbers_and_known_names(self):
         """الحقول النصية الوحيدة: اليوم/الوقت، أصل الدور المعروف، اسم الجلسة المشتق من الرقم والمعرّف والمجلد، ومفاتيح الإعداد."""

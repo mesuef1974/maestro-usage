@@ -1,6 +1,6 @@
 """تقارير الاستهلاك: CSV لكل تقرير وصفحة HTML ساكنة (RTL، عربية، بلا مكتبات). كل رقم محسوب من القاعدة.
 
-التقارير 1-3 و5 (أُلغي التقرير 4: نسبة الحصة الأسبوعية). التقرير 5 مبني على turn_origin (فئة يسجّلها Claude Code نفسه).
+التقارير 1-5. التقرير 4 فارغ حتى تصل عيّنات statusLine؛ التقرير 5 مبني على turn_origin (فئة يسجّلها Claude Code نفسه).
 """
 import csv
 import html
@@ -107,6 +107,14 @@ def report3(con, today=None):
         out.append(dict(id=cid, ts=ts, key=key, old=old, new=new, note=note, before_range=(b0, b1), after_range=(a0, a1),
                         before=before, after=after, after_days_available=full_after_days))
     return out
+
+
+def report4(con):
+    """نسبة الحصة الأسبوعية (وخمس الساعات) حسب اليوم من plan_snapshots؛ أعلى قيمة في اليوم."""
+    rows = con.execute("""
+        SELECT substr(ts, 1, 10) AS day, source, COUNT(*), MAX(seven_day_pct), MAX(five_hour_pct)
+        FROM plan_snapshots GROUP BY substr(ts, 1, 10), source ORDER BY day""").fetchall()
+    return ["day", "source", "samples", "max_seven_day_pct", "max_five_hour_pct"], rows
 
 
 def _ts(s):
@@ -246,6 +254,16 @@ def build(con, out_dir=REPORTS_DIR):
         parts.append('<div class="wrap">%s</div>' % table(
             ["الفترة", "أيام فعّالة", "جلسات", "ردود", "إجمالي توكن", "توكن لكل يوم فعّال", "متوسط السياق للردّ", "قراءة ÷ مخرجات"], rws))
     parts.append(source("جداول usage_turns وconfig_changes", stamp))
+
+    h4, rows4 = report4(con)
+    write_csv(os.path.join(out_dir, "report4_weekly_quota_by_day.csv"), h4, rows4)
+    parts.append("<h2>4. نسبة الحصة الأسبوعية حسب اليوم</h2>")
+    if rows4:
+        parts.append('<div class="wrap">%s</div>' % table(["اليوم", "المصدر", "عيّنات", "أعلى نسبة أسبوعية %", "أعلى نسبة 5 ساعات %"],
+                                                          [(d, sr, fmt(n), fmt(w, 1), fmt(f, 1)) for d, sr, n, w, f in rows4]))
+    else:
+        parts.append('<p class="warn">لا عيّنات حصة بعد: تصل من statusLine بعد أول ردّ في جلسة جديدة منذ التثبيت. السجلات القديمة لا تحمل نسبة الحصة، فلا تاريخ قبل التثبيت.</p>')
+    parts.append(source("جدول plan_snapshots", stamp))
 
     r5 = report5(con)
     write_csv(os.path.join(out_dir, "report5_scheduled_cycle.csv"), ["day", "turns", "cache_read", "cache_creation", "output"],

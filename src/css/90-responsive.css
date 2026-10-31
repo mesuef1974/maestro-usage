@@ -19,7 +19,7 @@
   .brow{grid-template-columns:1fr;gap:.2rem}
   .brow .x{white-space:normal}
   h1{font-size:var(--t-lg)}
-  .row2{grid-template-columns:1fr}
+  .row2,.qgrid{grid-template-columns:1fr}
   input[type=search]{inline-size:100%}
   .card,.limits{padding-inline:var(--sp-4)}
 }

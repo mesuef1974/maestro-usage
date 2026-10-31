@@ -13,18 +13,30 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import hourly_page  # noqa: E402
 import pages  # noqa: E402
 import reports  # noqa: E402
 import run_cycle  # noqa: E402
+import usage_db  # noqa: E402
 
 PAGES = {"/": "index.html", "/sessions.html": "roles.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
 FONT_RE = re.compile(r"^/assets/fonts/[A-Za-z]+\.ttf$")
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 
-def make_server(port, reports_dir=None, refresh_fn=None):
+def live_plan():
+    """لقطات الحصة من القاعدة مباشرةً (أرقام فقط)، دون انتظار إعادة بناء الصفحات."""
+    con = usage_db.connect()
+    try:
+        return hourly_page.plan_rows(con)
+    finally:
+        con.close()
+
+
+def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
     reports_dir = reports_dir or reports.REPORTS_DIR
     refresh_fn = refresh_fn or (lambda: run_cycle.main(["--force"]))  # زر التحديث يفرض بناء التقارير
+    plan_fn = plan_fn or live_plan
     lock = threading.Lock()  # دورة واحدة في وقت واحد
 
     class Handler(BaseHTTPRequestHandler):
@@ -52,6 +64,11 @@ def make_server(port, reports_dir=None, refresh_fn=None):
             path = self.path.split("?", 1)[0]
             if path == "/favicon.ico":  # يمنع خطأ 404 في وحدة تحكم المتصفح
                 return self._send(204, b"", "image/x-icon")
+            if path == "/plan.json":
+                if not self._host_ok():  # كبقية الواجهات: مضيف محلي فقط
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                body = json.dumps(plan_fn(), ensure_ascii=False).encode("utf-8")
+                return self._send(200, body, "application/json")
             if path in PAGES:
                 name, ctype = PAGES[path], "text/html; charset=utf-8"
             elif path == "/assets/platform.css":

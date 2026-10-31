@@ -4,6 +4,7 @@
 # أيقونات الشريط الجانبي (مسارات داخل svg 24x24، خطّ لا تعبئة)
 ICON = {
     "home": '<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',
+    "gauge": '<path d="M4 16a8 8 0 1 1 16 0M12 16l4-5"/>',
     "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     "wave": '<path d="M3 12h3l2-6 4 12 3-9 2 3h4"/>',
     "layers": '<path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/>',
@@ -18,16 +19,18 @@ ICON = {
     "db": '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
 }
 
-GROUPS = ["نظرة عامة", "الزمن", "الاستهلاك", "الأدوار والجلسات", "دراسات", "البيانات"]
+GROUPS = ["نظرة عامة", "الحصة والزمن", "الاستهلاك", "الأدوار والجلسات", "دراسات", "البيانات"]
 
 # (الملف، القالب، العنوان، السطر التمهيدي، المجموعة، الأيقونة، الأقسام بالترتيب)
 _ROWS = [
     ("index.html", "dashboard.html", "نظرة عامة",
-     "توكنز كل شهر، ثم دليل صفحات المنصة.", "نظرة عامة", "home", ["month", "hub"]),
+     "الحصة الآن وتوكنز كل شهر، ثم دليل صفحات المنصة.", "نظرة عامة", "home", ["limits", "month", "hub"]),
+    ("plan.html", "dashboard.html", "الحصة الأسبوعية",
+     "نسبة الحصة المستهلكة عبر الأسبوع ومقارنتها بالتوكنات المقاسة.", "الحصة والزمن", "gauge", ["limits", "filters", "h3"]),
     ("hourly.html", "hourly.html", "الإجمالي بالساعة",
-     "منحنى التوكنات التراكمي بالساعة.", "الزمن", "clock", ["filters", "tiles", "hp", "ht", "defs"]),
+     "منحنى التوكنات التراكمي بالساعة ومؤشرات الحصة.", "الحصة والزمن", "clock", ["filters", "tiles", "hq", "hp", "ht", "defs"]),
     ("pressure.html", "hourly.html", "ضغط السياق لكل دور",
-     "ضغط السياق % وبطاقة كل دور على المحور الزمني.", "الزمن", "wave", ["filters", "hp", "hpr", "hr", "defs"]),
+     "ضغط السياق % وبطاقة كل دور على المحور الزمني.", "الحصة والزمن", "wave", ["filters", "hp", "hpr", "hr", "defs"]),
     ("cache.html", "dashboard.html", "التخزين المؤقت",
      "حصّة القراءة من الكاش لكل نموذج وأثرها في التوكنات.", "الاستهلاك", "layers", ["filters", "tiles", "h1"]),
     ("origins.html", "dashboard.html", "مصادر الاستهلاك",
@@ -63,7 +66,7 @@ def for_template(template):
 # القوالب غير المذكورة هنا (sessions وhourly وskills) تبقى حمولتها كاملة لأن كل أقسامها تقرأ المصفوفة الكبيرة نفسها.
 DATA_NEEDS = {
     "dashboard.html": {
-        "tiles": {"a"}, "month": {"a"}, "h1": {"a"}, "h2": {"a"},
+        "limits": {"plan", "plan_label", "plan_renew_day"}, "tiles": {"a"}, "month": {"a"}, "h1": {"a"}, "h2": {"a"}, "h3": {"plan"},
         "h4": {"b", "sessions"}, "h5": {"a", "changes"}, "h6": {"startup"},
     },
 }
@@ -82,7 +85,7 @@ def prune_data(data, template, sections):
 
 
 # قوائم الكائنات الكبيرة المنتظمة التي تُضمَّن بصيغة أعمدة (المفاتيح مرة واحدة)؛ `unpack` في ui_common.js تعيدها.
-PACK_KEYS = {"dashboard.html": ("a", "b"), "sessions.html": ("c",), "hourly.html": ("h",)}
+PACK_KEYS = {"dashboard.html": ("a", "b", "plan"), "sessions.html": ("c",), "hourly.html": ("h", "plan")}
 
 
 def pack_data(data, template):

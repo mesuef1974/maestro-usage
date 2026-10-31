@@ -120,6 +120,8 @@ def render(page_file, data, parts):
     assert "<head>" in html_
     html_ = html_.replace("<head>", "<head><script>" + head.strip() + "</script>", 1)
     html_ = re.sub(r"<title>.*?</title>", "<title>%s · ميزان</title>" % html.escape(page["title"]), html_, count=1)
+    if page_file == "plan.html":  # رابط الصفحة إلى نفسها بلا معنى
+        html_ = re.sub(r'<a href="plan.html">[^<]*</a>', "", html_)
     top, bottom = shell(page_file)
     assets = FAVICON_LINK + '<link rel="stylesheet" href="%s?v=%s">' % (ASSET_URL, css_hash())
     for token, value in (("__ASSETS__", assets), ("__PAGEHEAD__", pagehead(page, page["template"], parts.get("__STAMP__", ""))), ("__SHELL_OPEN__", top), ("__SHELL_CLOSE__", bottom),

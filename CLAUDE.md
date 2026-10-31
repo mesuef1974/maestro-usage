@@ -6,7 +6,7 @@
 ```bash
 python src/run_cycle.py --force   # تحميل ثم إعادة بناء كل التقارير (المهمة المجدولة كل دقيقة)
 python src/serve.py               # 127.0.0.1:8790، عملية منفصلة تُعاد بعد إضافة مسار
-python src/agents_cli.py --health
+python src/usage_cli.py --health  # وكذلك src/agents_cli.py --health
 python src/skill_usage.py         # مسح استعمال المهارات (دقائق، يدوي ← data/skill_usage.json)
 python -m pytest tests -q && ruff check src tests
 ```
@@ -14,7 +14,7 @@ python -m pytest tests -q && ruff check src tests
 ## البنية
 - `usage_ingest.py` يقرأ `~/.claude/projects/**/*.jsonl` سطرًا سطرًا إلى `usage_turns`؛ `statusline_collector.py` الحصة؛ `usage_db.py` والمخطط `schema/schema.sql`. القاعدة خارج المستودع: `C:\Users\mesue\.maestro\flow_usage.sqlite3` (نسخها في `backups\`).
 - التحليل: `regime.py` و`study.py` و`startup_cost.py` و`role_groups.py`.
-- `reports.build(con)` تكتب CSV و`reports/assets/platform.css` و13 صفحة من سجلّ `src/pages.py` (الملف والعنوان والمجموعة والأيقونة والأقسام). أربعة قوالب (dashboard وsessions وhourly وskills `.html`) تخدم كلها؛ كل قسم في القالب بين `<!--@sec اسم-->` و`<!--@/sec-->` و`ui.render(ملف_الصفحة, data, parts)` يُبقي أقسام الصفحة فقط ويولّد الغلاف (شريط جانبي من السجلّ بلا فهرس «في هذه الصفحة») و`__PAGEHEAD__` و`__ASSETS__`. وحدة `payload`/`render`/`write` لكل قالب، و`ui.write` ذرّية. الأسلوب مركزي في `src/css/*.css` (هوية «ميزان»، انظر `docs/design_system.md`): لا `style` في القوالب ولا ألوان حرفية خارج `00-tokens.css`. JS الصفحة مضمَّن في القالب وكل رسم يحرسه `has("id")` و`$` ترجع عنصرًا وهميًّا للغائب. صفحة جديدة: سطر في `pages.py` (ومعه قسم جديد في القالب إن لزم) واختبار؛ المسار والتنقّل يأتيان من السجلّ. فحص الواجهات: `python scripts/page_check.py` (كونسول وفيض أفقي) و`python scripts/ux_audit.py --label <اسم>` ثم `--compare before after2` (التقرير `docs/ux_audit.md`).
+- `reports.build(con)` تكتب CSV و`reports/assets/platform.css` و14 صفحة من سجلّ `src/pages.py` (الملف والعنوان والمجموعة والأيقونة والأقسام). أربعة قوالب (dashboard وsessions وhourly وskills `.html`) تخدم كلها؛ كل قسم في القالب بين `<!--@sec اسم-->` و`<!--@/sec-->` و`ui.render(ملف_الصفحة, data, parts)` يُبقي أقسام الصفحة فقط ويولّد الغلاف (شريط جانبي من السجلّ بلا فهرس «في هذه الصفحة») و`__PAGEHEAD__` و`__ASSETS__`. وحدة `payload`/`render`/`write` لكل قالب، و`ui.write` ذرّية. الأسلوب مركزي في `src/css/*.css` (هوية «ميزان»، انظر `docs/design_system.md`): لا `style` في القوالب ولا ألوان حرفية خارج `00-tokens.css`. JS الصفحة مضمَّن في القالب وكل رسم يحرسه `has("id")` و`$` ترجع عنصرًا وهميًّا للغائب. صفحة جديدة: سطر في `pages.py` (ومعه قسم جديد في القالب إن لزم) واختبار؛ المسار والتنقّل يأتيان من السجلّ. فحص الواجهات: `python scripts/page_check.py` (كونسول وفيض أفقي) و`python scripts/ux_audit.py --label <اسم>` ثم `--compare before after2` (التقرير `docs/ux_audit.md`).
 - `data/` و`reports/` خارج git عمدًا.
 
 ## القواعد الصلبة
