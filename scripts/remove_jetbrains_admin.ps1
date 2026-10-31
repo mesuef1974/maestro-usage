@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Continue"
-$log = Join-Path (Split-Path -Parent $PSScriptRoot) "datajb_admin.log"
+$log = Join-Path (Split-Path -Parent $PSScriptRoot) "data\jb_admin.log"
 "بدء " + (Get-Date -Format s) | Out-File $log -Encoding utf8
 $un = "C:\Program Files (x86)\JetBrains\PyCharm 2024.3.5\bin\Uninstall.exe"
 if (Test-Path $un) {
