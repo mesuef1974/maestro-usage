@@ -11,8 +11,6 @@ import startup_cost  # noqa: E402
 import ui  # noqa: E402
 
 THRESHOLD = 300_000  # يطابق reports.CTX_THRESHOLD
-PLAN_LABEL = "Ultra"  # اسم الخطة (كانت «Max 20x» حتى 2026-10-30؛ القاعدة تحفظ «Max» فقط)
-PLAN_RENEW_DAY = None  # يوم تجديد الاشتراك الشهري (1-31)؛ None = لا يُعرض سطر التجديد
 
 # ترتيب ثابت: اللون يتبع النموذج لا رتبته. الباقي يُطوى في «أخرى».
 MODEL_GROUPS = [
@@ -65,15 +63,13 @@ def payload(con, label_fn, not_applied_mark, min_turns):
     fact_b = [dict(s=index[k[0]], d=k[1], m=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mx=r[6], cv=r[7])
               for k, r in sorted(b.items())]
 
-    plan = [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, pl=pl, src=src) for ts, f, fr, w, wr, pl, src in con.execute(
-        "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, plan, source FROM plan_snapshots ORDER BY ts")]
     changes = [dict(ts=ts, key=key, old=old, new=new, applied=not_applied_mark not in (note or ""))
                for ts, key, old, new, note in con.execute(
                    "SELECT ts, key, old_value, new_value, note FROM config_changes ORDER BY ts, id")]
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in MODEL_GROUPS] + [OTHER_NAME], threshold=THRESHOLD, min_turns=min_turns,
-                first_day=first, last_day=last, a=fact_a, b=fact_b, sessions=sessions, plan=plan, changes=changes,
-                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, startup=startup_cost.payload(con))
+                first_day=first, last_day=last, a=fact_a, b=fact_b, sessions=sessions, changes=changes,
+                startup=startup_cost.payload(con))
 
 
 def render(data, static_html, stamp, page="index.html"):

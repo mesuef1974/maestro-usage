@@ -253,3 +253,11 @@
 - إلغاء تثبيت البرنامج والخدمة وProgram Files وHKLM يحتاج مدير: حاولتُ رفع الصلاحية (UAC) فلم يكتمل ولم يُنشأ سجلّ، فبقي PyCharm والخدمة. كتبتُ `scripts/remove_jetbrains_admin.ps1` ليشغّله المالك بنفسه من نافذة مدير؛ لم أنفّذه.
 - لم أتحقّق بعدُ من زوال البرنامج. لم أمسّ ما في `~/.claude` من تكامل IDE (مستثنى بقاعدة المشروع). لم أبحث عن خط JetBrains Mono في المشاريع.
 - تكملة (المالك شغّل `remove_jetbrains_admin.ps1` كمدير بعد إصلاح الترميز، فاستبدلتُ نصوصه بـASCII): سجلّه `data\jb_admin.log` يُظهر خروج 0 لإلغاء تثبيت PyCharm وحزمة ETW، وحذف `Program Files (x86)\JetBrains` و`Program Files\JetBrains` ومفتاحي HKLM. تحقّقتُ بعده: المجلدات الثلاثة زالت، لا خدمة JetBrains ولا مهمة ETW ولا مدخل «إلغاء تثبيت» ولا مفاتيح HKCU/HKLM، وC صار فيه 143 GB خالية. المتبقي عمدًا: `D:\shschool_mvp\.idea` بانتظار أمر المالك.
+
+## 2026-10-31 — إزالة حساب التوكنز الأسبوعي من جذوره (بأمر المالك: الحساب شهري فقط)
+- ماذا: أُزيلت من الواجهة حصة الخطة (قسما limits وh3 في dashboard وقسم hq في hourly) وصفحة `plan.html` ومسار `/plan.json` في الخادم و`report4` وملفه CSV وأعمدة `snap_sessions/snap_tokens` ودالة `snapshot_cost` في study، وأُزيل من جامع statusLine حقول `rate_limits` ونصّ الشريط (لا يطبع شيئًا الآن)، ومن المحمّل إدراج `plan_snapshots` وإحصاء `plans_new`. حُذفت الملفات `src/usage_cli.py` و`src/record_usage.py` و`tests/test_usage_cli.py`.
+- القاعدة: إصدار المخطط 5 يُسقط الجدولين `plan_snapshots` و`cli_usage_counts` (ومعهما فهرساهما) عند الاتصال؛ النسخة الاحتياطية قبل الإسقاط `backups\flow_usage_before_weekly_removal_20261031_093556.sqlite3`. سُجّل التغيير في `config_changes` بمفتاح `startup_weekly_accounting_removed`.
+- المجدول: أُلغي تسجيل `MaestroUsageSnapshot` فقط؛ `MaestroUsageIngest` باقية وتعمل (دورة `run_cycle --force` ناجحة على 268608 دورًا).
+- تحقّقتُ: 109 اختبارات ناجحة (واحد متخطّى) وruff نظيف، و`page_check` بلا أخطاء كونسول ولا فيض أفقي في صفحات 375 و1440، وانعدام كلمة plan في index وhourly، وزوال الجدولين من القاعدة الحيّة، وبقاء 13 صفحة.
+- المتصفح المدمج: index وhourly تُفتحان بلا طلب فاشل ولا فيض أفقي، وزال رابط «الحصة الأسبوعية»؛ أعدتُ تسمية مجموعة «الحصة والزمن» إلى «الزمن»، وأعدتُ تشغيل serve.py (كان على الشيفرة القديمة). سطر statusLine في settings.json (ملك 0101) ما زال يستدعي المجمّع، فيعمل ويجمع حقول السياق دون الحصة؛ لم أمسّه. ملفات `data\usage_cli*` القديمة تُركت.
+- لم تُبنَ بعدُ ضوابط الحساب الشهري (لم يُطلب).

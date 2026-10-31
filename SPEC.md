@@ -21,7 +21,7 @@ Claude Code يشغّل سكربتًا تحدّده بعد كل ردّ ويمرّ
 - التثبيت (سطر `statusLine` في settings.json) يمرّ عبر 0101 (محظور عليك تعديله).
 
 ### ج. أمر `get_usage` (احتياط للتحقق)
-إن توفّرت لك أداة `mcp__ccd_session_mgmt__get_usage` فهي تعطي نسب الحصة الحالية (5 ساعات، أسبوعي عام، أسبوعي Fable). وإلا فاطلبيها من 0101 عند الحاجة. تسجَّل في `plan_snapshots` بمصدر `get_usage`.
+إن توفّرت لك أداة `mcp__ccd_session_mgmt__get_usage` فهي تعطي نسب الحصة الحالية، لكن المشروع لا يسجّلها: أُلغي حساب الحصة الأسبوعية (2026-10-31) والحساب شهري فقط.
 
 ### د. مرجع للقراءة فقط: مراقب Codex المحلي
 `C:\Users\mesue\.codex\worktrees\main-unification\local-pen-studio\scripts\usage_monitor\` فيه تصميم ناجح لنفس الغرض لـCodex. خذي الأفكار ولا تنسخي الشيفرة كما هي:
@@ -43,7 +43,6 @@ Claude Code يشغّل سكربتًا تحدّده بعد كل ردّ ويمرّ
 | `sessions` | `session_key` (معرّف CLI) | `number` (0101…) NULL، `title` NULL، `cwd`، `branch`، `first_seen`، `last_seen` |
 | `usage_turns` | `message_id` | `session_key` FK، `ts`، `model`، `input_tokens`، `cache_creation_tokens`، `cache_read_tokens`، `output_tokens`، `thinking_tokens`، `is_sidechain`، `request_id`، `source_path` |
 | `ingest_state` | `source_path` | `offset_bytes`، `size_bytes`، `mtime`، `updated_at` |
-| `plan_snapshots` | `id` | `ts`، `session_key` NULL، `five_hour_pct`، `five_hour_resets_at`، `seven_day_pct`، `seven_day_resets_at`، `source` (statusline/get_usage)، `plan` |
 | `statusline_samples` | `id` | `ts`، `session_key`، `context_size`، `context_used_pct`، حقول `current_usage` الأربعة، `cache_hit_ratio`، `cache_warm`، `cost_usd` |
 | `config_changes` | `id` | `ts`، `key`، `old_value`، `new_value`، `note` |
 
@@ -58,7 +57,7 @@ Claude Code يشغّل سكربتًا تحدّده بعد كل ردّ ويمرّ
 1. توكنز كل جلسة موزّعة على النموذج واليوم، مرتّبة بنسبة قراءة الذاكرة إلى المخرجات.
 2. أسوأ عشر جلسات سياقًا: سياق الردّ (`input + cache_creation + cache_read`) فوق 300 ألف، مع عدد الردود.
 3. مقارنة سبعة أيام قبل كل تغيير في `config_changes` وسبعة بعده، بالمقاييس نفسها.
-4. نسبة الحصة الأسبوعية حسب اليوم (من `plan_snapshots`).
+4. (أُلغي) نسبة الحصة الأسبوعية حسب اليوم.
 5. كلفة الدورة الدورية في جلسة 0101 (كل 5 دقائق): بلا نصوص. تُميَّز بنمط زمني (ردود على فواصل نحو 5 دقائق) وبمخرجات صغيرة، وتُذكر في التقرير حدود هذا التمييز ودرجة الثقة فيه.
 
 الإخراج: صفحة HTML ساكنة تُولَّد محليًّا إلى `C:\Users\mesue\maestro_usage\reports\` (RTL، عربية، بلا مكتبات خارجية، تعمل بالفتح المباشر من الملف) مع ملف CSV لكل تقرير. لا خادم ولا Django في هذه المرحلة.

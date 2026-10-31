@@ -53,10 +53,8 @@ class TestReports(unittest.TestCase):
         self.assertEqual(r["after"]["turns"], 3)        # 10-22..10-28
         self.assertEqual(r["after"]["active_days"], 3)
 
-    def test_report4_and_5(self):
+    def test_report5(self):
         c = self.con
-        c.execute("INSERT INTO plan_snapshots(ts, session_key, five_hour_pct, seven_day_pct, source) VALUES "
-                  "('2026-10-29T10:00:00.000Z','sA',10,20,'statusline'),('2026-10-29T11:00:00.000Z','sA',30,25,'statusline')")
         c.execute("UPDATE sessions SET number='0101' WHERE session_key='sA'")
         # عشر دورات مجدولة كل 300 ثانية، كل منها ردّان متلاحقان
         for i in range(10):
@@ -67,9 +65,6 @@ class TestReports(unittest.TestCase):
                           "output_tokens,thinking_tokens,is_sidechain,source_path,turn_origin) VALUES (?,?,?,?,1,0,1000,5,0,0,'p.jsonl','scheduled')",
                           ("s%d_%d" % (i, j), "sA", "2026-10-25T%02d:%02d:%02dZ" % (hh, mm, ss), "m"))
         c.commit()
-        _h, rows4 = reports.report4(c)
-        self.assertEqual(rows4[0][:3], ("2026-10-29", "statusline", 2))
-        self.assertEqual(rows4[0][3], 25)
         r5 = reports.report5(c)
         self.assertEqual((r5["turns"], r5["runs"], r5["cache_read"]), (20, 10, 20000))
         self.assertEqual(round(r5["gap"]["median"]), 300)
@@ -88,8 +83,8 @@ class TestReports(unittest.TestCase):
         for bad in ("@import", "XMLHttpRequest", "src=\"http", "<script src"):
             self.assertNotIn(bad, html)
         # الطلب الوحيد المسموح: زر التحديث الفوري نحو الخادم المحلي بمسار نسبي
-        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري والقراءة الحيّة للقطات الحصة
-        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"') + html.count('fetch("/plan.json"'))
+        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري
+        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"'))
 
 
 if __name__ == "__main__":

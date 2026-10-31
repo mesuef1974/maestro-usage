@@ -85,8 +85,8 @@ class TestHourlyPage(unittest.TestCase):
         with open(os.path.join(out, "hourly.html"), encoding="utf-8") as f:
             html = f.read()
         self.assertEqual(html.replace("http://www.w3.org/2000/svg", "").count("http"), 0)
-        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري والقراءة الحيّة للقطات الحصة
-        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"') + html.count('fetch("/plan.json"'))
+        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري
+        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"'))
         links = re.findall(r"<link[^>]*>", html)  # الرابطان المحلّيان فقط: أيقونة data: والأسلوب المركزي من assets/
         self.assertEqual(len(links), 2, links)
         self.assertTrue(all('href="data:image/svg+xml' in ln or 'href="assets/platform.css?v=' in ln for ln in links), links)

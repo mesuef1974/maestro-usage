@@ -8,7 +8,7 @@
 أعمدة الإنجاز (inbox #15): «الإنجاز» صنفان منفصلان لا يُجمعان: إيداعات git (مستودعا shschool_mvp وdelivery_manager_work، كل الفروع،
 بلا دمج، بتاريخ المُودِع UTC) وبطاقات الدفتر (أول انتقال للبطاقة إلى merged أو published أو closed). ومقاييسهما: cr_per_commit وcr_per_card.
 البند 2: تكلفة الإيقاظ (cc عند الردّ بعد فجوة > ساعة) مقابل رسائل صندوق الدور بين الردّين (study_wake_by_msgs.csv).
-البند 6: عمود event يحمل علامات تغيّر الإعدادات وتصفير عدّاد الرسائل، وsnap_* كلفة جلسات مهمة اللقطة الساعية (متغيّر ضابط).
+البند 6: عمود event يحمل علامات تغيّر الإعدادات وتصفير عدّاد الرسائل.
 """
 import argparse
 import csv
@@ -16,7 +16,7 @@ import json
 import os
 import subprocess
 import sys
-from bisect import bisect_left, bisect_right
+from bisect import bisect_right
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from statistics import mean, median
@@ -33,12 +33,10 @@ COLS = ["day", "replies", "main", "cr", "cc", "u", "cr_per_reply", "sessions", "
 
 
 EXTRA_COLS = ["commits_shschool", "commits_dmw", "cards_done", "cr_per_commit", "cr_per_card", "msgs", "wake_msgs",
-              "snap_sessions", "snap_tokens", "event"]
+              "event"]
 DMW = "C:/Users/mesue/delivery_manager_work"
 SHSCHOOL = "D:/shschool_mvp"
 DONE_STATES = ("merged", "published", "closed")
-SNAP_MAX_REPLIES = 8
-SNAP_TAIL_SEC = 120
 BUCKETS = [("0", 0, 0), ("1", 1, 1), ("2-3", 2, 3), ("4+", 4, 10 ** 9)]
 DOHA = timezone(timedelta(hours=3))
 
@@ -195,21 +193,6 @@ def wake_by_msgs(events, first_day):
     return rows
 
 
-def snapshot_cost(con):
-    """{يوم: (جلسات, توكنات)} لجلسات مهمة اللقطة الساعية: غير مرقّمة وقصيرة وسُجّلت لقطة get_usage أثناءها."""
-    snaps = sorted(_epoch(ts) for (ts,) in con.execute("SELECT ts FROM plan_snapshots WHERE source='get_usage'"))
-    out = defaultdict(lambda: [0, 0])
-    for lo, hi, tok in con.execute(
-            "SELECT MIN(t.ts), MAX(t.ts), SUM(t.input_tokens+t.cache_creation_tokens+t.cache_read_tokens+t.output_tokens) "
-            "FROM usage_turns t JOIN sessions s USING(session_key) WHERE s.number IS NULL "
-            "GROUP BY t.session_key HAVING COUNT(*) <= ?", (SNAP_MAX_REPLIES,)):
-        j = bisect_left(snaps, _epoch(lo) - 5)
-        if j < len(snaps) and snaps[j] <= _epoch(hi) + SNAP_TAIL_SEC:
-            out[lo[:10]][0] += 1
-            out[lo[:10]][1] += tok
-    return {d: tuple(v) for d, v in out.items()}
-
-
 def events(con, counter_path):
     """{يوم: نص} علامات تغيّر الإعدادات (config_changes) وتصفير عدّاد الرسائل (since بعد بدء العدّ) بتاريخ UTC."""
     ev = defaultdict(list)
@@ -228,7 +211,7 @@ def events(con, counter_path):
     return {d: " | ".join(v) for d, v in ev.items()}
 
 
-def enrich(rows, commits, cards, inbox, wakes, snaps, ev):
+def enrich(rows, commits, cards, inbox, wakes, ev):
     msgs = defaultdict(int)
     for t in (t for v in inbox.values() for t in v):
         msgs[datetime.fromtimestamp(t, timezone.utc).strftime("%Y-%m-%d")] += 1
@@ -241,8 +224,7 @@ def enrich(rows, commits, cards, inbox, wakes, snaps, ev):
         k = cards.get(d, 0)
         r.update(commits_shschool=c1, commits_dmw=c2, cards_done=k,
                  cr_per_commit=round(r["cr"] / (c1 + c2)) if c1 + c2 else "", cr_per_card=round(r["cr"] / k) if k else "",
-                 msgs=msgs.get(d, 0), wake_msgs=wake_msgs.get(d, 0),
-                 snap_sessions=snaps.get(d, (0, 0))[0], snap_tokens=snaps.get(d, (0, 0))[1], event=ev.get(d, ""))
+                 msgs=msgs.get(d, 0), wake_msgs=wake_msgs.get(d, 0), event=ev.get(d, ""))
     return rows
 
 
@@ -264,7 +246,7 @@ def main(argv=None):
     inbox = inbox_times(os.path.join(a.dmw, "ledger", "inbox"))
     wakes = wake_events(con, inbox)
     rows = enrich(daily(con, a.first), {"shschool": git_commits(a.shschool), "dmw": git_commits(a.dmw)},
-                  ledger_done(os.path.join(a.dmw, "ledger", "events.jsonl")), inbox, wakes, snapshot_cost(con),
+                  ledger_done(os.path.join(a.dmw, "ledger", "events.jsonl")), inbox, wakes,
                   events(con, os.path.join(a.dmw, "msg_counter.json")))
     os.makedirs(reports.REPORTS_DIR, exist_ok=True)
     cols = COLS + EXTRA_COLS

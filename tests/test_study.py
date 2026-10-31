@@ -87,11 +87,6 @@ class TestStudy(unittest.TestCase):
         b = {r["bucket"]: r for r in study.wake_by_msgs(w, "2026-10-20")}
         self.assertEqual((b["2-3"]["wakes"], b["2-3"]["cc_mean"], b["0"]["wakes"]), (1, 7000, 0))
 
-    def test_snapshot_cost_matches_short_unnumbered_session_with_a_snapshot(self):
-        self.con.execute("INSERT INTO plan_snapshots(ts, source) VALUES ('2026-10-21T01:00:30Z', 'get_usage')")
-        self.con.commit()
-        self.assertEqual(study.snapshot_cost(self.con), {"2026-10-21": (1, 1 + 10_000 + 1)})
-
     def test_events_from_config_changes_and_counter_reset(self):
         self.con.execute("INSERT INTO config_changes(ts, key, old_value, new_value, note) VALUES ('2026-10-29','K','a','b','n')")
         self.con.commit()
@@ -120,12 +115,12 @@ class TestStudy(unittest.TestCase):
     def test_enrich_separates_commits_and_cards(self):
         rows = [dict(day="2026-10-20", cr=1000)]
         study.enrich(rows, {"shschool": {"2026-10-20": 2}, "dmw": {"2026-10-20": 3}}, {"2026-10-20": 4},
-                     {"0101": []}, [], {}, {"2026-10-20": "e"})
+                     {"0101": []}, [], {"2026-10-20": "e"})
         r = rows[0]
         self.assertEqual((r["commits_shschool"], r["commits_dmw"], r["cards_done"]), (2, 3, 4))
         self.assertEqual((r["cr_per_commit"], r["cr_per_card"], r["event"]), (200, 250, "e"))
         rows = [dict(day="2026-10-21", cr=1000)]
-        study.enrich(rows, {}, {}, {}, [], {}, {})
+        study.enrich(rows, {}, {}, {}, [], {})
         self.assertEqual((rows[0]["cr_per_commit"], rows[0]["cr_per_card"]), ("", ""))
 
 

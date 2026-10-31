@@ -34,8 +34,7 @@ class TestServe(unittest.TestCase):
         with open(os.path.join(self.tmp, "secret.txt"), "w", encoding="utf-8") as f:
             f.write("لا يُقدَّم")
         self.calls = []
-        self.srv = serve.make_server(0, self.tmp, lambda: self.calls.append(1) or 0,
-                                     lambda: [{"ts": "2026-10-30T10:00:00Z", "f": 1.0, "src": "cli_usage"}])
+        self.srv = serve.make_server(0, self.tmp, lambda: self.calls.append(1) or 0)
         self.port = self.srv.server_address[1]
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
 
@@ -84,12 +83,6 @@ class TestServe(unittest.TestCase):
         self.assertEqual(self.req("POST", "/refresh", {"Origin": "http://evil.example"})[0], 403)
         self.assertEqual(self.req("POST", "/refresh", {"Origin": "http://127.0.0.1:%d" % self.port})[0], 200)
         self.assertEqual(len(self.calls), 1)
-
-    def test_plan_json_is_live_and_local_only(self):
-        code, body = self.req("GET", "/plan.json")
-        self.assertEqual(code, 200)
-        self.assertEqual(json.loads(body), [{"ts": "2026-10-30T10:00:00Z", "f": 1.0, "src": "cli_usage"}])
-        self.assertEqual(self.req("GET", "/plan.json", {"Host": "evil.example"})[0], 403)
 
     def test_get_does_not_trigger_refresh(self):
         self.req("GET", "/refresh")
