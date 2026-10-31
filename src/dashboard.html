@@ -70,7 +70,7 @@ __PAGEHEAD__
   <div class="cardhead"><h2 id="h4">أسوأ الجلسات سياقًا</h2><span class="sub" id="c4sum"></span></div>
   <p class="sub">الجلسات الأكثر ردودًا بسياق فوق <span id="thr"></span> توكن (السياق = إدخال + كتابة ذاكرة + قراءة ذاكرة للردّ الواحد).</p>
   <div class="bars" id="c4"></div>
-  <h3 style="margin-block-start:1.2rem">كل الجلسات</h3>
+  <h3 class="mt">كل الجلسات</h3>
   <p class="sub">الجلسات ذات <span id="minturns"></span> ردًّا فأكثر في الفترة. انقر عنوان عمود للترتيب.</p>
   <div class="wrap" id="t4"></div>
   <button type="button" class="more" id="more4"></button>
@@ -80,10 +80,10 @@ __PAGEHEAD__
   <div class="cardhead"><h2 id="h5">قبل وبعد autoCompactWindow</h2><span class="sub" id="c5sum"></span></div>
   <p class="sub">سياق الردّ يومًا بيوم قبل ضبط نافذة الضغط التلقائي وبعده. لا يتأثر هذا القسم بمرشِّح الفترة (آخر 28 يومًا)، ويتأثر بمرشِّح النماذج.</p>
   <div class="grid2">
-    <div><h3 style="font-size:.95rem">متوسط السياق للردّ (توكن)</h3><div class="chart" id="c5a"></div></div>
-    <div><h3 style="font-size:.95rem">نسبة الردود فوق <span class="thr2"></span> توكن</h3><div class="chart" id="c5b"></div></div>
+    <div><h3>متوسط السياق للردّ (توكن)</h3><div class="chart" id="c5a"></div></div>
+    <div><h3>نسبة الردود فوق <span class="thr2"></span> توكن</h3><div class="chart" id="c5b"></div></div>
   </div>
-  <div class="wrap" id="t5" style="margin-block-start:.8rem"></div>
+  <div class="wrap mt" id="t5"></div>
   <p class="warn" id="n5"></p>
   <details><summary>عرض الجدول اليومي</summary><div class="wrap" id="t5d"></div></details>
 </section>
@@ -92,12 +92,12 @@ __PAGEHEAD__
   <div class="cardhead"><h2 id="h6">كلفة بدء الجلسة</h2><span class="sub" id="c6sum"></span></div>
   <p class="sub">سياق أول ردّ في كل جلسة جديدة (ما يُحمَّل قبل أن تكتب شيئًا: التعليمات والمهارات والذاكرة والإعدادات). الجلسات المستأنفة مستبعدة (أول ردّ فوق 110 آلاف في الرسم اليومي). أحكام «قبل وبعد» أدناه تعدّ الجلسة جديدة حتى 60 ألفًا فقط. لا يتأثر بالمرشِّحات.</p>
   <section class="tiles" id="t6tiles" aria-label="مؤشرات كلفة البدء"></section>
-  <h3 style="font-size:.95rem">وسيط سياق البدء يوميًّا (توكن)</h3>
+  <h3>وسيط سياق البدء يوميًّا (توكن)</h3>
   <div class="chart" id="c6"></div>
-  <h3 style="font-size:.95rem;margin-block-start:1rem">أثر كل تعديل في مصادر السياق الثابت</h3>
+  <h3 class="mt">أثر كل تعديل في مصادر السياق الثابت</h3>
   <div class="wrap" id="t6"></div>
   <p class="warn" id="n6"></p>
-  <h3 style="font-size:.95rem;margin-block-start:1rem">حسب المجلد (آخر 30 يومًا)</h3>
+  <h3 class="mt">حسب المجلد (آخر 30 يومًا)</h3>
   <div class="wrap" id="t6f"></div>
 </section>
 
@@ -157,7 +157,7 @@ function renderMonth(){
   barRows($("#cm"),list.map(function(o){
     return {name:o.k+(o.part?" (حتى يوم "+o.days+")":""),val:o.tot,text:compact(o.tot)+" · "+compact(o.tot/o.days)+"/يوم",
       tip:[{name:"المجموع",value:compact(o.tot,2)},{name:"المتوسط اليومي",value:compact(o.tot/o.days,2)},{name:"قراءة الذاكرة",value:pct(o.tot?o.cr/o.tot:null)},
-           {name:"الردود",value:num(o.t)},{name:"نسبته إلى أعلى شهر",value:pct(top?o.tot/top:null)}]}}),"--s1");
+           {name:"الردود",value:num(o.t)},{name:"نسبته إلى أعلى شهر",value:pct(top?o.tot/top:null)}]}}),"--m1");
   drawTable($("#tm"),[{k:"k",l:"الشهر",f:function(r){return r.k+(r.part?" *":"")}},{k:"days",l:"أيام",n:1,f:function(r){return num(r.days)}},
     {k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},{k:"cc",l:"كتابة ذاكرة",n:1,f:function(r){return num(r.cc)}},{k:"cr",l:"قراءة ذاكرة",n:1,f:function(r){return num(r.cr)}},
     {k:"out",l:"مخرجات",n:1,f:function(r){return num(r.out)}},{k:"tot",l:"المجموع",n:1,f:function(r){return num(r.tot)}}],list);
@@ -192,13 +192,14 @@ function render2(){
   var list=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.cr-a.cr});
   var tcr=list.reduce(function(a,r){return a+r.cr},0)||1,tt=list.reduce(function(a,r){return a+r.t},0)||1;
   barRows($("#c2"),list.map(function(r){var nm=ORIG_AR[r.o]||r.o;return {name:nm,val:r.cr,text:pct(r.cr/tcr)+" · "+compact(r.cr),
-    tip:[{name:"حصة قراءة الذاكرة",value:pct(r.cr/tcr,2)},{name:"قراءة الذاكرة",value:compact(r.cr,2)},{name:"الردود",value:num(r.t)+" ("+pct(r.t/tt)+")"},{name:"كتابة الذاكرة",value:compact(r.cc,2)},{name:"المخرجات",value:compact(r.out,2)}]}}),"--s7");
+    tip:[{name:"حصة قراءة الذاكرة",value:pct(r.cr/tcr,2)},{name:"قراءة الذاكرة",value:compact(r.cr,2)},{name:"الردود",value:num(r.t)+" ("+pct(r.t/tt)+")"},{name:"كتابة الذاكرة",value:compact(r.cc,2)},{name:"المخرجات",value:compact(r.out,2)}]}}),"--m1");
   drawTable($("#t2"),[{k:"o",l:"أصل الدور",f:function(r){return ORIG_AR[r.o]||r.o}},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},{k:"cc",l:"كتابة ذاكرة",n:1,f:function(r){return num(r.cc)}},
     {k:"cr",l:"قراءة ذاكرة",n:1,f:function(r){return num(r.cr)}},{k:"s",l:"حصة %",n:1,f:function(r){return num(100*r.cr/tcr,1)}},{k:"out",l:"مخرجات",n:1,f:function(r){return num(r.out)}}],list);
 }
 
 /* ---------- بطاقة حدود الخطة (آخر لقطة، لا تتأثر بالمرشِّحات) ---------- */
 var WD=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+function utcHM(ms){return new Date(ms).toISOString().slice(11,16)+" UTC"}
 function clock(ms,withDay){
   var d=new Date(Math.round(ms/3e5)*3e5),h=d.getHours(),m=d.getMinutes();
   var t=(h%12||12)+":"+(m<10?"0":"")+m+" "+(h<12?"ص":"م");
@@ -208,7 +209,7 @@ function limitRow(id,pct,resetIso,withDay,now){
   var ms=resetIso?Date.parse(resetIso):NaN,over=!isNaN(ms)&&ms<now;
   var shown=pct!=null&&!over;
   $("#"+id+"p").textContent=shown?Math.round(pct)+"%":"—";
-  $("#"+id+"r").textContent=isNaN(ms)?"":(over?"انتهت النافذة؛ بانتظار لقطة جديدة":"تتصفّر "+(withDay?"":"عند ")+clock(ms,withDay));
+  $("#"+id+"r").textContent=isNaN(ms)?"":(over?"انتهت النافذة؛ بانتظار لقطة جديدة":"تتصفّر "+(withDay?"":"عند ")+clock(ms,withDay)+" ("+utcHM(ms)+")");
   var f=$("#"+id+"f"),b=f.parentNode,v=shown?Math.min(100,Math.max(0,pct)):0;
   f.style.inlineSize=v+"%";f.className="lf"+(v>=80?" hot":"");
   b.setAttribute("aria-valuenow",String(Math.round(v)));
@@ -254,7 +255,7 @@ function renderLimits(){
   if(lf)limitRow("lrf",lf.fa,lf.far,true,now);
   quotaLine("lr7q",D.quota&&D.quota.week);quotaLine("lrfq",D.quota&&D.quota.fable);
   var age=Math.max(0,Math.round((now-Date.parse(last.ts))/6e4));
-  $("#lnote").textContent="آخر لقطة منذ "+(age<1?"أقل من دقيقة":age<120?age+" دقيقة":Math.round(age/60)+" ساعة")+" · المصدر: "+last.src+" · الأزمنة بتوقيت جهازك.";
+  $("#lnote").textContent="آخر لقطة منذ "+(age<1?"أقل من دقيقة":age<120?age+" دقيقة":Math.round(age/60)+" ساعة")+" · المصدر: "+last.src+" · الأزمنة بتوقيت جهازك وبين قوسين UTC كبقية الصفحات.";
 }
 
 /* ---------- 3: حصة الخطة ---------- */
@@ -266,7 +267,7 @@ function render3(){
   var lg=$("#l3");clear(lg);
   var last=pts.length?pts[pts.length-1]:null;
   var five=!!(last&&last.f!=null); /* سلسلة الخمس ساعات تُرسم فقط إن كانت آخر لقطة تحملها؛ تاريخها القديم يبقى في الجدول */
-  (five?[["خمس ساعات","--s1"]]:[]).concat([["أسبوعي (كل النماذج)","--s2"]]).forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
+  (five?[["خمس ساعات","--m2"]]:[]).concat([["أسبوعي (كل النماذج)","--m1"]]).forEach(function(x){var s=mk("span");var i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
   if(five){var rl=mk("span");rl.textContent="┆ تصفير النافذة الخمسية";lg.appendChild(rl)}
   $("#n3").textContent=pts.length<5?"اللقطات قليلة بعد ("+pts.length+")؛ تتراكم مع الأيام.":"المصدر: لقطات تُسجَّل آليًّا من أمر /usage بلا استهلاك توكنات"+(last?" (آخر مصدر: "+last.src+")":"")+"، وتُحدَّث هنا كل دقيقة عند التقديم من الخادم المحلي.";
   if(!pts.length){clear(box);box.appendChild(mk("div",{class:"empty"},"لا لقطات لحصة الخطة في هذه الفترة."));clear($("#t3"));return}
@@ -283,7 +284,7 @@ function render3(){
     xfmt:function(v){var d=new Date(v),h=d.toISOString().slice(11,16);return two?h+" "+dm(ymd(v)):dm(ymd(v))},
     tfmt:function(v){return v.toFixed(0)+"%"},endLabel:function(v){return v.toFixed(0)+"%"},
     title:function(i){return pts[i].ts.replace("T"," ").replace("Z"," UTC")+" · "+pts[i].src},
-    series:(five?[{name:"خمس ساعات",c:"--s1",v:pts.map(function(p){return p.f})}]:[]).concat([{name:"أسبوعي (كل النماذج)",c:"--s2",v:pts.map(function(p){return p.w})}])});
+    series:(five?[{name:"خمس ساعات",c:"--m2",v:pts.map(function(p){return p.f})}]:[]).concat([{name:"أسبوعي (كل النماذج)",c:"--m1",v:pts.map(function(p){return p.w})}])});
   drawTable($("#t3"),[{k:"ts",l:"الوقت (UTC)"},{k:"src",l:"المصدر"},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],pts.slice().reverse());
 }
 
@@ -338,10 +339,10 @@ function render5(){
     title:function(i){return days28[i]+(days28[i]===LAST?" (اليوم، ناقص)":"")}};
   var mx=Math.max.apply(null,ctx.filter(function(x){return x!=null}).concat([1]));
   drawLines($("#c5a"),Object.assign({},common,{label:"متوسط السياق للردّ",ymax:niceMax(mx),yfmt:function(v){return compact(v,v>=1e6?1:0)},tfmt:function(v){return compact(v,1)+" توكن"},
-    series:[{name:"متوسط السياق",c:"--s7",v:ctx,hollow:hol}]}));
+    series:[{name:"متوسط السياق",c:"--m1",v:ctx,hollow:hol}]}));
   var mx2=Math.max.apply(null,shr.filter(function(x){return x!=null}).concat([.01]));
   drawLines($("#c5b"),Object.assign({},common,{label:"نسبة الردود فوق العتبة",ymax:Math.min(1,niceMax(mx2*100)/100),ml:46,yfmt:function(v){return Math.round(v*100)+"%"},tfmt:function(v){return pct(v)},
-    series:[{name:"نسبة الردود",c:"--s7",v:shr,hollow:hol}]}));
+    series:[{name:"نسبة الردود",c:"--m1",v:shr,hollow:hol}]}));
   var n5=$("#n5");
   if(!c){$("#c5sum").textContent="";n5.textContent="لا تغيير مسجَّل لـ autoCompactWindow في config_changes.";clear($("#t5"));clear($("#t5d"));return}
   var cd=c.ts.slice(0,10),bf=eachDay(addDays(cd,-7),addDays(cd,-1)),af=eachDay(cd,LAST);
@@ -382,7 +383,7 @@ function renderStartup(){
   drawLines($("#c6"),{label:"وسيط سياق البدء",xs:xi,x0:0,x1:days.length-1,ml:58,ymax:niceMax(mx),markers:marks,
     xfmt:function(v){return dm(days[Math.round(v)])},yfmt:function(v){return compact(v,0)},tfmt:function(v){return compact(v,1)+" توكن"},
     title:function(i){var r=byd[days[i]];return days[i]+(r?" · "+r.n+" جلسة · "+compact(r.p25,0)+"–"+compact(r.p75,0):"")},
-    series:[{name:"الوسيط",c:"--s7",v:med}]});
+    series:[{name:"الوسيط",c:"--m1",v:med}]});
   var rows=sc.fx.slice().reverse().map(function(f){return {ts:f.ts.slice(0,16).replace("T"," "),label:f.label,sz:f.size0!=null?num(f.size0)+" ← "+num(f.size1)+" بايت":"يدوي",
     nb:f.nb,na:f.na,mb:f.mb,ma:f.ma,delta:f.delta,v:f.verdict+(f.overlap?"*":"")}});
   var n6=$("#n6");

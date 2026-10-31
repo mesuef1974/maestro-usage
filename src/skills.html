@@ -31,7 +31,7 @@ __PAGEHEAD__
 <!--@sec gone--><section class="card" aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">استُعملت سابقًا وليست في الحصر</h2><span class="sub" id="gsum"></span></div>
   <p class="sub">أسماء وردت في السجلات بالأداة أو بأمر مائل ولا ملف محلي لها الآن (حذفت أو أُعيدت تسميتها أو إضافات قديمة). للعلم لا للإجراء.</p>
-  <div class="wrap" id="gone" style="max-block-size:320px"></div>
+  <div class="wrap mid" id="gone"></div>
 </section><!--@/sec-->
 
 <!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
@@ -52,7 +52,8 @@ __SHELL_CLOSE__
 var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 
-var REC={keep:{l:"أبقِ",c:"--s3"},nameonly:{l:"اسم فقط",c:"--s1"},off:{l:"أطفئ",c:"--oth"},archive:{l:"أرشف",c:"--s4"},clean:{l:"نظِّف",c:"--s8"}};
+/* ألوان الحالة (لا ألوان النماذج) ومع كل لون اسمه، فلا تُقرأ التوصية باللون وحده */
+var REC={keep:{l:"أبقِ",c:"--good"},nameonly:{l:"اسم فقط",c:"--m2"},off:{l:"أطفئ",c:"--oth"},archive:{l:"أرشف",c:"--warn"},clean:{l:"نظِّف",c:"--bad"}};
 var ORDER=["keep","nameonly","off","archive","clean"];
 var ST={on:"مفعّلة","name-only":"اسم فقط",off:"مطفأة",archived:"مؤرشفة"};
 var S={recs:new Set(ORDER),src:"",q:"",dup:false,unused:false,sk:"k",sd:1};

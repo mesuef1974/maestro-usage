@@ -1,8 +1,8 @@
-/* البيانات: الرسوم وأشرطة الصفوف والجداول والأدلّة. الألوان من --s1..--s8 فقط (لوحة محقَّقة)، والنص بألوان النص لا بلون السلسلة. */
+/* البيانات: الرسوم وأشرطة الصفوف والجداول والأدلّة. ألوان النماذج --s1..--s8 وألوان القياس --m1/--m2 (لوحات محقَّقة)، والنص بألوان النص لا بلون السلسلة. لا نص في SVG دون 12px. */
 .chart{inline-size:100%;position:relative;opacity:1;transition:opacity var(--dur)}
 .chart svg{display:block;max-inline-size:100%;touch-action:pan-y}
 .chart.busy{opacity:.5}
-svg text{font-family:var(--font-num);fill:var(--ink2);font-size:11px;font-variant-numeric:tabular-nums}
+svg text{font-family:var(--font-num);fill:var(--ink2);font-size:12px;font-variant-numeric:tabular-nums}
 svg .grid{stroke:var(--grid);stroke-width:1}
 svg .axis{stroke:var(--line);stroke-width:1}
 svg .hov{fill:var(--hover)}
@@ -13,28 +13,29 @@ svg .hov{fill:var(--hover)}
 .bars{display:grid;gap:var(--sp-2)}
 .brow{display:grid;grid-template-columns:minmax(7rem,13rem) 1fr minmax(6.5rem,11rem);gap:var(--sp-3);align-items:center;padding-block:.15rem;border-radius:var(--r-sm);cursor:default}
 .brow:hover,.brow:focus-visible{background:var(--hover)}
-.brow.sel{background:var(--hover);outline:1px solid var(--line)}
+.brow.sel{background:var(--hover);outline:1px solid var(--line-strong)}
 .brow .n{font-size:var(--t-sm);overflow-wrap:anywhere;min-inline-size:0}
 .brow .t{block-size:14px;background:var(--chip);border-radius:3px;position:relative;min-inline-size:0}
 .brow .f{position:absolute;inset-block:0;inset-inline-start:0;border-radius:0 4px 4px 0;min-inline-size:2px}
 html[dir="rtl"] .brow .f{border-radius:4px 0 0 4px}
 .brow .x{font:var(--t-sm)/1.4 var(--font-num);color:var(--ink);text-align:start;white-space:nowrap}
 .wrap{overflow-x:auto;max-block-size:420px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.wrap.short{max-block-size:220px}.wrap.mid{max-block-size:320px}.wrap.tall{max-block-size:520px}.wrap.free{max-block-size:none}
 table{border-collapse:collapse;inline-size:100%;font-size:var(--t-sm);line-height:1.5}
 th,td{padding:.35rem var(--sp-3);text-align:start;border-block-end:1px solid var(--grid);white-space:nowrap}
 td{font-family:var(--font-num)}
 th{background:var(--raised);position:sticky;top:0;font-weight:700;color:var(--ink2)}
 th button{all:unset;cursor:pointer;display:inline-flex;gap:var(--sp-1);align-items:center;min-block-size:28px;min-inline-size:28px}
 th button:focus-visible{outline:2px solid var(--focus)}
-th[aria-sort="ascending"] button::after{content:"▲";font-size:.65rem}
-th[aria-sort="descending"] button::after{content:"▼";font-size:.65rem}
+th[aria-sort="ascending"] button::after{content:"▲";font-size:.75rem}
+th[aria-sort="descending"] button::after{content:"▼";font-size:.75rem}
 td.num{font-variant-numeric:tabular-nums}
 tr.sel td{background:var(--hover)}
 .cmp td:nth-child(2),.cmp td:nth-child(3){font-weight:700}
 /* الحصة الأسبوعية */
 .qgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-4)}
 .qbar{block-size:14px;background:var(--chip);border-radius:3px;position:relative;margin-block:var(--sp-2)}
-.qbar i{position:absolute;inset-block:0;inset-inline-start:0;background:var(--brand);border-radius:3px}
+.qbar i{position:absolute;inset-block:0;inset-inline-start:0;background:var(--m1);border-radius:3px}
 .qrow{display:flex;justify-content:space-between;gap:var(--sp-4);font-size:var(--t-sm);border-block-end:1px solid var(--grid);padding-block:.2rem}
 .qrow b{font-family:var(--font-num);font-weight:700}
 /* بطاقات الأدوار (الساعة) */

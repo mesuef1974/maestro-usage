@@ -33,7 +33,7 @@ __PAGEHEAD__
 <!--@sec rg--><section class="card" aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">بحسب نظام نافذة السياق</h2><span class="sub" id="gsum"></span></div>
   <p class="sub">نظام النافذة الذي قرأته عملية الجلسة عند بدئها (افتراضي، 250 ألفًا، مليون). بدء العملية معروف للجلسات الملتقطة من 30/10 فقط؛ لغيرها يُستدلّ بما يُجزم به وإلا «غير محدد». لا تتأثر هذه البطاقة بمرشِّح النظام.</p>
-  <div class="wrap" id="rg" style="max-block-size:none"></div>
+  <div class="wrap free" id="rg"></div>
   <p class="note" id="gnote"></p>
 </section><!--@/sec-->
 
@@ -41,14 +41,14 @@ __PAGEHEAD__
   <div class="cardhead"><h2 id="hr">ترتيب الأدوار</h2><span class="sub" id="rsum"></span></div>
   <p class="sub">اختر المقياس. النسبة المعروضة هي حصة الدور من إجمالي كل الجلسات في الفترة (بما فيها غير المرقّمة، ولو أُخفيت). انقر دورًا لعرض تفاصيله.</p>
   <div class="metrics" id="metrics" role="group" aria-label="المقياس"></div>
-  <div class="bars" id="rank" style="margin-block-start:.6rem"></div>
+  <div class="bars mt" id="rank"></div>
   <button type="button" class="more" id="rmore"></button>
 </section><!--@/sec-->
 
 <!--@sec roles--><section class="card" aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">كل الأدوار</h2><span class="sub" id="tsum"></span></div>
   <p class="sub">انقر عنوان عمود للترتيب. «ذاكرة» = cache. أعمدة «بدأه» نسبة الردود بحسب من بدأ الدور.</p>
-  <div class="wrap" id="roles" style="max-block-size:520px"></div>
+  <div class="wrap tall" id="roles"></div>
 </section><!--@/sec-->
 
 <!--@sec detail--><section class="card" id="detail" aria-labelledby="hd">
@@ -93,10 +93,10 @@ var S={from:null,to:LAST,preset:"30",models:new Set(D.models.map(function(_,i){r
 /* ---------- المقاييس ---------- */
 function c2(v){return compact(v,2)}
 var MET=[
-  {k:"cr",l:"قراءة الذاكرة",c:"--s7",add:1,fmt:c2},
-  {k:"cc",l:"كتابة الذاكرة",c:"--s7",add:1,fmt:c2},
-  {k:"u",l:"المخرجات",c:"--s7",add:1,fmt:c2},
-  {k:"t",l:"الردود",c:"--s7",add:1,fmt:num},
+  {k:"cr",l:"قراءة الذاكرة",c:"--m1",add:1,fmt:c2},
+  {k:"cc",l:"كتابة الذاكرة",c:"--m1",add:1,fmt:c2},
+  {k:"u",l:"المخرجات",c:"--m1",add:1,fmt:c2},
+  {k:"t",l:"الردود",c:"--m1",add:1,fmt:num},
   {k:"ctx",l:"متوسط السياق",c:"--s5",fmt:c2},
   {k:"mx",l:"أكبر سياق",c:"--s5",fmt:c2},
   {k:"ov",l:"نسبة فوق العتبة",c:"--s5",fmt:function(v){return pct(v)}},
@@ -370,7 +370,7 @@ function renderDetail(){
   section(body,"مسار الضغط اليومي","متوسط السياق وأكبر سياق في اليوم لردود الخيط الرئيس؛ الفراغ يعني لا ردود رئيسة.");
   var da=dailyAgg(rows),xs=days.map(function(_,i){return i});
   var mean=days.map(function(d){var o=da[d];return o&&o.mt?o.ms/o.mt:null}),mxs=days.map(function(d){var o=da[d];return o&&o.mt?o.mx:null});
-  var lg=mk("div",{class:"legend"});[["متوسط السياق","--s7"],["أكبر سياق","--s5"]].forEach(function(x){var s=mk("span"),i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
+  var lg=mk("div",{class:"legend"});[["متوسط السياق","--m1"],["أكبر سياق","--m2"]].forEach(function(x){var s=mk("span"),i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
   body.appendChild(lg);
   var d2=divChart(body,"d2");
   var mm=Math.max.apply(null,mxs.filter(function(x){return x!=null}).concat([1]));
@@ -378,7 +378,7 @@ function renderDetail(){
   else drawLines(d2,{label:"مسار الضغط اليومي",xs:xs,x0:0,x1:days.length-1,ymax:niceMax(mm),ml:58,
     yfmt:function(v){return compact(v,v>=1e6?1:0)},xfmt:function(v){return dm0(days[Math.round(v)])},tfmt:function(v){return compact(v,1)+" توكن"},
     title:function(i){return days[i]+(days[i]===LAST?" (اليوم، ناقص)":"")},
-    series:[{name:"متوسط السياق",c:"--s7",v:mean},{name:"أكبر سياق",c:"--s5",v:mxs}]});
+    series:[{name:"متوسط السياق",c:"--m1",v:mean},{name:"أكبر سياق",c:"--m2",v:mxs}]});
 
   var grid=mk("div",{class:"row2"});body.appendChild(grid);
   var left=mk("div"),right=mk("div");grid.appendChild(left);grid.appendChild(right);
@@ -386,7 +386,7 @@ function renderDetail(){
   var ob=mk("div",{class:"bars"});left.appendChild(ob);
   var olist=Object.keys(a.org).map(function(k){return {o:k,x:a.org[k]}}).sort(function(x,y){return y.x.cr-x.x.cr});
   barRows(ob,olist.map(function(o){return {name:ORIG_AR[o.o]||o.o,val:o.x.cr,text:pct(share(o.x.cr,a.cr),0)+" · "+c2(o.x.cr),
-    tip:[{name:"الردود",value:num(o.x.t)+" ("+pct(share(o.x.t,a.t))+")"},{name:"قراءة الذاكرة",value:c2(o.x.cr)},{name:"كتابة الذاكرة",value:c2(o.x.cc)},{name:"المخرجات",value:c2(o.x.u)}]}}),"--s7");
+    tip:[{name:"الردود",value:num(o.x.t)+" ("+pct(share(o.x.t,a.t))+")"},{name:"قراءة الذاكرة",value:c2(o.x.cr)},{name:"كتابة الذاكرة",value:c2(o.x.cc)},{name:"المخرجات",value:c2(o.x.u)}]}}),"--m1");
   section(right,"جلساتها","انقر «اختيار» للتفصيل بالجلسة.");
   var sw=mk("div",{class:"wrap",style:"max-block-size:360px"});right.appendChild(sw);
   var sg=groupBy(rows,function(r){return r.s});
@@ -420,7 +420,7 @@ function renderCompare(){
     return {l:m.l,a:x==null?"—":m.f(x),b:y==null?"—":m.f(y),r:(!m.nr&&x>0&&y!=null)?(y/x).toFixed(2)+" مرّة":"—"}});
   var wrap=mk("div",{class:"wrap cmp",style:"max-block-size:none"});body.appendChild(wrap);
   drawTable(wrap,[{k:"l",l:"المقياس"},{k:"a",l:entName(A)},{k:"b",l:entName(B)},{k:"r",l:"الثاني ÷ الأول"}],trs);
-  var lg=mk("div",{class:"legend"});[[entName(A),"--s1"],[entName(B),"--s2"]].forEach(function(x){var s=mk("span"),i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
+  var lg=mk("div",{class:"legend"});[[entName(A),"--m1"],[entName(B),"--m2"]].forEach(function(x){var s=mk("span"),i=mk("i");i.style.background=css(x[1]);s.appendChild(i);s.appendChild(document.createTextNode(x[0]));lg.appendChild(s)});
   section(body,"المسار اليومي للاثنين","المقياس نفسه المختار في «تفاصيل».");
   var mb=mk("div",{class:"metrics"});body.appendChild(mb);dmButtons(mb,function(){renderDetail();renderCompare()});
   body.appendChild(lg);
@@ -432,7 +432,7 @@ function renderCompare(){
   if(days.length<2)empty(c1,"الفترة يوم واحد؛ لا خط يُرسم.");
   else drawLines(c1,{label:"مقارنة "+dmx.l,xs:xs,x0:0,x1:days.length-1,ymax:niceMax(mx),ml:58,yfmt:function(v){return compact(v,v>=1e6?1:0)},
     xfmt:function(v){return dm0(days[Math.round(v)])},tfmt:dmx.tf,title:function(i){return days[i]+(days[i]===LAST?" (اليوم، ناقص)":"")},
-    series:[{name:entName(A),c:"--s1",v:va},{name:entName(B),c:"--s2",v:vb}]});
+    series:[{name:entName(A),c:"--m1",v:va},{name:entName(B),c:"--m2",v:vb}]});
   section(body,"متوسط السياق اليومي للاثنين");
   var ma=days.map(function(d){var o=da[d];return o&&o.mt?o.ms/o.mt:null}),mb2=days.map(function(d){var o=db[d];return o&&o.mt?o.ms/o.mt:null});
   var mm=Math.max.apply(null,ma.concat(mb2).filter(function(x){return x!=null}).concat([1]));
@@ -440,7 +440,7 @@ function renderCompare(){
   if(days.length<2||mm<=1)empty(c2x,"لا ردود رئيسة كافية.");
   else drawLines(c2x,{label:"مقارنة متوسط السياق",xs:xs,x0:0,x1:days.length-1,ymax:niceMax(mm),ml:58,yfmt:function(v){return compact(v,v>=1e6?1:0)},
     xfmt:function(v){return dm0(days[Math.round(v)])},tfmt:function(v){return compact(v,1)+" توكن"},title:function(i){return days[i]},
-    series:[{name:entName(A),c:"--s1",v:ma},{name:entName(B),c:"--s2",v:mb2}]});
+    series:[{name:entName(A),c:"--m1",v:ma},{name:entName(B),c:"--m2",v:mb2}]});
 }
 
 /* ---------- الربط ---------- */

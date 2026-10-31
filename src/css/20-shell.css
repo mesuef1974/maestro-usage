@@ -20,7 +20,7 @@
 .toc a{font-size:var(--t-xs);min-block-size:30px}
 .toc a[aria-current="location"]{color:var(--ink);font-weight:700;background:var(--hover)}
 .sidefoot{display:grid;gap:var(--sp-2)}
-.themebtn{border:1px solid var(--line);border-radius:var(--r-sm);padding:.3rem var(--sp-3);font-size:var(--t-xs);background:var(--surface);color:var(--ink2);min-block-size:32px}
+.themebtn{border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:.3rem var(--sp-3);font-size:var(--t-xs);background:var(--surface);color:var(--ink2);min-block-size:32px}
 .themebtn:hover{background:var(--hover);color:var(--ink)}
 .page{max-inline-size:var(--page-w);margin-inline:auto;padding-block:var(--sp-5) var(--sp-7);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
 .app>.page{inline-size:100%;min-inline-size:0}
