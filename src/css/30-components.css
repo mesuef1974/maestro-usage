@@ -60,6 +60,7 @@
 .lrow .lb{block-size:8px;background:var(--chip);border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden;margin-block-start:var(--sp-2)}
 .lrow .lf{display:block;block-size:100%;background:var(--s1);border-radius:var(--r-pill);min-inline-size:4px;transition:inline-size .3s var(--ease)}
 .lrow .lf.hot{background:var(--s8)}
+.lrow .lq{color:var(--ink3);font-size:var(--t-sm);margin-block-start:var(--sp-1)}
 /* دليل الصفحات في «نظرة عامة» */
 .hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--sp-5) var(--sp-4);margin-block:var(--sp-5)}
 .hubgroup h2{font-size:var(--t-base);margin-block-end:var(--sp-2);color:var(--ink2);font-weight:500}

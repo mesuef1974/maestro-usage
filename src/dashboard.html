@@ -13,8 +13,8 @@ __PAGEHEAD__
 <!--@sec limits--><section class="limits" id="limits" aria-labelledby="hl" hidden>
   <div class="lh"><h2 id="hl">حدود استهلاك الخطة<span id="lplan"></span></h2><a href="plan.html">الحصة الأسبوعية</a></div>
   <div class="lrow" id="lr5"><div class="lt"><span class="ln">حدّ الخمس ساعات</span><span><span class="lr" id="lr5r"></span><span class="lp" id="lr5p"></span></span></div><div class="lb" role="progressbar" aria-label="حدّ الخمس ساعات" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr5f"></span></div></div>
-  <div class="lrow" id="lr7"><div class="lt"><span class="ln">الأسبوعي · كل النماذج</span><span><span class="lr" id="lr7r"></span><span class="lp" id="lr7p"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr7f"></span></div></div>
-  <div class="lrow" id="lrf" hidden><div class="lt"><span class="ln">الأسبوعي · Fable</span><span><span class="lr" id="lrfr"></span><span class="lp" id="lrfp"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي لنموذج Fable" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lrff"></span></div></div>
+  <div class="lrow" id="lr7"><div class="lt"><span class="ln">الأسبوعي · كل النماذج</span><span><span class="lr" id="lr7r"></span><span class="lp" id="lr7p"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr7f"></span></div><div class="lq" id="lr7q"></div></div>
+  <div class="lrow" id="lrf" hidden><div class="lt"><span class="ln">الأسبوعي · Fable</span><span><span class="lr" id="lrfr"></span><span class="lp" id="lrfp"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي لنموذج Fable" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lrff"></span></div><div class="lq" id="lrfq"></div></div>
   <div class="lrow" id="lrn" hidden><div class="lt"><span class="ln">تجديد الاشتراك الشهري</span><span><span class="lr" id="lrnr"></span><span class="lp" id="lrnp"></span></span></div></div>
   <p class="note" id="lnote"></p>
 </section>
@@ -213,6 +213,18 @@ function limitRow(id,pct,resetIso,withDay,now){
   f.style.inlineSize=v+"%";f.className="lf"+(v>=80?" hot":"");
   b.setAttribute("aria-valuenow",String(Math.round(v)));
 }
+/* سطر كلفة الحصة تحت الشريط: توكن لكل 1% (من انتقالات النسبة الدقيقة) ومعدل الحرق والمتوقَّع عند التصفير؛ بلا تقدير إن قلّت الانتقالات */
+function quotaLine(id,q){
+  var el=$("#"+id);if(!q){el.textContent="";return}
+  var c=q.cost||{},f=q.fc||{};
+  if(c.per_pct==null){el.textContent="كلفة 1% غير مقدَّرة بعد ("+(c.n||0)+" من "+QUOTA_MIN+" أزواج انتقال دقيقة).";return}
+  var parts=["≈ "+compact(c.per_pct)+" توكن لكل 1% (وسيط "+compact(c.med)+"، "+c.n+" أزواج)"];
+  if(f.rate_day!=null)parts.push("الحرق "+num(f.rate_day,1)+"%/يوم");
+  if(f.full_at)parts.push("يبلغ 100% نحو "+clock(Date.parse(f.full_at),true));
+  else if(f.at_reset!=null)parts.push("المتوقَّع عند التصفير "+num(Math.min(100,f.at_reset),0)+"%");
+  el.textContent=parts.join(" · ");
+}
+var QUOTA_MIN=3;
 function renderLimits(){
   if(!has("limits"))return;
   var box=$("#limits"),last=null;
@@ -240,6 +252,7 @@ function renderLimits(){
   var lf=null;D.plan.forEach(function(p){if(p.fa!=null&&(!lf||p.ts>lf.ts))lf=p});
   $("#lrf").hidden=!lf;
   if(lf)limitRow("lrf",lf.fa,lf.far,true,now);
+  quotaLine("lr7q",D.quota&&D.quota.week);quotaLine("lrfq",D.quota&&D.quota.fable);
   var age=Math.max(0,Math.round((now-Date.parse(last.ts))/6e4));
   $("#lnote").textContent="آخر لقطة منذ "+(age<1?"أقل من دقيقة":age<120?age+" دقيقة":Math.round(age/60)+" ساعة")+" · المصدر: "+last.src+" · الأزمنة بتوقيت جهازك.";
 }
