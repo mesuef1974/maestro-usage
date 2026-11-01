@@ -93,6 +93,8 @@ class TestHourlyPage(unittest.TestCase):
         for bad in ("@import", "XMLHttpRequest", "<script src"):
             self.assertNotIn(bad, html)
         self.assertIn("themebtn", html)  # زر السمة المركزي
+        self.assertIn('id="autobtn"', html)  # زر التحديث الدوري تحت زر السمة
+        self.assertLess(html.index("mu_theme"), html.index("mu_auto"))
         self.assertLess(html.index("mu_theme"), html.index("</head>"))  # السمة المحفوظة تُطبَّق في الرأس قبل الرسم
 
 

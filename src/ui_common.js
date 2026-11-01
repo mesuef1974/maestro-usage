@@ -203,19 +203,32 @@ function age(){
   a.textContent="عمر البيانات: "+(m<1?"أقل من دقيقة":Math.round(m)+" دقيقة")+(m>30?" — قديمة، اضغط تحديث فوري":"");
   a.className=m>30?"warn":"sub";
 }
+var AUTO={key:"mu_auto",steps:[0,5,15,30],save:null,timer:null,due:0};  // التحديث الدوري: دقائق، 0 = إيقاف؛ يُحفظ في localStorage ويشترك فيه كل الصفحات
+function autoGet(){try{var v=Number(localStorage.getItem(AUTO.key));return AUTO.steps.indexOf(v)>0?v:0}catch(e){return 0}}
+function refreshNow(msg,b){
+  // دورة تحميل كاملة في الخادم ثم إعادة تحميل الصفحة مع حفظ المرشِّحات (زر «تحديث فوري» والدوري كلاهما هنا)
+  if(AUTO.save)AUTO.save();
+  if(location.protocol==="file:"){
+    msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8790 في المتصفح — الآن يُعاد تحميل الملف فقط.";
+    setTimeout(function(){location.reload()},2500);return}
+  b.disabled=true;msg.textContent="جارٍ التحديث…";
+  fetch("/refresh",{method:"POST"}).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok)location.reload();else{msg.textContent="فشلت الدورة؛ راجع data\\cycle.log";b.disabled=false}
+  }).catch(function(){msg.textContent="تعذّر الوصول إلى الخادم المحلي؛ شغّل python src\\serve.py";b.disabled=false});
+}
+function autoArm(){
+  // يعيد ضبط المؤقّت وفق الاختيار المحفوظ؛ التبويب المخفي لا يحدِّث، وتُنفَّذ الدورة المستحقّة عند عودته
+  if(AUTO.timer){clearTimeout(AUTO.timer);AUTO.timer=null}
+  var m=autoGet();if(!m||location.protocol==="file:")return;
+  AUTO.due=Date.now()+m*6e4;
+  AUTO.timer=setTimeout(function(){AUTO.timer=null;if(document.hidden){AUTO.due=0;return}refreshNow($("#rmsg"),$("#refresh"))},m*6e4);
+}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&autoGet()&&!AUTO.timer&&!AUTO.due&&location.protocol!=="file:")refreshNow($("#rmsg"),$("#refresh"))});
 function initRefresh(saveView){
   var b=$("#refresh"),msg=$("#rmsg");
-  b.addEventListener("click",function(){
-    saveView();
-    if(location.protocol==="file:"){
-      msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8790 في المتصفح — الآن يُعاد تحميل الملف فقط.";
-      setTimeout(function(){location.reload()},2500);return}
-    b.disabled=true;msg.textContent="جارٍ التحديث…";
-    fetch("/refresh",{method:"POST"}).then(function(r){return r.json()}).then(function(j){
-      if(j&&j.ok)location.reload();else{msg.textContent="فشلت الدورة؛ راجع data\\cycle.log";b.disabled=false}
-    }).catch(function(){msg.textContent="تعذّر الوصول إلى الخادم المحلي؛ شغّل python src\\serve.py";b.disabled=false});
-  });
-  age();setInterval(age,30000);
+  AUTO.save=saveView;
+  b.addEventListener("click",function(){refreshNow(msg,b)});
+  age();setInterval(age,30000);autoArm();
 }
 
 /* ---------- مرشِّحات الفترة والنماذج (مشتركة: تفترض S وD وLAST وFIRST وrender في نطاق الصفحة) ---------- */
@@ -266,6 +279,21 @@ function bindFilters(){
   var b=document.createElement("button");b.type="button";b.className="themebtn";
   b.addEventListener("click",function(){var t=ORDER[(ORDER.indexOf(get())+1)%3];try{if(t==="auto")localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}apply(t)});
   nav.appendChild(b);apply(get());
+})();
+
+/* ---------- التحديث الدوري: زر تحت زر السمة يدور بين إيقاف و5 و15 و30 دقيقة (مؤقّته في autoArm بعد تهيئة الصفحة) ---------- */
+(function(){
+  var nav=document.getElementById("themeslot");
+  if(!nav)return;
+  function lbl(m){return m?"التحديث الدوري: كل "+m+(m<=10?" دقائق":" دقيقة"):"التحديث الدوري: إيقاف"}
+  var b=document.createElement("button");b.type="button";b.className="themebtn autobtn";b.id="autobtn";
+  function apply(m){b.textContent=lbl(m);b.setAttribute("aria-label",lbl(m)+"؛ اضغط للتبديل")}
+  b.addEventListener("click",function(){
+    var m=AUTO.steps[(AUTO.steps.indexOf(autoGet())+1)%AUTO.steps.length];
+    try{if(m)localStorage.setItem(AUTO.key,String(m));else localStorage.removeItem(AUTO.key)}catch(e){}
+    apply(m);autoArm();
+  });
+  nav.appendChild(b);apply(autoGet());
 })();
 
 /* ---------- المرشِّحات: مطويّة افتراضيًّا في الشاشات الضيّقة، وملخّصها يعرض الفترة الحالية ---------- */
