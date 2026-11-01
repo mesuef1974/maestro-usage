@@ -64,10 +64,30 @@ class TestQuotaModel(unittest.TestCase):
         self.assertEqual((c["lo"], c["hi"]), (80, 80))
         fc = quota_model.forecast(self.con, "seven_day_pct", "seven_day_resets_at", c["per_pct"], now=NOW)
         self.assertEqual(fc["pct"], 11)
+        self.assertEqual(fc["rate_src"], "tokens")  # لا لقطة قبل 24 ساعة فالاحتياط التوكنات
         self.assertAlmostEqual(fc["rate_day"], 8 * 80 / 80)  # 640 توكن في آخر 24 ساعة ÷ 80 = 8% يوميًّا
         hours_left = (datetime(2026, 11, 4, 17, tzinfo=timezone.utc) - NOW).total_seconds() / 3600
         self.assertAlmostEqual(fc["at_reset"], 11 + 8 / 24 * hours_left)
         self.assertIsNone(fc["full_at"])
+
+    def test_observed_rate_and_plan_boundary(self):
+        # لقطات بنافذة الخمس ساعات (الخطة القديمة) ثم اختفاؤها: الأزواج قبل الحدّ تُسقط، والحرق يُرصد من اللقطتين لا من التوكنات
+        for h, p in ((0, 2), (1, 3), (2, 4)):
+            self.con.execute("INSERT INTO plan_snapshots(ts, five_hour_pct, seven_day_pct, seven_day_resets_at, source) VALUES (?,10,?,'2026-11-04T17:00:00Z','cli_usage')",
+                             ("2026-10-30T%02d:00:00Z" % (8 + h), p))
+            self.con.execute("INSERT INTO plan_snapshots(ts, five_hour_pct, seven_day_pct, seven_day_resets_at, source) VALUES (?,10,?,'2026-11-04T17:00:00Z','cli_usage')",
+                             ("2026-10-30T%02d:05:00Z" % (8 + h), p))
+            self.turn("2026-10-30T%02d:02:00Z" % (8 + h), 1000)
+        self.snap("2026-10-30T11:00:00Z", 5)
+        self.snap("2026-10-30T11:05:00Z", 5)
+        self.snap("2026-10-31T11:00:00Z", 11)  # بعد نحو 24 ساعة: +6%
+        self.con.commit()
+        self.assertEqual(quota_model.plan_since(self.con), "2026-10-30T10:05:00Z")
+        self.assertEqual(quota_model.pairs(self.con, "seven_day_pct"), [])  # كل الأزواج تبدأ قبل الحدّ
+        fc = quota_model.forecast(self.con, "seven_day_pct", "seven_day_resets_at", None, now=NOW)
+        self.assertEqual((fc["rate_src"], fc["obs_from"]), ("observed", "2026-10-30T11:05:00Z"))
+        self.assertAlmostEqual(fc["rate_day"], 6 / (24 - 5 / 60) * 24)
+        self.assertIsNotNone(fc["at_reset"])
 
     def test_full_before_reset(self):
         self.snap("2026-10-31T11:00:00Z", 90)
@@ -83,7 +103,7 @@ class TestQuotaModel(unittest.TestCase):
         self.con.commit()
         p = quota_model.payload(self.con, now=NOW)
         self.assertEqual(set(p), {"week", "fable"})
-        self.assertEqual(p["fable"]["cost"], dict(n=0, per_pct=None))
+        self.assertEqual(p["fable"]["cost"], dict(since=None, n=0, per_pct=None))
         self.assertEqual(p["fable"]["fc"]["pct"], 2)
         self.assertEqual(quota_model._tokens(self.con, "2026-10-31T00:00:00Z", "2026-11-01T00:00:00Z", "claude-fable-%"), 500)
         self.assertEqual(quota_model._tokens(self.con, "2026-10-31T00:00:00Z", "2026-11-01T00:00:00Z", "claude-opus-%"), 0)

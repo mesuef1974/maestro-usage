@@ -253,8 +253,8 @@ def daily(con, days=60):
 
 
 def current(con):
-    """مؤشرات الآن: وسيط آخر K جلسة جديدة، وسيط K التي قبلها، الأرضية (5%)، حصتها من متوسط سياق الردّ في 7 أيام، وأكثر المجلدات."""
-    allv = _fresh(con)
+    """مؤشرات الآن: وسيط آخر K جلسة جديدة، وسيط K التي قبلها، الأرضية (5%)، حصتها من متوسط سياق الردّ في 7 أيام، وأكثر المجلدات، وزمن آخر عيّنة."""
+    allv = _fresh(con)  # مرتبة بالزمن، فآخر عنصر هو أحدث عيّنة طازجة
     ctxs = [x[1] for x in allv]
     last, prev = ctxs[-K:], ctxs[-2 * K:-K]
     now = datetime.now(timezone.utc)
@@ -270,6 +270,7 @@ def current(con):
     med = statistics.median(last) if last else None
     return dict(n=len(last), med=med, prev_n=len(prev), prev_med=statistics.median(prev) if prev else None,
                 floor=_quant(ctxs[-200:], .05) if ctxs else None, avg7=avg, share=(med / avg) if med and avg else None,
+                last_ts=allv[-1][0] if allv else None,
                 folders=[dict(f=f, n=len(v), med=round(statistics.median(v))) for f, v in top])
 
 

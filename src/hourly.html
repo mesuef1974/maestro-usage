@@ -44,7 +44,7 @@ __PAGEHEAD__
     <div class="seg" id="mode" role="group" aria-label="نوع التوكنات"><button type="button" data-v="cum">تراكمي</button><button type="button" data-v="per">لكل فترة</button></div>
     <div class="seg" id="scale" role="group" aria-label="المقياس"><button type="button" data-v="abs">مقياس موحّد</button><button type="button" data-v="rel">نسبي لكل دور</button></div>
     <div class="seg" id="bk" role="group" aria-label="التجميع"><button type="button" data-v="h">ساعة</button><button type="button" data-v="d">يوم</button></div>
-    <div class="seg" id="wsel" role="group" aria-label="نافذة السياق (100%)"><button type="button" data-v="1000000">نافذة 1 مليون = 100%</button><button type="button" data-v="250000">نافذة 250 ألفًا = 100%</button></div>
+    <span class="sub" id="wdesc"></span>
     <label class="tog"><input type="checkbox" id="idle"> تظليل الفترات الخاملة</label>
     <button type="button" class="exp" id="csv">تصدير CSV</button>
   </div>
@@ -87,38 +87,50 @@ var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 D=unpack(D);
 
-var LAST=D.last_day,FIRST=D.first_day,WIN=D.window,AL=D.alert/100,MAXSEL=8,H1=36e5,WINS=[D.window,250000];
-var S={from:null,to:LAST,preset:"7",models:new Set(D.models.map(function(_,i){return i})),unnum:false,bk:"h",mode:"cum",scale:"abs",win:D.window,idle:true,q:"",sel:null,slots:{}};
+/* WIN نافذة احتياطية فقط؛ الضغط يُقسَم على نافذة الردّ الفعلية r.w (بحسب نظام الجلسة ومجموعة النموذج) */
+var LAST=D.last_day,FIRST=D.first_day,WIN=D.window,AL=D.alert/100,MAXSEL=8,H1=36e5;
+var S={from:null,to:LAST,preset:"7",models:new Set(D.models.map(function(_,i){return i})),unnum:false,bk:"h",mode:"cum",scale:"abs",idle:true,q:"",sel:null,slots:{}};
+function winOf(r){return r.w||WIN}
+function utcLbl(ts){return ts.slice(11,19)==="00:00:00"?ts.slice(0,10):ts.slice(0,10)+" "+ts.slice(11,16)}
+/* وصف النوافذ الفعلية من الحمولة (فترات نظام 250 ألفًا من config_changes، لا ثابت مكتوب) */
+function winText(){var W=D.windows,sp=W.w250_spans.map(function(p){return "لجلسات بدأت "+(p[1]?"بين "+utcLbl(p[0])+" و"+utcLbl(p[1]):"منذ "+utcLbl(p[0]))+" UTC"}).join("، ");
+  return "النافذة الفعلية لكل جلسة: "+compact(W.default)+(sp?"، أو "+compact(W.w250)+" "+sp:"")+"، أو "+compact(W.old)+" للنماذج الأقدم"}
+function alertText(){var ac=D.windows.autocompact_pct;return "العتبة "+D.alert+"% من النافذة الفعلية"+(ac?" (الضغط التلقائي يقع عند "+ac[0]+"–"+ac[1]+"% منها وفق config_changes)":"")}
+/* الحزمة الجارية (الساعة أو اليوم الذي يضمّ الآن بتوقيت UTC) ناقصة: بياناتها لم تكتمل بعد */
+function partial(i){var nh=Math.floor(Date.now()/H1),h=bucketHour(i);return nh>=h&&nh<h+B.size}
+function partialTag(i){return partial(i)?" (ناقص)":""}
+function curIdx(){var i=Math.floor((Math.floor(Date.now()/H1)-B.lo)/B.size);return i>=0&&i<B.nb?i:-1}
 function c2(v){return compact(v,2)}
 function p0(v){return pct(v,0)}
 
 /* ---------- حساب الفترة ---------- */
 var R,RI,ALL,B,TILE,CH,SEL,PMAX=100;
-function mkAgg(nb){var f=function(){var a=new Array(nb),i;for(i=0;i<nb;i++)a[i]=0;return a};return {tok:f(),px:f(),dr:f(),df:f(),dt:f(),total:0,drops:0}}
+function mkAgg(nb){var f=function(){var a=new Array(nb),i;for(i=0;i<nb;i++)a[i]=0;return a};return {tok:f(),px:f(),pw:f(),dr:f(),di:f(),df:f(),dt:f(),total:0,drops:0,didle:0}}
 function hourLabel(h){return ymd(h*H1)+" "+("0"+(h%24)).slice(-2)+":00"}
 function bucketHour(i){return B.lo+i*B.size}
-function bLabel(i){var h=bucketHour(i);return B.size===1?hourLabel(h)+" UTC":ymd(h*H1)+" (يوم UTC)"}
+function bLabel(i){var h=bucketHour(i);return (B.size===1?hourLabel(h)+" UTC":ymd(h*H1)+" (يوم UTC)")+partialTag(i)}
 function bShort(i){var h=bucketHour(i),d=ymd(h*H1);return B.size===1?dm(d)+" "+("0"+(h%24)).slice(-2)+":00":dm(d)}
 /* قالب واحد لعدّة صفحات: يُنفَّذ كل جزء فقط إن كان قسمه موجودًا */
 function has(id){return !!document.getElementById(id)}
 function compute(){
-  WIN=S.win;
   var lo=Date.parse(S.from+"T00:00:00Z")/H1,hi=Date.parse(S.to+"T00:00:00Z")/H1+23,size=S.bk==="d"?24:1,nb=Math.floor((hi-lo)/size)+1;
   B={lo:lo,hi:hi,size:size,nb:nb};RI={};
   var hk={};
   D.h.forEach(function(r){
     if(!S.models.has(r.m)||r.h<lo||r.h>hi||(!S.unnum&&!D.rp[r.r]))return;
     var a=RI[r.r]||(RI[r.r]=mkAgg(nb)),b=Math.floor((r.h-lo)/size);
-    a.tok[b]+=r.k;a.total+=r.k;if(r.x>a.px[b])a.px[b]=r.x;
-    if(r.d){a.dr[b]+=r.d;a.drops+=r.d;if(r.df>a.df[b]){a.df[b]=r.df;a.dt[b]=r.dt}}
-    if(r.x>0){var k=r.r+":"+r.h;if(!(hk[k]>=r.x))hk[k]=r.x}
+    a.tok[b]+=r.k;a.total+=r.k;
+    /* أعلى ضغط في الحزمة = أعلى نسبة سياق ÷ نافذته (لا أكبر سياق خام، فالنوافذ تختلف بين الجلسات والنماذج) */
+    if(r.x>0&&r.x/winOf(r)>a.px[b]/(a.pw[b]||WIN)){a.px[b]=r.x;a.pw[b]=winOf(r)}
+    if(r.d){a.dr[b]+=r.d;a.drops+=r.d;a.di[b]+=r.di;a.didle+=r.di;if(r.df>a.df[b]){a.df[b]=r.df;a.dt[b]=r.dt}}
+    if(r.x>0){var k=r.r+":"+r.h,v=r.x/winOf(r);if(!(hk[k]>=v))hk[k]=v}
   });
   ALL=mkAgg(nb);
-  Object.keys(RI).forEach(function(k){var a=RI[k];for(var i=0;i<nb;i++)ALL.tok[i]+=a.tok[i];ALL.total+=a.total;ALL.drops+=a.drops});
+  Object.keys(RI).forEach(function(k){var a=RI[k];for(var i=0;i<nb;i++)ALL.tok[i]+=a.tok[i];ALL.total+=a.total;ALL.drops+=a.drops;ALL.didle+=a.didle});
   R=Object.keys(RI).map(Number).sort(function(x,y){return RI[y].total-RI[x].total||D.roles[x].localeCompare(D.roles[y])});
   /* بطاقات الملخص على مستوى الساعة بصرف النظر عن التجميع */
   var n=0,sum=0,mx=0,mxk=null,over=0;
-  Object.keys(hk).forEach(function(k){var v=hk[k]/WIN;n++;sum+=v;if(v>mx){mx=v;mxk=k}if(v>=AL)over++});
+  Object.keys(hk).forEach(function(k){var v=hk[k];n++;sum+=v;if(v>mx){mx=v;mxk=k}if(v>=AL)over++});
   PMAX=100*Math.max(1,Math.ceil(mx-1e-9));
   TILE={n:n,avg:n?sum/n:null,max:mx,maxk:mxk,over:over,tokens:ALL.total,roles:R.filter(function(r){return RI[r].total>0}).length};
 }
@@ -127,7 +139,7 @@ function fin(a){
   a.cum=new Array(nb);a.pr=new Array(nb);a.cross=[];a.peak=null;a.act=0;
   for(i=0;i<nb;i++){
     run+=a.tok[i];a.cum[i]=run;if(a.tok[i]>0)a.act++;
-    var p=a.px[i]>0?a.px[i]/WIN:null;a.pr[i]=p;
+    var p=a.px[i]>0?a.px[i]/(a.pw[i]||WIN):null;a.pr[i]=p;
     if(p!=null){
       if(p>=AL&&(last==null||last<AL))a.cross.push(i);
       if(!a.peak||p>a.peak.v)a.peak={i:i,v:p};
@@ -248,7 +260,7 @@ function drawPress(box,sel){
   var tot=fin(ALL);
   var f=frame(box,{label:"ضغط السياق % للأدوار المحدّدة",ml:44,left:{max:PMAX,fmt:function(v){return v.toFixed(0)+"%"},title:"ضغط %"},thr:AL,idle:idleOf(tot),
     tip:function(i){
-      var rows=lines.filter(function(l){return l.a.pr[i]!=null}).map(function(l){return {color:css(l.c),name:l.n,value:pct(l.a.pr[i],1)+" · "+c2(l.a.px[i])}});
+      var rows=lines.filter(function(l){return l.a.pr[i]!=null}).map(function(l){return {color:css(l.c),name:l.n,value:pct(l.a.pr[i],1)+" · "+c2(l.a.px[i])+" من "+compact(l.a.pw[i]||WIN)}});
       if(!rows.length)rows=[{name:"لا ردّ رئيس في هذه الفترة",value:"—"}];
       return {title:bLabel(i),rows:rows};
     }});
@@ -282,8 +294,8 @@ function drawRole(box,n,a,absMax){
   }
   var f=frame(bp,{label:"الدور "+n+": ضغط السياق",ml:56,H:170,left:{max:PMAX,fmt:function(x){return x.toFixed(0)+"%"},title:"ضغط %"},thr:AL,idle:idleOf(a),
     tip:function(i){
-      var rows=[{name:"ضغط السياق",value:a.pr[i]!=null?pct(a.pr[i],1)+" · "+c2(a.px[i]):"— (لا ردّ رئيس)"}];
-      if(a.dr[i])rows.push({name:"هبوط السياق (تقدير)",value:"من "+c2(a.df[i])+" إلى "+c2(a.dt[i])+(a.dr[i]>1?" (+"+(a.dr[i]-1)+")":"")});
+      var rows=[{name:"ضغط السياق",value:a.pr[i]!=null?pct(a.pr[i],1)+" · "+c2(a.px[i])+" من "+compact(a.pw[i]||WIN):"— (لا ردّ رئيس)"}];
+      if(a.dr[i])rows.push({name:"هبوط السياق (تقدير)",value:"من "+c2(a.df[i])+" إلى "+c2(a.dt[i])+(a.dr[i]>1?" (+"+(a.dr[i]-1)+")":"")+(a.di[i]?" · "+num(a.di[i])+" بعد خمول":"")});
       if(a.cross.indexOf(i)>=0)rows.push({name:"عبور العتبة",value:D.alert+"%"});
       return {title:bLabel(i),rows:rows};
     }});
@@ -307,16 +319,18 @@ function tilesInto(box,items){
 function visibleRoles(){return D.rp.filter(function(p){return S.unnum||p}).length}
 function renderTiles(){
   /* دلتا الفترة: توكنات الفترة السابقة المساوية بالمرشِّحات نفسها (النماذج وغير المرقّمة) */
-  var P=prevRange(),ptok=null;
-  if(P){var plo=Date.parse(P.from+"T00:00:00Z")/H1,phi=Date.parse(P.to+"T00:00:00Z")/H1+23;ptok=0;D.h.forEach(function(r){if(S.models.has(r.m)&&r.h>=plo&&r.h<=phi&&(S.unnum||D.rp[r.r]))ptok+=r.k})}
-  var mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC":"—";
+  var P=prevRange(),ptok=null,ctok=TILE.tokens;
+  if(P){var plo=Date.parse(P.from+"T00:00:00Z")/H1,phi=Date.parse(P.to+"T00:00:00Z")/H1+23,clo=Date.parse(S.from+"T00:00:00Z")/H1,chi=Date.parse(P.curTo+"T00:00:00Z")/H1+23;ptok=0;if(P.cut)ctok=0;
+    /* الطرف الحالي للدلتا بالأيام الكاملة فقط [S.from, P.curTo] عند استبعاد اليوم الجاري؛ القيمة المعروضة تبقى للفترة كاملة */
+    D.h.forEach(function(r){if(!S.models.has(r.m)||!(S.unnum||D.rp[r.r]))return;if(r.h>=plo&&r.h<=phi)ptok+=r.k;if(P.cut&&r.h>=clo&&r.h<=chi)ctok+=r.k})}
+  var nh=Math.floor(Date.now()/H1),mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC"+(Number(mk_[1])===nh?" (ناقص)":""):"—";
   tilesInto($("#tiles"),[
-    ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة",deltaText(TILE.tokens,ptok)],
+    ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة",deltaText(ctok,ptok,P)],
     ["الأدوار النشطة",num(TILE.roles),"من "+num(visibleRoles())+(S.unnum?" دورًا وفئة":" دورًا من أدوار المشروع")],
     ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة"],
     ["أعلى ضغط",TILE.n?pct(TILE.max,1):"—",who],
-    ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—"],
-    ["هبوط السياق (تقدير)",num(ALL.drops),"ضغط أو مسح مُستدَل عليه"]]);
+    ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),(TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—")+" · نسبة من النافذة الفعلية"],
+    ["هبوط السياق (تقدير)",num(ALL.drops),"ضغط أو مسح مُستدَل عليه · منها "+num(ALL.didle)+" بعد خمول"]]);
 }
 function dq(ms){return new Date(ms+3*H1).toISOString().slice(0,16).replace("T"," ")}
 function renderQuota(){
@@ -327,18 +341,20 @@ function renderQuota(){
   var rows=[
     ["آخر تحديث للقياس",dq(t)+" (الدوحة)"],
     ["عمر القياس",ageH<1?"أقل من ساعة":ageH<48?num(ageH,1)+" ساعة":num(ageH/24,1)+" يومًا"],
-    ["المستهلك أسبوعيًّا",p.w==null?"—":num(p.w,1)+"%"],
-    ["المتبقي أسبوعيًّا",p.w==null?"—":num(100-p.w,1)+"%"],
-    ["المستهلك أسبوعيًّا (Fable)",p.fa==null?"—":num(p.fa,1)+"%"],
+    ["المستهلك أسبوعيًّا",p.w==null?"—":num(p.w,0)+"%"],
+    ["المتبقي أسبوعيًّا",p.w==null?"—":num(100-p.w,0)+"%"],
+    ["المستهلك أسبوعيًّا (Fable)",p.fa==null?"—":num(p.fa,0)+"%"],
     ["إعادة الضبط الأسبوعية",p.wr?dq(Date.parse(p.wr))+" (الدوحة)":"—"],
-    ["نافذة الخمس ساعات",p.f==null?"أُزيلت من الخطة":(p.fr&&Date.parse(p.fr)<Date.now()?"انتهت نافذتها (الرقم قديم)":num(p.f,1)+"% حتى "+dq(Date.parse(p.fr)))]];
-  var bar=mk("div",{class:"qbar",role:"img","aria-label":"المستهلك أسبوعيًّا "+(p.w==null?"غير معروف":num(p.w,1)+"%")}),i=mk("i");i.style.inlineSize=Math.max(0,Math.min(100,p.w||0))+"%";bar.appendChild(i);box.appendChild(bar);
+    ["نافذة الخمس ساعات",p.f==null?fiveMissing():(p.fr&&Date.parse(p.fr)<Date.now()?"انتهت نافذتها (الرقم قديم)":num(p.f,0)+"% حتى "+dq(Date.parse(p.fr)))]];
+  var bar=mk("div",{class:"qbar",role:"img","aria-label":"المستهلك أسبوعيًّا "+(p.w==null?"غير معروف":num(p.w,0)+"%")}),i=mk("i");i.style.inlineSize=Math.max(0,Math.min(100,p.w||0))+"%";bar.appendChild(i);box.appendChild(bar);
   rows.forEach(function(r){var d=mk("div",{class:"qrow"});d.appendChild(mk("span",null,r[0]));d.appendChild(mk("b",null,r[1]));box.appendChild(d)});
   $("#qsum").textContent=num(n)+" لقطة";
   var w=$("#qwarn");w.textContent=p.src==="cli_usage"?"اللقطات تُسجَّل آليًّا (كل 5 دقائق، وكل دقيقة عند تغيّر النسب) من أمر /usage بلا استهلاك توكنات (آخر مصدر: cli_usage). النسبة لحظية؛ الاتجاه يحتاج لقطات كافية ("+num(n)+" حاليًّا من كل المصادر).":"تنبيه: اللقطات قليلة ("+num(n)+" فقط) والمصدر الأخير ليس مهمة /usage الساعية؛ النسبة لحظية ولا تُبنى عليها اتجاهات.";
   var last=D.plan.slice(-6).reverse();
-  drawTable($("#qtab"),[{k:"ts",l:"الوقت (الدوحة)",f:function(r){return dq(Date.parse(r.ts))}},{k:"f",l:"خمس ساعات %",n:1,f:function(r){return r.f==null?"—":num(r.f,1)}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,1)}}],last,null,null);
+  drawTable($("#qtab"),[{k:"ts",l:"الوقت (الدوحة)",f:function(r){return dq(Date.parse(r.ts))}},{k:"w",l:"أسبوعي %",n:1,f:function(r){return r.w==null?"—":num(r.w,0)}},{k:"fa",l:"Fable %",n:1,f:function(r){return r.fa==null?"—":num(r.fa,0)}}],last,null,null);
 }
+/* القيمة الفارغة استنتاج لا سجل: نذكر آخر لقطة قُرئت فيها نافذة الخمس ساعات بدل الجزم بإزالتها */
+function fiveMissing(){for(var i=D.plan.length-1;i>=0;i--)if(D.plan[i].f!=null)return "غير مقروءة من /usage منذ "+dq(Date.parse(D.plan[i].ts))+" (الدوحة)";return "غير مقروءة من /usage في أي لقطة"}
 function renderChips(){
   var box=$("#rchips");clear(box);
   var sel=curSel(),q=S.q;
@@ -380,7 +396,7 @@ function renderRoleCards(sel){
     var a=aggs[k],card=mk("div",{class:"rcard"}),head=mk("div",{class:"rhead"}),h3=mk("h3");
     var sw=mk("span",{class:"sw"});sw.style.background=css(cvar(n));sw.style.inlineSize="12px";sw.style.blockSize="12px";h3.appendChild(sw);h3.appendChild(document.createTextNode("الدور "+n));head.appendChild(h3);
     var st=mk("div",{class:"rstat"});
-    [["التوكنات",c2(a.total)],["أعلى ضغط",a.peak?pct(a.peak.v,1)+" ("+bShort(a.peak.i)+")":"—"],["عبور "+D.alert+"%",num(a.cross.length)],["هبوط السياق",num(a.drops)],["فترات نشطة",num(a.act)+" من "+num(B.nb)]].forEach(function(x){
+    [["التوكنات",c2(a.total)],["أعلى ضغط",a.peak?pct(a.peak.v,1)+" ("+bShort(a.peak.i)+partialTag(a.peak.i)+")":"—"],["عبور "+D.alert+"%",num(a.cross.length)],["هبوط السياق",num(a.drops)+" (منها "+num(a.didle)+" بعد خمول)"],["فترات نشطة",num(a.act)+" من "+num(B.nb)+(curIdx()>=0?" (الجارية ناقصة)":"")]].forEach(function(x){
       var s=mk("span",null,x[0]+" ");s.appendChild(mk("b",null,x[1]));st.appendChild(s)});
     head.appendChild(st);card.appendChild(head);
     var box=mk("div",{class:"chart"});card.appendChild(box);
@@ -393,9 +409,9 @@ function renderRoleCards(sel){
 
 /* ---------- تصدير CSV ---------- */
 function exportCsv(){
-  var sel=curSel(),out=["bucket_utc,role,tokens_bucket,tokens_cumulative,pressure_pct,peak_context,drops"];
+  var sel=curSel(),out=["bucket_utc,role,tokens_bucket,tokens_cumulative,pressure_pct,peak_context,context_window,drops,drops_after_idle"];
   function row(label,name,a){for(var i=0;i<B.nb;i++){if(!a.tok[i]&&!a.px[i])continue;
-    out.push([label(i),name,a.tok[i],a.cum[i],a.pr?(a.pr[i]==null?"":(100*a.pr[i]).toFixed(2)):"",a.px?a.px[i]:"",a.dr?a.dr[i]:""].join(","))}}
+    out.push([label(i),name,a.tok[i],a.cum[i],a.pr?(a.pr[i]==null?"":(100*a.pr[i]).toFixed(2)):"",a.px?a.px[i]:"",a.px&&a.px[i]?(a.pw[i]||WIN):"",a.dr?a.dr[i]:"",a.di?a.di[i]:""].join(","))}}
   var lab=function(i){var h=bucketHour(i);return ymd(h*H1)+(B.size===1?"T"+("0"+(h%24)).slice(-2)+":00:00Z":"")};
   sel.forEach(function(n){row(lab,n,aggOf(n))});
   row(lab,"ALL",fin(ALL));
@@ -406,9 +422,9 @@ function exportCsv(){
 
 /* ---------- العرض ---------- */
 function syncSegs(){
-  [["#mode","mode"],["#scale","scale"],["#bk","bk"],["#wsel","win"]].forEach(function(p){
+  [["#mode","mode"],["#scale","scale"],["#bk","bk"]].forEach(function(p){
     [].forEach.call($(p[0]).children,function(b){b.setAttribute("aria-pressed",String(b.dataset.v===String(S[p[1]])))})});
-  $("#win").textContent=num(WIN);fillDefs({window:num(WIN)});
+  $("#wdesc").textContent=winText();
   $("#idle").checked=S.idle;
 }
 function render(){
@@ -416,34 +432,34 @@ function render(){
   var sel=curSel();assignSlots(sel);SEL=sel;PMAX=adaptP(sel);
   syncSegs();renderTiles();renderQuota();renderChips();legendTotal(sel);
   $("#tsum").textContent=(S.mode==="cum"?"تراكمي من بداية الفترة":"لكل "+(S.bk==="h"?"ساعة":"يوم"))+" · "+(S.scale==="abs"?"مقياس موحّد":"نسبي")+" · "+num(B.nb)+" "+(S.bk==="h"?"ساعة":"يومًا");
-  $("#prsum").textContent=sel.length?"العتبة "+D.alert+"% · النافذة "+compact(WIN)+" توكن = 100%"+(PMAX>100?" · المحور ممدود إلى "+PMAX+"% لأن سياقات تجاوزت النافذة":" · المحور حتى "+PMAX+"% (يتكيّف مع أعلى قيمة)")+(AL*100>PMAX+1e-6?" · العتبة خارج المحور لأن أعلى ضغط دونها":""):"";
+  $("#prsum").textContent=sel.length?alertText()+" · "+winText()+" = 100%"+(PMAX>100?" · المحور ممدود إلى "+PMAX+"% لأن سياقات تجاوزت النافذة":" · المحور حتى "+PMAX+"% (يتكيّف مع أعلى قيمة)")+(AL*100>PMAX+1e-6?" · العتبة خارج المحور لأن أعلى ضغط دونها":""):"";
   var jobs=renderRoleCards(sel); /* تُبنى البطاقات أولًا كي تُقاس عروض الرسوم بعد استقرار التخطيط وظهور شريط التمرير */
   if(!sel.length){clear($("#tchart"));clear($("#pchart"));return}
   drawTotal($("#tchart"),sel);drawPress($("#pchart"),sel);jobs.forEach(function(f){f()});
 }
-function saveView(){try{sessionStorage.setItem("mu_hourly",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models),q:S.q,bk:S.bk,mo:S.mode,sc:S.scale,id:S.idle,w:S.win,u:S.unnum,s:S.sel}))}catch(e){}}
+function saveView(){try{sessionStorage.setItem("mu_hourly",JSON.stringify({p:S.preset,f:S.from,t:S.to,m:Array.from(S.models),q:S.q,bk:S.bk,mo:S.mode,sc:S.scale,id:S.idle,u:S.unnum,s:S.sel}))}catch(e){}}
 function loadView(){
   try{var v=JSON.parse(sessionStorage.getItem("mu_hourly")||"null");if(!v)return;sessionStorage.removeItem("mu_hourly");
     if(v.p&&v.p!=="custom")setPreset(v.p);else if(v.f&&v.t){S.preset="custom";S.from=v.f;S.to=v.t;syncInputs()}
     if(Array.isArray(v.m)&&v.m.length)S.models=new Set(v.m.filter(function(i){return i>=0&&i<D.models.length}));
     S.q=String(v.q||"");if(v.bk==="h"||v.bk==="d")S.bk=v.bk;if(v.mo==="cum"||v.mo==="per")S.mode=v.mo;if(v.sc==="abs"||v.sc==="rel")S.scale=v.sc;
-    S.unnum=!!v.u;S.idle=v.id!==false;if(WINS.indexOf(v.w)>=0)S.win=v.w;S.sel=Array.isArray(v.s)?v.s.filter(function(n){return typeof n==="string"}).slice(0,MAXSEL):null;
+    S.unnum=!!v.u;S.idle=v.id!==false;S.sel=Array.isArray(v.s)?v.s.filter(function(n){return typeof n==="string"}).slice(0,MAXSEL):null;
   }catch(e){}
 }
 function init(){
-  fillDefs({alert:D.alert,drop_min:num(D.drop_min)});
+  var W=D.windows;fillDefs({alert:D.alert,drop_min:num(D.drop_min),window:num(W.default)+" (أو "+num(W.w250)+" لجلسات نظام 250 ألفًا، أو "+num(W.old)+" للنماذج الأقدم)",wake_gap:num(D.wake_gap/60)});
   setPreset("7");loadView();buildChips();initRefresh(saveView);bindFilters();
   $("#q").value=S.q;$("#unnum").checked=S.unnum;
   $("#unnum").addEventListener("change",function(){S.unnum=this.checked;render()});
   /* ضبط الفترة المخصّصة يُبقي التجميع المختار؛ الفترة الطويلة تنتقل تلقائيًّا إلى اليوم */
   [].forEach.call($("#presets").children,function(b){b.addEventListener("click",function(){S.bk=(b.dataset.p==="2"||b.dataset.p==="7")?"h":"d";render()})});
-  [["#mode","mode"],["#scale","scale"],["#bk","bk"],["#wsel","win"]].forEach(function(p){
-    [].forEach.call($(p[0]).children,function(b){b.addEventListener("click",function(){S[p[1]]=p[1]==="win"?Number(b.dataset.v):b.dataset.v;render()})})});
+  [["#mode","mode"],["#scale","scale"],["#bk","bk"]].forEach(function(p){
+    [].forEach.call($(p[0]).children,function(b){b.addEventListener("click",function(){S[p[1]]=b.dataset.v;render()})})});
   $("#idle").addEventListener("change",function(){S.idle=this.checked;render()});
   [].forEach.call(document.querySelectorAll("[data-top]"),function(b){b.addEventListener("click",function(){S.sel=topN(Number(b.dataset.top));render()})});
   var qt;$("#q").addEventListener("input",function(){var el=this;clearTimeout(qt);qt=setTimeout(function(){S.q=el.value.trim().toLowerCase();render()},150)});
   $("#csv").addEventListener("click",exportCsv);
-  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.q="";S.unnum=false;$("#unnum").checked=false;S.bk="h";S.mode="cum";S.scale="abs";S.win=D.window;S.idle=true;S.sel=null;S.slots={};
+  $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.q="";S.unnum=false;$("#unnum").checked=false;S.bk="h";S.mode="cum";S.scale="abs";S.idle=true;S.sel=null;S.slots={};
     $("#q").value="";setPreset("7");buildChips();render()});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(render,120)});
   S.q=S.q.toLowerCase();legend2();

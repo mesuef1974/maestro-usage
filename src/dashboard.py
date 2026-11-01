@@ -2,6 +2,8 @@
 
 الحمولة جدولان للحقائق: A = يوم × نموذج × أصل الدور، وB = جلسة × يوم × نموذج، إضافةً إلى لقطات الخطة وتغييرات الإعدادات.
 المرشِّحات (فترة، نماذج) تُحسب في المتصفح من هذين الجدولين، فتتّفق كل الأرقام.
+في الحقيقتين الحقول t/i/cc/cr/u/v مجاميع كل الردود (الاستهلاك)، والحقول المسبوقة بـm (mt/mi/mcc/mcr/mv) للخيط الرئيس وحده
+(is_sidechain=0) لأن مقاييس الضغط (متوسط السياق وفوق العتبة وأكبر سياق) تُحسب من الردود الرئيسة فقط كما في تعريف «سياق الردّ».
 """
 import os
 import sys
@@ -21,7 +23,7 @@ MODEL_GROUPS = [
     ("claude-opus-5-5", "Opus 5.5"), ("claude-fable-5-1", "Fable 5.1"), ("claude-haiku-5-5", "Haiku 5.5"),
 ]
 OTHER_NAME = "أخرى (أقدم)"
-ORIGINS = ("human", "peer", "scheduled", "sdk", "task_notification", "system", "unknown")
+ORIGINS = ("human", "peer", "scheduled", "sdk", "task_notification", "system", "sub", "unknown")  # sub = ردود الوكلاء الفرعيين
 
 
 def _group(model):
@@ -37,33 +39,37 @@ def _origin(o):
 
 def payload(con, label_fn, not_applied_mark, min_turns):
     ctx = "(input_tokens + cache_creation_tokens + cache_read_tokens)"
+    over = "CASE WHEN %s > ? THEN 1 ELSE 0 END" % ctx  # الردّ فوق العتبة
+    main = "CASE WHEN is_sidechain=0 THEN %s ELSE 0 END"  # الكمية للخيط الرئيس فقط
+    # الأصل: ردود الوكلاء الفرعيين أصلها «sub» (لا أصل مسجّل لها أصلًا)، وما سواها بلا أصل «unknown»
+    origin = "CASE WHEN is_sidechain=1 THEN 'sub' ELSE COALESCE(turn_origin,'unknown') END"
+    sums = "COUNT(*), SUM(input_tokens), SUM(cache_creation_tokens), SUM(cache_read_tokens), SUM(output_tokens), SUM(%s)" % over
+    main_sums = ", ".join("SUM(%s)" % (main % x) for x in ("1", "input_tokens", "cache_creation_tokens", "cache_read_tokens", over))
     a = {}
-    for day, model, org, t, i, cc, cr, u, v in con.execute(
-            "SELECT substr(ts,1,10), model, COALESCE(turn_origin,'unknown'), COUNT(*), SUM(input_tokens), SUM(cache_creation_tokens), "
-            "SUM(cache_read_tokens), SUM(output_tokens), SUM(CASE WHEN %s > ? THEN 1 ELSE 0 END) FROM usage_turns "
-            "GROUP BY 1, 2, 3" % ctx, (THRESHOLD,)):
+    for day, model, org, *vals in con.execute(
+            "SELECT substr(ts,1,10), model, %s, %s, %s FROM usage_turns GROUP BY 1, 2, 3" % (origin, sums, main_sums), (THRESHOLD, THRESHOLD)):
         k = (day, _group(model), _origin(org))
-        r = a.setdefault(k, [0] * 6)
-        for j, x in enumerate((t, i, cc, cr, u, v)):
+        r = a.setdefault(k, [0] * 11)  # 0-5 كل الردود (t i cc cr u v)، 6-10 الخيط الرئيس (mt mi mcc mcr mv)
+        for j, x in enumerate(vals):
             r[j] += x or 0
-    fact_a = [dict(d=k[0], m=k[1], g=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5]) for k, r in sorted(a.items())]
+    fact_a = [dict(d=k[0], m=k[1], g=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mt=r[6], mi=r[7], mcc=r[8], mcr=r[9], mv=r[10])
+              for k, r in sorted(a.items())]
 
     b = {}
-    for key, day, model, t, i, cc, cr, u, v, mx, cv in con.execute(
-            "SELECT session_key, substr(ts,1,10), model, COUNT(*), SUM(input_tokens), SUM(cache_creation_tokens), SUM(cache_read_tokens), "
-            "SUM(output_tokens), SUM(CASE WHEN %s > ? THEN 1 ELSE 0 END), MAX(%s), SUM(CASE WHEN %s > ? THEN %s ELSE 0 END) "
-            "FROM usage_turns GROUP BY 1, 2, 3" % (ctx, ctx, ctx, ctx), (THRESHOLD, THRESHOLD)):
+    for key, day, model, t, i, cc, cr, u, v, mt, mv, mx, cv in con.execute(
+            "SELECT session_key, substr(ts,1,10), model, %s, SUM(%s), SUM(%s), MAX(%s), SUM(CASE WHEN is_sidechain=0 AND %s > ? THEN %s ELSE 0 END) "
+            "FROM usage_turns GROUP BY 1, 2, 3" % (sums, main % "1", main % over, main % ctx, ctx, ctx), (THRESHOLD, THRESHOLD, THRESHOLD)):
         k = (key, day, _group(model))
-        r = b.setdefault(k, [0] * 8)  # 0-5 مجاميع، 6 أكبر سياق، 7 مجموع سياق الردود فوق العتبة
-        for j, x in enumerate((t, i, cc, cr, u, v)):
+        r = b.setdefault(k, [0] * 10)  # 0-5 مجاميع كل الردود، 6 ردود الخيط الرئيس، 7 فوق العتبة للرئيس، 8 أكبر سياق رئيس، 9 مجموع سياق الردود الرئيسة فوق العتبة
+        for j, x in enumerate((t, i, cc, cr, u, v, mt, mv)):
             r[j] += x or 0
-        r[6] = max(r[6], mx or 0)
-        r[7] += cv or 0
+        r[8] = max(r[8], mx or 0)
+        r[9] += cv or 0
     keys = sorted({k[0] for k in b})
     meta = {r[0]: r for r in con.execute("SELECT session_key, COALESCE(number,''), COALESCE(cwd,'') FROM sessions")}
     index = {key: n for n, key in enumerate(keys)}
     sessions = [dict(label=label_fn(meta.get(key, (key, "", ""))[1], key, meta.get(key, (key, "", ""))[2])) for key in keys]
-    fact_b = [dict(s=index[k[0]], d=k[1], m=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mx=r[6], cv=r[7])
+    fact_b = [dict(s=index[k[0]], d=k[1], m=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mt=r[6], mv=r[7], mx=r[8], cv=r[9])
               for k, r in sorted(b.items())]
 
     plan = [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, fa=fa, far=far, pl=pl, src=src) for ts, f, fr, w, wr, fa, far, pl, src in con.execute(

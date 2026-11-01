@@ -255,9 +255,18 @@ function buildChips(){
 }
 function inRange(day){return day>=S.from&&day<=S.to}
 /* دلتا الفترة: فترة سابقة مساوية الطول متّصلة قبل S.from؛ لا دلتا عند «الكل» أو إن لم تكتمل السابقة في القاعدة أو كان سابقها صفرًا */
-function prevRange(){if(S.preset==="all"||!S.from)return null;var n=Math.round((Date.parse(S.to+"T00:00:00Z")-Date.parse(S.from+"T00:00:00Z"))/864e5)+1,pf=addDays(S.from,-n);return pf>=FIRST?{from:pf,to:addDays(S.from,-1),n:n}:null}
+/* الفترة السابقة المساوية بأيام كاملة: إن شملت الفترة الحالية اليوم الجاري (UTC) استُبعد من الطرفين (curTo آخر يوم كامل، cut=true) فلا يُقارن يوم ناقص بيوم كامل */
+function prevRange(){
+  if(S.preset==="all"||!S.from)return null;
+  var today=ymd(Date.now()),cut=S.to>=today,curTo=cut?addDays(today,-1):S.to;
+  if(curTo<S.from)return null;
+  var n=Math.round((Date.parse(curTo+"T00:00:00Z")-Date.parse(S.from+"T00:00:00Z"))/864e5)+1,pf=addDays(S.from,-n);
+  return pf>=FIRST?{from:pf,to:addDays(S.from,-1),n:n,curTo:curTo,cut:cut}:null}
 function inPrev(day,p){return !!p&&day>=p.from&&day<=p.to}
-function deltaText(cur,prev){if(cur==null||prev==null||!(prev>0)||isNaN(cur))return "";var r=cur/prev-1;return (r>0?"▲ +":r<0?"▼ −":"= ")+pct(Math.abs(r),0)+" عن الفترة السابقة"}
+function inCur(day,p){return !!p&&day>=S.from&&day<=p.curTo}  // طرف الفترة الحالية في الدلتا: الأيام الكاملة فقط
+function deltaSfx(p){return " عن الفترة السابقة"+(p&&p.cut?" (أيام كاملة)":"")}
+function deltaText(cur,prev,p){if(cur==null||prev==null||!(prev>0)||isNaN(cur))return "";var r=cur/prev-1;return (r>0?"▲ +":r<0?"▼ −":"= ")+pct(Math.abs(r),0)+deltaSfx(p)}
+function deltaPts(cur,prev,p){if(cur==null||prev==null||isNaN(cur)||isNaN(prev))return "";var r=(cur-prev)*100;return (r>0?"▲ +":r<0?"▼ −":"= ")+num(Math.abs(r),1)+" نقطة"+deltaSfx(p)}  // لمؤشرات النسب: فرق بالنقاط المئوية لا تغيّر نسبي
 /* فراغات التعريفات (من سجلّ المقاييس) تُملأ بأرقام الحمولة */
 function fillDefs(m){Object.keys(m).forEach(function(k){[].forEach.call(document.querySelectorAll('[data-fill="'+k+'"]'),function(e){e.textContent=m[k]})})}
 function bindFilters(){

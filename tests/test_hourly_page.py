@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import hourly_page  # noqa: E402
+import regime  # noqa: E402
 import role_groups  # noqa: E402
 import reports  # noqa: E402
 import usage_db  # noqa: E402
@@ -20,7 +21,12 @@ class TestHourlyPage(unittest.TestCase):
         self.con = usage_db.connect(os.path.join(self.tmp, "u.sqlite3"))
         c = self.con
         c.execute("INSERT INTO sessions(session_key, number, cwd) VALUES "
-                  "('aaaaaaaa1','0101','D:/x'),('bbbbbbbb2','0101','D:/y'),('cccccccc3',NULL,'D:/z'),('dddddddd4','8094','D:/w')")
+                  "('aaaaaaaa1','0101','D:/x'),('bbbbbbbb2','0101','D:/y'),('cccccccc3',NULL,'D:/z'),('dddddddd4','8094','D:/w'),"
+                  "('eeeeeeee5','0202','D:/e'),('ffffffff6','0303','D:/f'),('gggggggg7','0404','D:/g'),('hhhhhhhh8','0505','D:/h')")
+        # بدء عمليات معروف: 0404 بعد آخر تغيير (مليون)، و0505 في عهد 250 ألفًا ثم استُؤنفت بعده (النظام من البدء لا من الردّ)
+        c.execute("INSERT INTO agent_starts(session_id, started_at, number, kind, pid, first_seen, last_seen) VALUES "
+                  "('gggggggg7','2026-10-30T12:00:00Z','0404','cli',1,'2026-10-30T12:00:00Z','2026-10-30T12:00:00Z'),"
+                  "('hhhhhhhh8','2026-10-29T12:00:00Z','0505','cli',2,'2026-10-29T12:00:00Z','2026-10-29T12:00:00Z')")
 
         def t(i, s, ts, cc, cr, u=1, side=0, model="claude-sonnet-5-5"):
             c.execute("INSERT INTO usage_turns(message_id,session_key,ts,model,input_tokens,cache_creation_tokens,cache_read_tokens,"
@@ -35,6 +41,11 @@ class TestHourlyPage(unittest.TestCase):
         t("6", "bbbbbbbb2", "2026-10-20T01:30:00Z", 0, 10_000, model="model-قديم")  # دور واحد لجلستين
         t("7", "cccccccc3", "2026-10-20T01:00:00Z", 0, 20_000)  # بلا رقم: فئة «أخرى»
         t("8", "dddddddd4", "2026-10-20T01:00:00Z", 0, 5_000)   # 8094: خارج المشروع
+        t("9", "eeeeeeee5", "2026-10-29T10:00:00Z", 0, 100_000)  # جلسة وُلدت في عهد 250 ألفًا وردّها قبل انتهائه: نافذتها 250 ألفًا
+        t("10", "ffffffff6", "2026-10-21T05:00:00Z", 0, 300_000)
+        t("11", "ffffffff6", "2026-10-21T07:30:00Z", 0, 20_000)  # هبوط بعد فجوة ساعتين ونصف: هبوط بعد خمول
+        t("12", "gggggggg7", "2026-10-30T13:00:00Z", 0, 100_000)  # بدء معروف بعد آخر تغيير: مليون
+        t("13", "hhhhhhhh8", "2026-10-31T00:00:00Z", 0, 100_000)  # بدء معروف في عهد 250 ألفًا: 250 ألفًا ولو جاء الردّ بعده
         c.commit()
         self.data = hourly_page.payload(c)
 
@@ -46,7 +57,7 @@ class TestHourlyPage(unittest.TestCase):
         return int(__import__("datetime").datetime.fromisoformat("2026-10-20T%02d:00:00+00:00" % hh).timestamp() // 3600)
 
     def test_project_flag_and_unnumbered_categories(self):
-        self.assertEqual(dict(zip(self.data["roles"], self.data["rp"])), {"0101": 1, "8094": 0, role_groups.OTHER: 0})
+        self.assertEqual(dict(zip(self.data["roles"], self.data["rp"])), {"0101": 1, "0202": 1, "0303": 1, "0404": 1, "0505": 1, "8094": 0, role_groups.OTHER: 0})
 
     def test_tokens_match_db(self):
         want = self.con.execute(
@@ -96,6 +107,56 @@ class TestHourlyPage(unittest.TestCase):
         self.assertIn('id="autobtn"', html)  # زر التحديث الدوري تحت زر السمة
         self.assertLess(html.index("mu_theme"), html.index("mu_auto"))
         self.assertLess(html.index("mu_theme"), html.index("</head>"))  # السمة المحفوظة تُطبَّق في الرأس قبل الرسم
+
+    def row(self, role, hh, day="2026-10-20"):
+        ri = self.data["roles"].index(role)
+        h = int(__import__("datetime").datetime.fromisoformat("%sT%02d:00:00+00:00" % (day, hh)).timestamp() // 3600)
+        rows = [r for r in self.data["h"] if r["r"] == ri and r["h"] == h]
+        self.assertEqual(len(rows), 1, rows)
+        return rows[0]
+
+    def test_window_per_session_regime_and_model(self):
+        other = len(self.data["models"]) - 1
+        self.assertEqual(self.data["window"], hourly_page.WINDOW)  # القيمة الاحتياطية تبقى مليونًا
+        self.assertEqual(self.row("0101", 3)["w"], 1_000_000)  # قبل أي تغيير: افتراضي = مليون
+        self.assertEqual(self.row("0202", 10, "2026-10-29")["w"], 250_000)  # وُلدت في عهد 250 ألفًا
+        self.assertEqual(self.row("0404", 13, "2026-10-30")["w"], 1_000_000)  # بدء معروف بعد آخر تغيير
+        self.assertEqual(self.row("0505", 0, "2026-10-31")["w"], 250_000)  # بدء معروف في عهد 250 ألفًا
+        old = [r for r in self.data["h"] if r["m"] == other]
+        self.assertEqual([r["w"] for r in old], [200_000])  # النموذج الأقدم: نافذته 200 ألف أيًّا كان النظام
+        self.assertEqual(hourly_page.window_of(regime.W250, other), 200_000)
+        self.assertEqual(hourly_page.window_of(regime.UNKNOWN, 0), 1_000_000)
+        # ساعة بلا ردّ رئيس (الوكيل الفرعي وحده) لا نافذة لها: w = 0 فتقع الصفحة على الاحتياطي
+        self.assertTrue(all(r["w"] > 0 or r["x"] == 0 for r in self.data["h"]))
+
+    def test_windows_meta_from_config_changes(self):
+        W = self.data["windows"]
+        ch = regime.changes()
+        want = [[ts, ch[i + 1][0] if i + 1 < len(ch) else None] for i, (ts, code) in enumerate(ch) if code == regime.W250]
+        self.assertEqual(W["w250_spans"], want)
+        self.assertTrue(want and "T" in want[0][0] and want[0][1])  # فترة واحدة مغلقة لنظام 250 ألفًا في البذور
+        notes = " ".join(n or "" for *_r, n in usage_db.CONFIG_SEEDS)
+        pcts = sorted({int(m) for m in re.findall(r"autoCompactsAtPercent=(\d+)", notes)})
+        self.assertEqual(W["autocompact_pct"], [pcts[0], pcts[-1]])
+        self.assertEqual((W["default"], W["w250"], W["old"]), (1_000_000, 250_000, 200_000))
+        self.assertEqual(self.data["wake_gap"], 3600)
+
+    def test_drop_after_idle_counter(self):
+        r = self.row("0303", 7, "2026-10-21")
+        self.assertEqual((r["d"], r["di"], r["df"], r["dt"]), (1, 1, 300_001, 20_001))
+        r3 = self.row("0101", 3)
+        self.assertEqual((r3["d"], r3["di"]), (1, 0))  # هبوط بعد دقيقة واحدة: ليس بعد خمول
+
+    def test_template_texts_follow_actual_window(self):
+        page = hourly_page.render(self.data, "الآن")
+        self.assertNotIn("wsel", page)  # لا محدّد نافذة عالميًّا: النافذة بحسب الجلسة والنموذج
+        self.assertNotIn("250 ألفًا = 100%", page)
+        for want in ('id="wdesc"', "النافذة الفعلية لكل جلسة", "w250_spans", "(ناقص)", "الجارية ناقصة", "بعد خمول",
+                     "Fable %", "غير مقروءة من /usage منذ", "r.w||WIN", "كل 5 دقائق، وكل دقيقة عند تغيّر النسب"):
+            self.assertIn(want, page)
+        self.assertNotIn("أُزيلت من الخطة", page)
+        self.assertNotIn("خمس ساعات %", page)
+        self.assertNotIn("num(p.w,1)", page)  # النسب أعداد صحيحة بلا خانة عشرية
 
 
 if __name__ == "__main__":

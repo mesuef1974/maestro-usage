@@ -2,6 +2,10 @@
 
 قراءة فقط، صفر توكنات، ولا يُخزَّن إلا اسم المهارة وعدد الاستدعاءات وعدد الجلسات وأول/آخر يوم. المسح كامل (دقائق على عشرة جيجابايت)،
 فيُشغَّل يدويًّا أو من مهمة مجدولة ولا يدخل في دورة الدقيقة؛ صفحة المهارات تقرأ آخر نتيجة محفوظة.
+
+التفريد: الجلسات المستأنفة والمتفرّعة تنسخ التاريخ، فيُعدّ استدعاء الأداة بمعرّف كتلة tool_use (id) مرة واحدة عبر كل الملفات،
+والأمر المائل بمعرّف الرسالة (uuid السطر أو message.id) مرة واحدة كذلك؛ السطر بلا معرّف يُعدّ بموضعه في ملفه. مفتاح الجلسة
+للوكيل الفرعي هو مجلد المالك (usage_ingest.owner_key) فيُحسب استدعاؤه ضمن الجلسة نفسها.
 """
 import collections
 import json
@@ -9,6 +13,9 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from usage_ingest import owner_key  # noqa: E402
 
 ROOT = os.path.join(os.path.expanduser("~"), ".claude", "projects")
 DEST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "skill_usage.json")
@@ -20,11 +27,20 @@ def _content(o):
     return c if isinstance(c, list) else []
 
 
+def _msg_id(o):
+    """معرّف الرسالة: uuid السطر ثم message.id؛ None إن غابا."""
+    return o.get("uuid") or (o.get("message") or {}).get("id") or None
+
+
 def scan(root=ROOT):
     by = collections.defaultdict(lambda: dict(n=0, sessions=set(), first=None, last=None, via=collections.Counter()))
     files = 0
+    seen = set()  # معرّفات tool_use والرسائل التي عُدَّت؛ النسخ المكرّرة في ملفات أخرى تُتجاهل
 
-    def note(name, sess, ts, via):
+    def note(name, sess, ts, via, ident):
+        if ident in seen:
+            return
+        seen.add(ident)
         d = by[name]
         d["n"] += 1
         d["sessions"].add(sess)
@@ -33,14 +49,17 @@ def scan(root=ROOT):
             d["first"] = min(d["first"] or ts, ts)
             d["last"] = max(d["last"] or ts, ts)
 
-    for dp, _dn, fn in os.walk(root):
-        for f in fn:
+    for dp, dn, fn in os.walk(root):
+        dn.sort()  # ترتيب ثابت: الأصل (اسم الجلسة) يسبق مجلد subagents الفرعي والنسخ
+        for f in sorted(fn):
             if not f.endswith(".jsonl"):
                 continue
             files += 1
+            path = os.path.join(dp, f)
+            sess = owner_key(root, path)
             try:
-                with open(os.path.join(dp, f), encoding="utf-8", errors="replace") as fh:
-                    for line in fh:
+                with open(path, encoding="utf-8", errors="replace") as fh:
+                    for i, line in enumerate(fh):
                         is_tool = '"name":"Skill"' in line
                         if not is_tool and not ("<command-name>" in line and '"type":"user"' in line):
                             continue
@@ -50,13 +69,16 @@ def scan(root=ROOT):
                             continue
                         day = (o.get("timestamp") or "")[:10]
                         if is_tool:
-                            for c in _content(o):
+                            for j, c in enumerate(_content(o)):
                                 if c.get("type") == "tool_use" and c.get("name") == "Skill" and (c.get("input") or {}).get("skill"):
-                                    note(c["input"]["skill"], f[:-6], day, "tool")
+                                    ident = ("tool", c.get("id")) if c.get("id") else ("line", path, i, j)
+                                    note(c["input"]["skill"], sess, day, "tool", ident)
                         else:
                             m = CMD.search(json.dumps(o.get("message") or {}, ensure_ascii=False))
                             if m:
-                                note(m.group(1).lstrip("/"), f[:-6], day, "slash")
+                                mid = _msg_id(o)
+                                ident = ("msg", mid) if mid else ("line", path, i, 0)
+                                note(m.group(1).lstrip("/"), sess, day, "slash", ident)
             except OSError:
                 pass
     usage = {k: dict(n=v["n"], sessions=len(v["sessions"]), first=v["first"], last=v["last"], via=dict(v["via"])) for k, v in by.items()}

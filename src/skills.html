@@ -23,7 +23,7 @@ __PAGEHEAD__
 
 <!--@sec tbl--><section class="card" id="tbl" aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">الجدول</h2><span class="sub" id="tsum"></span></div>
-  <p class="sub">انقر عنوان عمود للترتيب. «استدعاءات» عبر أداة Skill أو أمر مائل. «توكن الآن» و«بعد التوصية» تقدير لكلفة سطرها في قائمة السياق (أحرف ÷ <span id="cpt"></span>)؛ المطفأة بلا كلفة.</p>
+  <p class="sub">انقر عنوان عمود للترتيب. «استدعاءات» عبر أداة Skill أو أمر مائل. «توكن الآن» و«بعد التوصية» تقدير لكلفة سطرها في قائمة السياق (أحرف ÷ <span id="cpt"></span>)؛ المطفأة بلا كلفة. علامة «≈ تقدير» حيث طول الوصف مخمَّن لا مقيس (مهارات مضمَّنة بلا ملف محلي).</p>
   <div class="wrap" id="rows"></div>
   <p class="note">0 استدعاء لا يعني عدم النفع: قد تُقرأ المهارة مباشرة، أو تحيل إليها تعليمات النظام، أو تُطلب في مهام نادرة. لذلك الاسم وحده (name-only) أول خيار قبل الأرشفة.</p>
 </section><!--@/sec-->
@@ -68,6 +68,8 @@ function useEl(r){
   var e=mk("span",null,r.n?num(r.n)+" · "+num(r.s)+" جلسة":"0");
   if(!r.n)e.className="zero";return e;
 }
+/* خلية التوكن: الرقم، وللمهارات المضمَّنة ذات الطول المخمَّن علامة «≈ تقدير» (est في الحمولة) */
+function tokEl(k){return function(r){var e=mk("span",null,r[k]==null?"—":num(r[k]));if(r.est&&r[k]!=null)e.appendChild(mk("span",{class:"est",title:"طول الوصف مخمَّن لا مقيس"},"≈ تقدير"));return e}}
 var COLS=[
   {k:"k",l:"المهارة",el:function(r){var e=mk("span",null,r.k);return e}},
   {k:"src",l:"المصدر",f:function(r){return r.src}},
@@ -78,8 +80,8 @@ var COLS=[
   {k:"nd",l:"مكرَّرة مع",el:dupEl},
   {k:"nt",l:"الأفضل / ملاحظة",f:function(r){return r.nt}},
   {k:"r",l:"التوصية",el:recEl},
-  {k:"t0",l:"توكن الآن",n:1,f:function(r){return r.t0==null?"—":num(r.t0)}},
-  {k:"t1",l:"بعد التوصية",n:1,f:function(r){return r.t1==null?"—":num(r.t1)}}
+  {k:"t0",l:"توكن الآن",n:1,el:tokEl("t0")},
+  {k:"t1",l:"بعد التوصية",n:1,el:tokEl("t1")}
 ];
 var CLS={k:"k nw",src:"nw",st:"nw",b:"b",n:"nw",last:"nw",nd:"nw",nt:"nt",r:"nw",t0:"nw",t1:"nw"};
 

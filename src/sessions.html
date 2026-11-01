@@ -169,13 +169,14 @@ function renderTiles(){
   var roles={};VR.forEach(function(r){roles[roleOf(r)]=1});
   /* دلتا الفترة: تجميع الفترة السابقة المساوية بالمرشِّحات نفسها (النماذج والنظام والظهور) */
   var P=prevRange(),PV=P?agg(D.c.filter(function(r){return S.models.has(r.m)&&inPrev(r.d,P)&&S.rg.has(r.x)&&vis(r.s)})):null;
+  var CV=P&&P.cut?agg(D.c.filter(function(r){return S.models.has(r.m)&&inCur(r.d,P)&&S.rg.has(r.x)&&vis(r.s)})):V;  // الطرف الحالي بأيام كاملة
   tilesInto($("#tiles"),[
     ["الأدوار الظاهرة",num(Object.keys(roles).length),num(V.sc)+" جلسة نشطة في الفترة"],
-    ["الردود",num(V.t),pct(share(V.t,T.t))+" من إجمالي الفترة",deltaText(V.t,PV&&PV.t)],
-    ["قراءة الذاكرة",compact(V.cr),pct(share(V.cr,T.cr))+" من الإجمالي",deltaText(V.cr,PV&&PV.cr)],
-    ["كتابة الذاكرة",compact(V.cc),pct(share(V.cc,T.cc))+" من الإجمالي",deltaText(V.cc,PV&&PV.cc)],
-    ["متوسط السياق للردّ",compact(V.ctx),"توكن · فوق العتبة "+pct(V.ov),deltaText(V.ctx,PV&&PV.ctx)],
-    ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة",deltaText(V.wc,PV&&PV.wc)],
+    ["الردود",num(V.t),pct(share(V.t,T.t))+" من إجمالي الفترة",deltaText(CV.t,PV&&PV.t,P)],
+    ["قراءة الذاكرة",compact(V.cr),pct(share(V.cr,T.cr))+" من الإجمالي",deltaText(CV.cr,PV&&PV.cr,P)],
+    ["كتابة الذاكرة",compact(V.cc),pct(share(V.cc,T.cc))+" من الإجمالي",deltaText(CV.cc,PV&&PV.cc,P)],
+    ["متوسط السياق للردّ",compact(V.ctx),"توكن · فوق العتبة "+pct(V.ov),deltaText(CV.ctx,PV&&PV.ctx,P)],
+    ["كلفة الإيقاظ",compact(V.wc),num(V.wk)+" ردًّا بعد خمول فوق ساعة",deltaText(CV.wc,PV&&PV.wc,P)],
     startTile()]);
 }
 
@@ -199,12 +200,15 @@ function renderRegimes(){
     rows.push({x:n,sc:a.sc,t:a.t,ctx:a.ctx,mx:a.mx,ov:a.ov,dr:a.dr,drr:a.mt?a.dr/a.mt:null,ccr:a.t?a.cc/a.t:null,crr:a.t?a.cr/a.t:null})});
   $("#gsum").textContent=num(rows.length)+" نظامًا ظاهرًا";
   drawTable($("#rg"),[
-    {k:"x",l:"النظام"},{k:"sc",l:"جلسات",n:1,f:function(r){return num(r.sc)}},{k:"t",l:"ردود",n:1,f:function(r){return num(r.t)}},
+    {k:"x",l:"النظام"},{k:"sc",l:"جلسات (تُعدّ في كل نظام مرّت به)",n:1,f:function(r){return num(r.sc)}},{k:"t",l:"ردود (مع الوكلاء الفرعيين)",n:1,f:function(r){return num(r.t)}},
     {k:"ctx",l:"متوسط السياق",n:1,f:function(r){return c2(r.ctx)}},{k:"mx",l:"أكبر سياق",n:1,f:function(r){return c2(r.mx)}},
-    {k:"ov",l:"فوق العتبة",n:1,f:function(r){return pct(r.ov)}},{k:"drr",l:"هبوط لكل 100 ردّ",n:1,f:function(r){return r.drr==null?"—":num(100*r.drr,1)}},
-    {k:"ccr",l:"كتابة ذاكرة للردّ",n:1,f:function(r){return c2(r.ccr)}},{k:"crr",l:"قراءة ذاكرة للردّ",n:1,f:function(r){return c2(r.crr)}}],rows);
-  var m=g[3]?g[3].t:0,all=0;Object.keys(g).forEach(function(k){all+=g[k].t});
-  $("#gnote").textContent=all&&m?"«غير محدد» يضمّ "+pct(m/all)+" من الردود الظاهرة؛ لا تُنسب إلى نظام قبل التقاط بدء عمليات جلساتها.":"";
+    {k:"ov",l:"فوق العتبة",n:1,f:function(r){return pct(r.ov)}},{k:"drr",l:"هبوط لكل 100 ردّ رئيس",n:1,f:function(r){return r.drr==null?"—":num(100*r.drr,1)}},
+    {k:"ccr",l:"كتابة ذاكرة للردّ (كل الردود)",n:1,f:function(r){return c2(r.ccr)}},{k:"crr",l:"قراءة ذاكرة للردّ (كل الردود)",n:1,f:function(r){return c2(r.crr)}}],rows);
+  var m=g[3]?g[3].t:0,all=0,scs=0;Object.keys(g).forEach(function(k){all+=g[k].t;scs+=g[k].sc});
+  var parts=[];
+  if(scs>V.sc)parts.push("مجموع عمود الجلسات "+num(scs)+" مقابل "+num(V.sc)+" جلسة فعلية: الجلسة التي بدأت عمليات في أكثر من نظام تُعدّ في كل منها.");
+  if(all&&m)parts.push("«غير محدد» يضمّ "+pct(m/all)+" من الردود الظاهرة؛ لا تُنسب إلى نظام قبل التقاط بدء عمليات جلساتها.");
+  $("#gnote").textContent=parts.join(" ");
 }
 function sessRegimes(rows){
   var m={};rows.forEach(function(r){m[r.x]=(m[r.x]||0)+r.t});

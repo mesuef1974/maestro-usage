@@ -20,5 +20,6 @@
 .dups{display:flex;flex-wrap:wrap;gap:.2rem}
 .dups span{border:1px solid var(--line);background:var(--chip);border-radius:var(--r-sm);padding:0 .35rem;font-size:var(--t-xs);direction:ltr}
 .zero{color:var(--warn)}
+.est{color:var(--ink3);font-size:var(--t-xs);margin-inline-start:var(--sp-2);white-space:nowrap}
 .sav{color:var(--good);font-weight:700}
 .gone td{white-space:nowrap}

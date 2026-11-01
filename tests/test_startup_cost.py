@@ -97,6 +97,14 @@ class TestStartupCost(unittest.TestCase):
         p = sc.payload(self.con)
         self.assertEqual((p["daily"], p["fx"]), ([], []))
         self.assertIsNone(p["cur"]["med"])
+        self.assertIsNone(p["cur"]["last_ts"])
+
+    def test_current_reports_last_fresh_sample_time(self):
+        """زمن آخر عيّنة = أحدث جلسة جديدة (دون سقف الاستئناف)؛ عيّنة مستأنفة أحدث لا تُحتسب."""
+        self.sample(1, 20_000)
+        self.sample(2, 30_000)
+        self.sample(3, 150_000)  # مستأنفة: أحدث لكنها خارج العيّنات الطازجة
+        self.assertEqual(sc.current(self.con)["last_ts"], iso(2))
 
 
 if __name__ == "__main__":
