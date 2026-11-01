@@ -64,6 +64,20 @@ class TestIngest(Base):
         self.assertEqual(self.q("SELECT output_tokens FROM usage_turns WHERE message_id='m1'")[0][0], 40)
         self.assertEqual(self.q("SELECT thinking_tokens FROM usage_turns WHERE message_id='m1'")[0][0], 2)
 
+    def test_assistant_line_containing_user_marker_is_not_dropped(self):
+        # ردّ يحوي في محتواه النصّ «"type":"user"» (اقتباس سجل مثلًا) يبقى ردًّا؛ وسطر مستخدم يحوي نص ردّ يبقى مستخدمًا
+        # داخل JSON لا تظهر السلسلة إلا ككائن متداخل (مثل مدخلات tool_use)؛ النصوص المقتبسة تُهرَّب علاماتها
+        a = a_line("m1", "2026-10-01T00:00:01Z", out=9).replace('{"type":"text","text":"نص سري"}',
+                                                               '{"type":"tool_use","id":"t1","name":"x","input":{"type":"user"}}')
+        self.assertIn('"type":"user"', a)
+        u = json.dumps({"type": "user", "turnOrigin": "human", "message": {"content": [{"type": "tool_result", "content": [{"type": "assistant"}]}]}},
+                       separators=(",", ":"))
+        p = os.path.join(self.root, "proj", "aaa.jsonl")
+        write(p, [u, a, a_line("m2", "2026-10-01T00:00:02Z", out=7)])
+        self.run_ingest()
+        self.assertEqual(self.q("SELECT COUNT(*) FROM usage_turns")[0][0], 2)
+        self.assertEqual(self.q("SELECT turn_origin FROM usage_turns WHERE message_id='m1'")[0][0], "human")
+
     def test_synthetic_excluded_and_counted(self):
         p = os.path.join(self.root, "proj", "aaa.jsonl")
         write(p, [a_line("m1", "2026-10-01T00:00:01Z"), a_line("m2", "2026-10-01T00:00:02Z", model="<synthetic>")])

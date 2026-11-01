@@ -181,12 +181,11 @@ function renderTiles(){
 }
 
 /* ---------- نظام نافذة السياق ---------- */
-var RGC=["--oth","--s2","--s1","--s4"];
 function buildRegimeChips(){
   var box=$("#rchips");clear(box);
   D.regimes.forEach(function(n,i){
     var b=mk("button",{type:"button",class:"chip","aria-pressed":String(S.rg.has(i))});
-    var sw=mk("span",{class:"sw"});sw.style.background=css(RGC[i]);b.appendChild(sw);b.appendChild(mk("span",null,"نافذة: "+n));
+    b.appendChild(mk("span",null,"نافذة: "+n));  // بلا لون: الأنظمة ليست نماذج، والنصّ يميّزها
     b.addEventListener("click",function(){
       if(S.rg.has(i))S.rg.delete(i);else S.rg.add(i);
       if(!S.rg.size)D.regimes.forEach(function(_,j){S.rg.add(j)});

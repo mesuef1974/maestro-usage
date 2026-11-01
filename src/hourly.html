@@ -319,15 +319,20 @@ function tilesInto(box,items){
 function visibleRoles(){return D.rp.filter(function(p){return S.unnum||p}).length}
 function renderTiles(){
   /* دلتا الفترة: توكنات الفترة السابقة المساوية بالمرشِّحات نفسها (النماذج وغير المرقّمة) */
-  var P=prevRange(),ptok=null,ctok=TILE.tokens;
-  if(P){var plo=Date.parse(P.from+"T00:00:00Z")/H1,phi=Date.parse(P.to+"T00:00:00Z")/H1+23,clo=Date.parse(S.from+"T00:00:00Z")/H1,chi=Date.parse(P.curTo+"T00:00:00Z")/H1+23;ptok=0;if(P.cut)ctok=0;
-    /* الطرف الحالي للدلتا بالأيام الكاملة فقط [S.from, P.curTo] عند استبعاد اليوم الجاري؛ القيمة المعروضة تبقى للفترة كاملة */
-    D.h.forEach(function(r){if(!S.models.has(r.m)||!(S.unnum||D.rp[r.r]))return;if(r.h>=plo&&r.h<=phi)ptok+=r.k;if(P.cut&&r.h>=clo&&r.h<=chi)ctok+=r.k})}
+  var P=prevRange(),ptok=null,ctok=TILE.tokens,pavg=null,cavg=TILE.avg;
+  if(P){var plo=Date.parse(P.from+"T00:00:00Z")/H1,phi=Date.parse(P.to+"T00:00:00Z")/H1+23,clo=Date.parse(S.from+"T00:00:00Z")/H1,chi=Date.parse(P.curTo+"T00:00:00Z")/H1+23,phk={},chk={};ptok=0;if(P.cut)ctok=0;
+    /* الطرف الحالي للدلتا بالأيام الكاملة فقط [S.from, P.curTo] عند استبعاد اليوم الجاري؛ القيمة المعروضة تبقى للفترة كاملة. متوسط الضغط بالمنهج نفسه (أعلى نسبة لكل ساعة-دور) */
+    D.h.forEach(function(r){if(!S.models.has(r.m)||!(S.unnum||D.rp[r.r]))return;var k=r.r+":"+r.h,v=r.x>0?r.x/winOf(r):0;
+      if(r.h>=plo&&r.h<=phi){ptok+=r.k;if(v&&!(phk[k]>=v))phk[k]=v}
+      if(P.cut&&r.h>=clo&&r.h<=chi){ctok+=r.k;if(v&&!(chk[k]>=v))chk[k]=v}});
+    var pk=Object.keys(phk),ck=Object.keys(chk);
+    pavg=pk.length?pk.reduce(function(a,k){return a+phk[k]},0)/pk.length:null;
+    if(P.cut)cavg=ck.length?ck.reduce(function(a,k){return a+chk[k]},0)/ck.length:null}
   var nh=Math.floor(Date.now()/H1),mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC"+(Number(mk_[1])===nh?" (ناقص)":""):"—";
   tilesInto($("#tiles"),[
     ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة",deltaText(ctok,ptok,P)],
     ["الأدوار النشطة",num(TILE.roles),"من "+num(visibleRoles())+(S.unnum?" دورًا وفئة":" دورًا من أدوار المشروع")],
-    ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة"],
+    ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة",deltaPts(cavg,pavg,P)],
     ["أعلى ضغط",TILE.n?pct(TILE.max,1):"—",who],
     ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),(TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—")+" · نسبة من النافذة الفعلية"],
     ["هبوط السياق (تقدير)",num(ALL.drops),"ضغط أو مسح مُستدَل عليه · منها "+num(ALL.didle)+" بعد خمول"]]);

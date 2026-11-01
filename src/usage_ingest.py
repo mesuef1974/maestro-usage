@@ -68,17 +68,24 @@ def parse_lines(lines, origin=None):
     """يلخّص السطور الجديدة: أفضل سطر لكل message_id وآخر رقم عنوان. بلا نصوص."""
     best, number, synthetic, bad = {}, None, 0, 0
     for line in lines:
-        if '"type":"user"' in line:
+        # الفحص النصي للسرعة فقط؛ سطر المستخدم الذي يحوي أيضًا نص ردّ (نسخ أو اقتباس) يُحسم بعد تحليل JSON لا بالنص
+        maybe = '"type":"assistant"' in line or '"type":"custom-title"' in line
+        if '"type":"user"' in line and not maybe:
             m = ORIGIN_RE.search(line)
             if m:
                 origin = m.group(1)
             continue
-        if '"type":"assistant"' not in line and '"type":"custom-title"' not in line:
+        if not maybe:
             continue
         try:
             o = json.loads(line)
         except ValueError:
             bad += 1
+            continue
+        if o.get("type") == "user":
+            m = ORIGIN_RE.search(line)
+            if m:
+                origin = m.group(1)
             continue
         if o.get("type") == "custom-title":
             m = NUM_RE.match(o.get("customTitle") or "")
