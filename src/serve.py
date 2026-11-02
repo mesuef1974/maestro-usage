@@ -35,7 +35,7 @@ def live_plan():
 
 def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
     reports_dir = reports_dir or reports.REPORTS_DIR
-    refresh_fn = refresh_fn or (lambda: run_cycle.main(["--force"]))  # زر التحديث يفرض بناء التقارير
+    refresh_fn = refresh_fn or run_cycle.force_or_wait  # زر التحديث يفرض البناء وينتظر دورة مجدولة إن كانت تعمل؛ يأخذ لحظة الطلب
     plan_fn = plan_fn or live_plan
     lock = threading.Lock()  # دورة واحدة في وقت واحد
 
@@ -93,9 +93,9 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
             if not self._host_ok():  # يمنع صفحة غريبة من تشغيل الدورة عبر المتصفح
                 return self._send(403, b"forbidden", "text/plain; charset=utf-8")
             t = time.time()
-            with lock:
-                rc = refresh_fn()
-            body = json.dumps({"ok": rc == 0, "seconds": round(time.time() - t, 1)}).encode("utf-8")
+            with lock:  # طلب متراكم خلف قفل الخادم يأخذ لحظته الأصلية فيكتفي ببناء سبقه
+                rc = refresh_fn(t)
+            body = json.dumps({"ok": rc == 0, "busy": rc == run_cycle.SKIPPED, "seconds": round(time.time() - t, 1)}).encode("utf-8")
             self._send(200, body, "application/json")
 
     class Server(ThreadingHTTPServer):

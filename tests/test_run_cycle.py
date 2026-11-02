@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -62,3 +63,25 @@ class TestStateFile(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestForceOrWait(unittest.TestCase):
+    """زر التحديث خلف دورة مجدولة: ينتظرها ثم يبني، أو يكتفي ببنائها، أو يعيد SKIPPED بعد المهلة."""
+
+    def test_waits_then_builds(self):
+        rcs = iter([run_cycle.SKIPPED, run_cycle.SKIPPED, 0])
+        with mock.patch.object(run_cycle, "main", side_effect=lambda argv: next(rcs)) as m, \
+                mock.patch.object(run_cycle, "load_state", return_value=state(age=100)):
+            self.assertEqual(run_cycle.force_or_wait(t0=time.time(), timeout=60, poll=0), 0)
+        self.assertEqual(m.call_count, 3)
+
+    def test_uses_build_finished_by_other_cycle(self):
+        with mock.patch.object(run_cycle, "main", return_value=run_cycle.SKIPPED) as m, \
+                mock.patch.object(run_cycle, "load_state", return_value={"last_build": T0 + 5, "pending": False}):
+            self.assertEqual(run_cycle.force_or_wait(t0=T0, timeout=60, poll=0), 0)
+        self.assertEqual(m.call_count, 0)
+
+    def test_gives_up_after_timeout(self):
+        with mock.patch.object(run_cycle, "main", return_value=run_cycle.SKIPPED), \
+                mock.patch.object(run_cycle, "load_state", return_value=state(age=100)):
+            self.assertEqual(run_cycle.force_or_wait(t0=T0, timeout=0, poll=0), run_cycle.SKIPPED)

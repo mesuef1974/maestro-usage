@@ -6,9 +6,11 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+import run_cycle  # noqa: E402
 import serve  # noqa: E402
 
 
@@ -34,7 +36,8 @@ class TestServe(unittest.TestCase):
         with open(os.path.join(self.tmp, "secret.txt"), "w", encoding="utf-8") as f:
             f.write("لا يُقدَّم")
         self.calls = []
-        self.srv = serve.make_server(0, self.tmp, lambda: self.calls.append(1) or 0,
+        self.rc = 0
+        self.srv = serve.make_server(0, self.tmp, lambda t0: self.calls.append(t0) or self.rc,
                                      lambda: [{"ts": "2026-10-30T10:00:00Z", "f": 1.0, "src": "cli_usage"}])
         self.port = self.srv.server_address[1]
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
@@ -78,6 +81,14 @@ class TestServe(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertTrue(json.loads(body)["ok"])
         self.assertEqual(len(self.calls), 1)
+
+    def test_refresh_reports_busy_when_another_cycle_holds_the_lock(self):
+        """الدورة المجدولة تحمل القفل حتى انقضاء المهلة: الجواب busy لا ok (لا إعادة تحميل لصفحة قديمة)."""
+        self.rc = run_cycle.SKIPPED
+        code, body = self.req("POST", "/refresh")
+        j = json.loads(body)
+        self.assertEqual((code, j["ok"], j["busy"]), (200, False, True))
+        self.assertAlmostEqual(self.calls[-1], time.time(), delta=5)  # لحظة الطلب تُمرَّر إلى الدورة
 
     def test_refresh_rejects_foreign_host_or_origin(self):
         self.assertEqual(self.req("POST", "/refresh", {"Host": "evil.example"})[0], 403)

@@ -212,9 +212,14 @@ function refreshNow(msg,b){
     msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8790 في المتصفح — الآن يُعاد تحميل الملف فقط.";
     setTimeout(function(){location.reload()},2500);return}
   b.disabled=true;msg.textContent="جارٍ التحديث…";
+  /* الخادم ينتظر الدورة المجدولة إن كانت تعمل (حتى 4 دقائق) ثم يبني؛ بعد 15 ثانية نوضّح سبب الطول بدل صمت الزر */
+  var slow=setTimeout(function(){msg.textContent="ما زالت الدورة تعمل (قد تنتظر الدورة المجدولة أو بناء التقارير، حتى 4 دقائق)…"},15000);
   fetch("/refresh",{method:"POST"}).then(function(r){return r.json()}).then(function(j){
-    if(j&&j.ok)location.reload();else{msg.textContent="فشلت الدورة؛ راجع data\\cycle.log";b.disabled=false}
-  }).catch(function(){msg.textContent="تعذّر الوصول إلى الخادم المحلي؛ شغّل python src\\serve.py";b.disabled=false});
+    clearTimeout(slow);
+    if(j&&j.ok)location.reload();
+    else if(j&&j.busy){msg.textContent="دورة أخرى تعمل منذ أكثر من 4 دقائق؛ أعد المحاولة لاحقًا أو راجع data\\cycle.log";b.disabled=false}
+    else{msg.textContent="فشلت الدورة؛ راجع data\\cycle.log";b.disabled=false}
+  }).catch(function(){clearTimeout(slow);msg.textContent="تعذّر الوصول إلى الخادم المحلي؛ شغّل python src\\serve.py";b.disabled=false});
 }
 function autoArm(){
   // يعيد ضبط المؤقّت وفق الاختيار المحفوظ؛ التبويب المخفي لا يحدِّث، وتُنفَّذ الدورة المستحقّة عند عودته

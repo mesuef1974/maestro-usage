@@ -29,6 +29,12 @@ class UiShellTest(unittest.TestCase):
             self.assertEqual(s.count("<!--@sec "), s.count("<!--@/sec-->"), name)
             self.assertEqual(len(re.findall(r"<h1[ >]", s)), 0, name)  # العنوان من السجلّ عبر __PAGEHEAD__
 
+    def test_refresh_button_handles_busy_cycle(self):
+        """زر التحديث: جواب busy لا يعيد تحميل صفحة قديمة، ورسالة بعد 15 ثانية تشرح الانتظار."""
+        s = open(os.path.join(SRC, "ui_common.js"), encoding="utf-8").read()
+        for token in ("j.busy", "setTimeout(function(){msg.textContent=", "clearTimeout(slow)", "if(j&&j.ok)location.reload()"):
+            self.assertIn(token, s)
+
     def test_registry_is_consistent(self):
         files = [p["file"] for p in pages.PAGES]
         self.assertEqual(len(files), len(set(files)))

@@ -1,6 +1,7 @@
 """دورة تشغيل دورية واحدة: تحميل السجلات ثم spool الـstatusLine، ونسخة احتياطية يومية. تُستدعى من المهمة المجدولة.
 
-أرقام فقط في data\\cycle.log. قفل بسيط يمنع تداخل دورتين. لا يرمي استثناءً إلى المجدول (يسجّل الخطأ).
+أرقام فقط في data\\cycle.log. قفل بسيط يمنع تداخل دورتين: main تعيد SKIPPED حين تعمل دورة أخرى (المجدول يراها 0)،
+وزر «تحديث فوري» يستعمل force_or_wait فينتظر تلك الدورة بدل إعادة الصفحة القديمة بـok كاذب. لا يرمي استثناءً إلى المجدول (يسجّل الخطأ).
 """
 import json
 import os
@@ -22,6 +23,8 @@ LOCK = os.path.join(DATA, "cycle.lock")
 LOG = os.path.join(DATA, "cycle.log")
 LOG_MAX = 500_000
 LOCK_STALE_SECONDS = 1800
+SKIPPED = 3  # رمز رجوع main حين تحمل دورة أخرى القفل (ليس خطأ؛ المجدول يحوّله إلى 0)
+WAIT_TIMEOUT_SEC = 240  # أقصى انتظار لزر التحديث خلف دورة مجدولة (بناء التقارير قد يطول عند الضغط)
 STATE = os.path.join(DATA, "cycle_state.json")  # آخر بناء للتقارير وهل بقيت بيانات جديدة لم تُبنَ بعد
 BUILD_MIN_SEC = 900  # الاستيعاب كل دقيقة، والتقارير على الأقل كل 15 دقيقة وعند وجود جديد
 BUILD_SLACK_SEC = 30  # اهتزاز المجدول: دورة تأتي قبل الحدّ بثوانٍ لا تُؤجَّل دقيقة كاملة
@@ -81,7 +84,7 @@ def main(argv=None):
     force = "--force" in (argv if argv is not None else sys.argv[1:])
     if not acquire():
         log("skipped: another cycle is running")
-        return 0
+        return SKIPPED
     try:
         t = time.time()
         con = usage_db.connect()
@@ -122,5 +125,21 @@ def main(argv=None):
     return 0
 
 
+def force_or_wait(t0=None, timeout=WAIT_TIMEOUT_SEC, poll=2.0):
+    """بناء قسري لزر التحديث. إن كانت دورة أخرى تعمل ننتظرها (حتى timeout) ثم نبني؛ وإن بنت هي التقارير بعد لحظة الطلب t0
+    اكتفينا بها (طلبات متراكمة خلف قفل الخادم لا تبني مرتين). يعيد 0 عند النجاح وSKIPPED عند انقضاء المهلة."""
+    t0 = time.time() if t0 is None else t0
+    while True:
+        if load_state()["last_build"] >= t0:
+            return 0
+        rc = main(["--force"])
+        if rc != SKIPPED:
+            return rc
+        if time.time() - t0 >= timeout:
+            return SKIPPED
+        time.sleep(poll)
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main()
+    sys.exit(0 if rc == SKIPPED else rc)
