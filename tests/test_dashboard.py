@@ -91,6 +91,7 @@ class TestDashboard(unittest.TestCase):
         """القالب يقرأ الحقول الرئيسة في المؤشرات والجلسات والضغط، ويُعيد حساب المتوقَّع من النسبة الحيّة، ويعرض زمن آخر عيّنة بدء."""
         page = dashboard.render(self.data, "", "الآن", "index.html")
         for s in ('sum(rows,"mt")', "(الخيط الرئيس)", "function quotaForecast", 'quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now)',
+                  'id="lalert"', "function quotaAlert", "تحذير: بمعدل الحرق الحالي",
                   "RATE_SRC[f.rate_src]", "o.mt+=r.mt", "c.last_ts", "(جزئي من ", "، ناقص)", "حدّ أدنى 10%"):
             self.assertIn(s, page)
         self.assertNotIn("حدّ أدنى 20%", page)

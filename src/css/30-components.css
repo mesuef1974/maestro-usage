@@ -64,6 +64,10 @@
 .lrow .lb{block-size:8px;background:var(--chip);border:1px solid var(--line-strong);border-radius:var(--r-pill);overflow:hidden;margin-block-start:var(--sp-2)}
 .lrow .lf{display:block;block-size:100%;background:var(--m1);border-radius:var(--r-pill);min-inline-size:4px;transition:inline-size .3s var(--ease)}
 .lrow .lf.hot{background:var(--bad)}
+/* تنبيه الحالة: حدّ ملوّن وكلمة حالة في النص؛ لا خلفية ملوّنة كي يبقى النص بدرجات الحبر */
+.callout{border:1px solid var(--line-strong);border-inline-start-width:4px;border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3);font-size:var(--t-sm);line-height:1.6;margin:0 0 var(--sp-3)}
+.callout.bad{border-color:var(--bad)}
+.callout.warn{border-color:var(--warn)}
 .lrow .lq{color:var(--ink3);font-size:var(--t-sm);margin-block-start:var(--sp-1)}
 /* دليل الصفحات في «نظرة عامة» */
 .hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--sp-5) var(--sp-4);margin-block:var(--sp-5)}

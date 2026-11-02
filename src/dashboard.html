@@ -12,6 +12,7 @@ __PAGEHEAD__
 
 <!--@sec limits--><section class="limits" id="limits" aria-labelledby="hl" hidden>
   <div class="lh"><h2 id="hl">حدود استهلاك الخطة<span id="lplan"></span></h2><a href="plan.html">الحصة الأسبوعية</a></div>
+  <p class="callout bad" id="lalert" role="alert" hidden></p>
   <div class="lrow" id="lr5"><div class="lt"><span class="ln">حدّ الخمس ساعات</span><span><span class="lr" id="lr5r"></span><span class="lp" id="lr5p"></span></span></div><div class="lb" role="progressbar" aria-label="حدّ الخمس ساعات" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr5f"></span></div></div>
   <div class="lrow" id="lr7"><div class="lt"><span class="ln">الأسبوعي · كل النماذج</span><span><span class="lr" id="lr7r"></span><span class="lp" id="lr7p"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lr7f"></span></div><div class="lq" id="lr7q"></div></div>
   <div class="lrow" id="lrf" hidden><div class="lt"><span class="ln">الأسبوعي · Fable</span><span><span class="lr" id="lrfr"></span><span class="lp" id="lrfp"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي لنموذج Fable" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lrff"></span></div><div class="lq" id="lrfq"></div></div>
@@ -241,6 +242,16 @@ function quotaLine(id,q,pct,resets,now){
   if(fc.full_at)parts.push("يبلغ 100% نحو "+clock(Date.parse(fc.full_at),true));
   else if(fc.at_reset!=null)parts.push("المتوقَّع عند التصفير "+num(Math.min(100,fc.at_reset),0)+"%");
   el.textContent=parts.join(" · ");
+  return fc;
+}
+/* تنبيه بلوغ السقف: لون حالة مع كلمة «تحذير» دائمًا (لا لون وحده)؛ يُعاد حسابه مع كل لقطة حيّة لأن quotaLine تُستدعى من renderLimits */
+function quotaAlert(items){
+  var el=$("#lalert"),msgs=[];
+  items.forEach(function(it){var fc=it.fc;if(!fc)return;
+    if(fc.full_at)msgs.push("تحذير: بمعدل الحرق الحالي تبلغ "+it.name+" 100% نحو "+clock(Date.parse(fc.full_at),true)+(it.resets?" قبل تصفيرها "+clock(Date.parse(it.resets),true):"")+"؛ بعدها يتوقف الاستعمال حتى التصفير.");
+    else if(fc.at_reset!=null&&fc.at_reset>=90)msgs.push("تنبيه: "+it.name+" متوقَّعة عند التصفير "+num(Math.min(100,fc.at_reset),0)+"%.");
+  });
+  el.hidden=!msgs.length;el.textContent=msgs.join(" ");
 }
 var QUOTA_MIN=3;
 function renderLimits(){
@@ -270,7 +281,8 @@ function renderLimits(){
   var lf=null;D.plan.forEach(function(p){if(p.fa!=null&&(!lf||p.ts>lf.ts))lf=p});
   $("#lrf").hidden=!lf;
   if(lf)limitRow("lrf",lf.fa,lf.far,true,now);
-  quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now);quotaLine("lrfq",D.quota&&D.quota.fable,lf?lf.fa:null,lf?lf.far:null,now);
+  var fw=quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now),ff=quotaLine("lrfq",D.quota&&D.quota.fable,lf?lf.fa:null,lf?lf.far:null,now);
+  quotaAlert([{name:"الحصة الأسبوعية لكل النماذج",fc:fw,resets:last.wr},{name:"حصة Fable الأسبوعية",fc:ff,resets:lf?lf.far:null}]);
   var age=Math.max(0,Math.round((now-Date.parse(last.ts))/6e4));
   $("#lnote").textContent="آخر لقطة منذ "+(age<1?"أقل من دقيقة":age<120?age+" دقيقة":Math.round(age/60)+" ساعة")+" · المصدر: "+last.src+" · الأزمنة بتوقيت جهازك وبين قوسين UTC كبقية الصفحات.";
 }
