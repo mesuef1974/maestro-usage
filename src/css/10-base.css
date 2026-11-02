@@ -12,7 +12,7 @@ a:hover{color:var(--accent)}
 bdi,.ltr{unicode-bidi:isolate}
 .ltr{direction:ltr;display:inline-block}
 .sub{color:var(--ink2);font-size:var(--t-sm);margin:0}
-.note,.src{color:var(--ink3);font-size:var(--t-xs);margin:var(--sp-2) 0 0}
+.note,.src{color:var(--ink3);font-size:var(--t-xs);margin:var(--sp-2) 0 0;max-inline-size:68ch}
 .warn{color:var(--warn);font-size:var(--t-sm);margin:var(--sp-2) 0 0}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
