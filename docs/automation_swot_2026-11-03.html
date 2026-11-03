@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SWOT الأتمتة وسير العمل · 2026-11-03</title>
+<style>
+:root{--bg:#f6f3ee;--surface:#fffdf9;--raised:#faf7f2;--chip:#efeae2;--ink:#2a2622;--ink2:#5e574e;--ink3:#70685d;--line:#d6cfc2;--line-strong:#857b6e;
+--brand:#a8541a;--brand-ink:#7b3c13;--brand-soft:#f5e9de;--accent:#775200;--accent-soft:#f6ecd2;--good:#18794e;--good-soft:#e3f2ea;--warn:#955700;--warn-soft:#faeedb;--bad:#b3261e;--bad-soft:#f9e3e1;--focus:#1f6fd0;
+--s1:#2a78d6;--s2:#eb6834;--s3:#15a070;--s4:#b87800;--s5:#d0507f;--oth:#8f8e88;
+--font:"Noto Naskh Arabic","Dubai","Segoe UI Variable Text","Segoe UI",Tahoma,sans-serif;--head:"Noto Kufi Arabic","Dubai","Segoe UI Variable Display","Segoe UI",Tahoma,sans-serif;--num:"Inter","Segoe UI Variable Text","Segoe UI",Tahoma,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15120e;--surface:#1e1a15;--raised:#251f19;--chip:#2a241d;--ink:#efe9df;--ink2:#c4baab;--ink3:#9d9385;--line:#3a332b;--line-strong:#776d5f;--brand:#f0a15f;--brand-ink:#f4b887;--brand-soft:#443222;--accent:#e8bd4a;--accent-soft:#3b3115;--good:#4cc18b;--good-soft:#1c3a2a;--warn:#e0a13a;--warn-soft:#3d2f14;--bad:#f0837b;--bad-soft:#44221f;--focus:#6da7ec;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--oth:#85847d;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:1.0625rem;line-height:1.7;padding-block:2rem 4rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:1100px;margin-inline:auto}
+h1,h2,h3{font-family:var(--head);color:var(--brand-ink);line-height:1.3;text-wrap:balance}
+h1{font-size:2rem;margin:0 0 .25rem}h2{font-size:1.4rem;margin:2.2rem 0 .6rem;padding-inline-start:.75rem;border-inline-start:4px solid var(--brand)}h3{font-size:1.1rem;margin:1.2rem 0 .4rem;color:var(--ink)}
+p{margin:.4rem 0;max-width:80ch}.lede{color:var(--ink2);font-size:1.1rem}
+.meta{color:var(--ink3);font-size:.9rem;display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;margin-block:.5rem 1.5rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:1rem 1.25rem;margin-block:1rem}
+.verdict{border-inline-start:6px solid var(--warn);background:var(--raised)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.75rem;margin-block:1rem}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.75rem .9rem}
+.tile .l{color:var(--ink3);font-size:.85rem}.tile .v{font-family:var(--num);font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}.tile .d{color:var(--ink2);font-size:.85rem}
+.tile.bad .v{color:var(--bad)}.tile.good .v{color:var(--good)}.tile.warn .v{color:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;line-height:1.5;margin-block:.5rem}
+th,td{border-bottom:1px solid var(--line);padding:.35rem .5rem;text-align:start;vertical-align:top}th{color:var(--ink3);font-weight:600;background:var(--raised)}
+td.n,th.n{font-family:var(--num);font-variant-numeric:tabular-nums;direction:ltr;text-align:right;white-space:nowrap}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-block:.6rem}.wrap table{margin:0}
+.swot{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:.9rem}
+.q{border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;background:var(--surface);border-block-start:5px solid var(--line-strong)}
+.q.s{border-block-start-color:var(--good)}.q.w{border-block-start-color:var(--bad)}.q.o{border-block-start-color:var(--s1)}.q.t{border-block-start-color:var(--warn)}
+.q h3{margin:0 0 .4rem;display:flex;align-items:center;gap:.5rem}.q h3 span{font-family:var(--num);font-size:.8rem;border-radius:999px;padding:.05rem .55rem;background:var(--chip);color:var(--ink2)}
+.q ol,.q ul{margin:0;padding-inline-start:1.3rem}.q li{margin-block:.3rem}
+ol,ul{padding-inline-start:1.4rem}li{margin-block:.25rem}
+code{font-family:var(--num);font-size:.88em;background:var(--chip);border-radius:6px;padding:0 .3rem;direction:ltr;unicode-bidi:isolate}
+.ref{color:var(--ink3);font-size:.85rem;font-family:var(--num);direction:ltr;unicode-bidi:isolate}
+.kt{display:inline-block;border:1px solid;border-radius:999px;padding:0 .55rem;font-size:.82rem;white-space:nowrap;margin-inline-end:.25rem}
+.kt.p1{border-color:var(--bad);background:var(--bad-soft)}.kt.p2{border-color:var(--warn);background:var(--warn-soft)}.kt.p3{border-color:var(--good);background:var(--good-soft)}.kt.tok{border-color:var(--s1)}.kt.code{border-color:var(--line-strong);background:var(--chip)}
+.note{color:var(--ink3);font-size:.9rem}
+.bars{display:grid;gap:.45rem;margin-block:.6rem;max-width:48rem}.bar{display:grid;grid-template-columns:11rem 1fr 7rem;gap:.6rem;align-items:center;font-size:.92rem}
+.bar i{display:block;block-size:14px;border-radius:4px;background:var(--s1)}.bar b{font-family:var(--num);font-weight:500;color:var(--ink2);direction:ltr;text-align:right}
+.steps{counter-reset:s}.steps>li{list-style:none;position:relative;padding-inline-start:2.4rem;margin-block:.7rem}
+.steps>li::before{counter-increment:s;content:counter(s);position:absolute;inset-inline-start:0;top:.15rem;inline-size:1.7rem;block-size:1.7rem;border-radius:50%;background:var(--brand);color:#fff;font-family:var(--num);font-weight:700;display:grid;place-items:center;font-size:.9rem}
+.steps b{color:var(--ink)}.steps .why{color:var(--ink2);font-size:.92rem}
+.src{font-size:.88rem;color:var(--ink3)}
+@media print{body{background:#fff;color:#000}.card,.q,.tile{break-inside:avoid}}
+</style>
+</head>
+<body>
+<main>
+<h1>تقرير SWOT: أتمتة سير العمل وتكلفتها بالتوكن</h1>
+<p class="lede">مراجعة عميقة للمضخّة والدفتر والبوّابات والرسائل في مستودع الحوكمة، مقرونة بقياس استهلاك التوكنز من قاعدة «ميزان»، وتحديد ما يُنقل من الجلسات إلى شيفرة محضة.</p>
+<div class="meta"><span>التاريخ: 2026-11-03 (الدوحة)</span><span>المعدّ: 0440 «التحوّل»</span><span>النطاق: tools/ وledger/ في delivery_manager_work، وusage_turns في ميزان (30 يومًا: 10-04 إلى 11-03)</span><span>قراءة فقط؛ كل رقم من مصدره</span></div>
+
+<section class="card verdict">
+<h2 style="margin-top:0;border:0;padding:0">الحكم</h2>
+<p><b>الأتمتة تعمل وتُنتج، لكنها تُشغَّل بالجلسات لا بساعة، وتُموَّل بالتوكن عبر الرسائل.</b> الجزء الآلي (من الاعتماد إلى النشر) سريع: وسيط 4.7 ساعة من الاعتماد إلى النشر، و90% من عمليات الدمج في آخر أسبوع نفّذتها المضخّة. أما ما يسبق الاعتماد فبشري وبطيء (59 بطاقة ملتقَطة بوسيط 15 يومًا)، والمضخّة لا تدور إلا حين تتحرك جلسة فتتجمّد ليلًا (9 انقطاعات فوق ساعتين في 14 يومًا).</p>
+<p>على جانب التوكن، <b>56.8% من كل ما استُهلك في 30 يومًا (16.2 من 28.6 مليار توكن) ردودٌ أصلها رسالة من جلسة أخرى</b>، بمتوسط سياق 209 ألف توكن لرد ناتجه 568 توكنًا فقط. أكبر فرصة ليست في المضخّة (بايثون محض بلا توكن) بل في <b>تكويد توجيه الرسائل والإيقاظ والتصعيد</b> بحيث لا يصل إلى النموذج إلا ما يحتاج قرارًا. إلغاء الكنّاسات في 10-29 أثبت الاتجاه: التوكن الآلي اليومي هبط من 199 إلى 74 مليونًا، والإجمالي من 811 إلى 315 مليونًا يوميًّا.</p>
+</section>
+
+<h2>الأرقام الحاكمة</h2>
+<div class="tiles">
+<div class="tile"><div class="l">توكن 30 يومًا</div><div class="v">28.6 مليار</div><div class="d">141,651 ردًّا؛ 97% منها قراءة من الكاش</div></div>
+<div class="tile bad"><div class="l">أصلها رسالة جلسة أخرى (peer)</div><div class="v">56.8%</div><div class="d">77,421 ردًّا، 16.2 مليار توكن</div></div>
+<div class="tile good"><div class="l">الإجمالي اليومي بعد 10-30</div><div class="v">−61%</div><div class="d">811 → 315 مليون/يوم بعد إلغاء الكنّاسات</div></div>
+<div class="tile good"><div class="l">الاعتماد → النشر (وسيط، 30ي)</div><div class="v">4.7 س</div><div class="d">المئين 85: 31.9 س</div></div>
+<div class="tile warn"><div class="l">الالتقاط → النشر (وسيط، 7ي)</div><div class="v">52.7 س</div><div class="d">كان 23.7 س على 30 يومًا</div></div>
+<div class="tile bad"><div class="l">بطاقات عالقة &gt; 48 س</div><div class="v">80</div><div class="d">من 107 مفتوحة؛ 59 منها captured</div></div>
+<div class="tile warn"><div class="l">دورات المضخّة 11-03</div><div class="v">107</div><div class="d">مقابل 285 في 10-29؛ rc=1 في 87% بلا سبب مسجَّل</div></div>
+<div class="tile bad"><div class="l">تنبيهات التصعيد 11-03</div><div class="v">147</div><div class="d">وسجلات الصندوق 986 في اليوم نفسه</div></div>
+</div>
+
+<h3>من أين يأتي التوكن (30 يومًا، بحسب أصل الرد)</h3>
+<div class="bars">
+<div class="bar"><span>رسالة من جلسة أخرى</span><i style="width:100%"></i><b>16,245 م</b></div>
+<div class="bar"><span>المالك (human)</span><i style="width:38.7%;background:var(--s3)"></i><b>6,287 م</b></div>
+<div class="bar"><span>إشعار مهمة خلفية</span><i style="width:17.5%;background:var(--s4)"></i><b>2,836 م</b></div>
+<div class="bar"><span>مجدول</span><i style="width:8.1%;background:var(--s2)"></i><b>1,320 م</b></div>
+<div class="bar"><span>SDK</span><i style="width:8.1%;background:var(--s5)"></i><b>1,312 م</b></div>
+<div class="bar"><span>بلا أصل (وكلاء فرعيون وغيرهم)</span><i style="width:3.6%;background:var(--oth)"></i><b>590 م</b></div>
+</div>
+<p class="note">المجدول توقّف كليًّا بعد 10-30 (إلغاء الكنّاسات)؛ ما بقي من آلي هو إشعارات المهام الخلفية وSDK. متوسط السياق لكل رد: 218 ألفًا للإشعارات، 209 للرسائل والمالك، 143 للمجدول. توزيع سياق ردود الرسائل: 45% منها بين 200 و400 ألف توكن، و4.7% فوق 400 ألف.</p>
+
+<div class="wrap"><table>
+<thead><tr><th>الدور</th><th class="n">ردود peer</th><th class="n">توكن peer (مليون)</th><th class="n">متوسط السياق (ألف)</th><th class="n">متوسط الناتج</th><th class="n">أطول جلسة (أيام)</th></tr></thead>
+<tbody>
+<tr><td>0101</td><td class="n">10,361</td><td class="n">1,976</td><td class="n">190</td><td class="n">596</td><td class="n">10.9</td></tr>
+<tr><td>0501</td><td class="n">9,465</td><td class="n">1,932</td><td class="n">204</td><td class="n">485</td><td class="n">20.1</td></tr>
+<tr><td>0601</td><td class="n">7,909</td><td class="n">1,618</td><td class="n">204</td><td class="n">430</td><td class="n">20.1</td></tr>
+<tr><td>0301</td><td class="n">7,330</td><td class="n">1,468</td><td class="n">200</td><td class="n">691</td><td class="n">—</td></tr>
+<tr><td>0201</td><td class="n">3,029</td><td class="n">870</td><td class="n">287</td><td class="n">611</td><td class="n">19.4</td></tr>
+<tr><td>0701</td><td class="n">4,523</td><td class="n">857</td><td class="n">189</td><td class="n">566</td><td class="n">21.0</td></tr>
+</tbody></table></div>
+<p class="note">جلسات ثابتة تعيش ثلاثة أسابيع بآلاف الردود وسياق 200 ألف تُعاد قراءته مع كل رسالة: هذا هو شكل الهدر، لا عدد الرسائل وحده. الأرضية الثابتة المحقونة مع كل استدعاء 54.6 ألف توكن (49.6% من المقروء، قياس 11-01).</p>
+
+<h2>كيف تعمل الأتمتة اليوم (الواقع لا الوثيقة)</h2>
+<ul>
+<li><b>المشغّل:</b> خطّافا Stop وSessionStart فقط (settings.json السطران 203 و238) يطلقان <code>flow_pump.py --apply</code> كعملية منفصلة إن مرّت 300 ثانية على آخر دورة. مهمة <code>flow-pump-10min</code> موجودة ملفًّا وغير مسجَّلة، وخطّاف PostToolUse المكتوب في الشيفرة غير مربوط. <span class="ref">flow_pump_hook.py:46,103-122 · flow_pump.py:1205</span></li>
+<li><b>الدورة:</b> 15 مرحلة بالترتيب (اعتماد، قائمة المالك، إعفاء، شجرة، prepush في Docker، دفع، فتح طلب، سطر اعتماد، نزع التسليح ثم دمج في نافذتين 14:30 و19:00، إعادة CI، متابعة الجذر، مصالحة، مزامنة الدفتر، تصعيد، دوريات). <span class="ref">flow_pump.py:1573-1683</span></li>
+<li><b>الاعتماد من المصدر:</b> لا انتقال إلا بعد <code>approval_check --head</code> الذي يقبل مصدرين فقط: سطر في owner_confirmations.md أو تفويض 0101 في الدفتر؛ الدمج مقيّد بالرأس (<code>--match-head-commit</code>) ويُنزع تسليحه إذا تغيّر الرأس. <span class="ref">approval_check.py:635-642 · flow_pump.py:1174-1202,1300</span></li>
+<li><b>الدفتر:</b> إلحاق مع fsync ومعالجة السطر المبتور ونسخ يومية ذرّية (30 نسخة) على القرص نفسه؛ 12,822 حدثًا و860 بطاقة؛ خارج git. <span class="ref">ledger.py:133-169</span></li>
+<li><b>ما يصل إلى النموذج:</b> رسائل الصندوق (المراقب <code>inbox.py wait</code> ينتهي عند أول وارد فيوقظ الجلسة، D-512م)، تنبيهات الركود والتصعيد، المهام الدورية، حقن SessionStart (نحو 10,160 توكنًا لكل حقن، 3.5 مرات لكل بطاقة)، وإشعارات المهام الخلفية.</li>
+</ul>
+
+<h2>مصفوفة SWOT</h2>
+<div class="swot">
+<div class="q s"><h3>نقاط القوة <span>S</span></h3><ol>
+<li><b>الانتقالات تُقرأ من المصدر</b> (git وgh والدفتر) لا من الرسائل، والدمج مقيّد بالرأس ويُعطَّل إن تغيّر. <span class="ref">flow_pump.py:1174-1202,1312-1322</span></li>
+<li><b>المسار الآلي سريع ومهيمن:</b> 90% من الدمج بالمضخّة في 7 أيام (56 من 62)، ووسيط pushed→merged 0.4 س على 30 يومًا، ونسبة العبور اليومية 0.85–1.0.</li>
+<li><b>إعفاءات مثبَتة بالشيفرة</b> (merge-tree، merge-base، تحليل AST، كشف إضعاف التأكيدات) لا بادّعاء الجلسة، ويُعاد التحقق حتى عمق 6. <span class="ref">ledger.py:1189-1414 · approval_check.py:500-523</span></li>
+<li><b>الدفتر متين:</b> fsync، سطر مبتور يُعالج، نسخ يومية ذرّية، قفل بين العمليات، وتغطية نحو 550 اختبارًا (178 للمضخّة وحدها).</li>
+<li><b>الاتجاه مثبَت بالأرقام:</b> نقل الكنّاسات إلى الشيفرة خفض الإجمالي اليومي 61% والتوكن الآلي 63%.</li>
+<li><b>prepush معزول</b> في Docker بشبكة داخلية وقراءة فقط، والإيصال يُكتب من المضيف بشروط صارمة. <span class="ref">flow_pump.py:560-603,798-800</span></li>
+</ol></div>
+<div class="q w"><h3>نقاط الضعف <span>W</span></h3><ol>
+<li><b>لا ساعة خارجية:</b> المضخّة تدور بالخطّاف فقط؛ 9 انقطاعات فوق ساعتين في 14 يومًا (أطولها 10.4 س) وتضيع نوافذ الدمج. دورات 11-03: 107 مقابل 285 في 10-29.</li>
+<li><b>الرسائل تموّل بالتوكن:</b> 77,421 ردًّا أصلها رسالة جلسة في 30 يومًا بـ16.2 مليار توكن؛ 49% من سجلات الصندوق في 14 يومًا إقرارات (ack 2,093 من 4,291) لا تحتاج نموذجًا؛ 986 سجلًّا و147 تنبيه تصعيد في يوم 11-03 وحده.</li>
+<li><b>الاعتماد ذاتي بلا مصادقة:</b> <code>--by 0101</code> ادّعاء نصّي، و<code>delegation_blockers</code> تعيد فارغًا منذ D-506م، والمضخّة توقّع باسم 0101؛ دورة كاملة ممكنة من تفويض واحد حتى على ملفات قاعدة الاعتماد. <span class="ref">ledger.py:1575-1608 · flow_pump.py:51</span></li>
+<li><b>تزامن هشّ:</b> قفل المضخّة يموت بعد 900 ث بلا تجديد بينما prepush قد يتجاوزها (مهلة 900 + إعادة 900)؛ التحقق في <code>ledger.move</code> خارج القفل؛ <code>new_id</code> بالعدّ؛ <code>inbox._append</code> بلا قفل ولا fsync. <span class="ref">flow_pump.py:517,684,1453,1480 · ledger.py:210-213,1011-1080 · inbox.py:196-213</span></li>
+<li><b>ما قبل الاعتماد بشري بطيء:</b> 59 بطاقة captured بوسيط 15 يومًا (8 منها 33–36 يومًا)، وإعادة التوجيه 172 مرة في 30 يومًا بمكوث وسيطه 63.6 س، وroutedin_progress بالمئين 85 = 187.5 س.</li>
+<li><b>رصد أعمى:</b> rc=1 في 154 دورة بلا سطر خطأ؛ مدة الدورة لا تُسجَّل؛ wake_log متوقف منذ 10-29؛ لا <code>logging</code> في أي ملف؛ 8 مواضع <code>except: pass</code>.</li>
+<li><b>الوثائق تخالف السلوك بعد D-506م:</b> docstrings والثوابت (SECURITY_LABEL، SENSITIVE_GLOBS) تقول إن الهجرات والأمن محجوبة وهي لا تحجب؛ اختبار ينجح دائمًا بلا معنى. <span class="ref">flow_pump.py:15-20,65-68,944,1128</span></li>
+<li><b>كلفة غير توكنية:</b> كل <code>approval_check</code> يشغّل <code>ledger.py show</code> في عملية فرعية 3 مرات ويقرأ 5.2 MB كل مرة؛ 18 خطّافًا منفصلًا تكلّف 2.3 ث و69.5 MB قراءة لكل استدعاء أداة.</li>
+<li><b>مهام مجدولة يتيمة</b> (14 مجلدًا) وخطّاف pre-push غير مثبَّت، والدفتر بلا نسخة خارج الجهاز.</li>
+</ol></div>
+<div class="q o"><h3>الفرص <span>O</span></h3><ol>
+<li><b>موجّه رسائل محدِّد (deterministic router):</b> الإقرارات والإشعارات الحالية تُسجَّل في الدفتر ولا تُسلَّم إلى جلسة؛ يصل إلى النموذج ما يحتاج قرارًا فقط.</li>
+<li><b>ساعة نظام للمضخّة</b> (مهمة Windows لا مهمة Claude) كل 10 دقائق: صفر توكن، ويزيل التجمّد الليلي، ويتفق مع D-50م وD-60م.</li>
+<li><b>تجميع التنبيهات في خلاصة:</b> دفعة واحدة لكل هدف كل 15 دقيقة بدل 147 تنبيهًا متفرّقًا (مبدأ D-299م/D-300م).</li>
+<li><b>hook_runner معتمد وغير مدموج:</b> توفير 47–53% من زمن الخطّافات جاهز في فرع.</li>
+<li><b>حدود البطاقة كحدود للسياق</b> (تجربة D-510م على 0501 و0601): الجلسات التي تعيش 20 يومًا بسياق 200 ألف هي أغلى ما في المنظومة.</li>
+<li><b>ميزان يقيس كل ذلك أصلًا:</b> أصل الرد والدور والجلسة والسياق، فكل خطوة تكويد تُقاس بعدها بالأرقام نفسها.</li>
+</ol></div>
+<div class="q t"><h3>التهديدات <span>T</span></h3><ol>
+<li><b>دمج غير مقصود:</b> ثغرة التفويض الذاتي مع نوافذ دمج آلية تعني أن خطأ جلسة واحدة قد يصل إلى main بلا كلمة من المالك.</li>
+<li><b>نسختان من المضخّة معًا</b> عند دورة طويلة: دفع أو دمج مزدوج وملفات حالة متضاربة.</li>
+<li><b>عودة الهدر:</b> أي مراقب أو كنّاس جديد يُشغَّل بجلسة يعيد مئات الملايين يوميًّا؛ الحصة (Max 20x) هي السقف لا الدولار.</li>
+<li><b>تآكل الثقة بالتصعيد:</b> 147 تنبيهًا في يوم تجعل الجلسات والمالك يتجاهلون الجرس الحقيقي.</li>
+<li><b>فقد الدفتر:</b> الملف خارج git ونسخه على القرص نفسه.</li>
+<li><b>انحراف الوثيقة عن الشيفرة</b> يُنتج قرارات مبنية على سلوك غير موجود.</li>
+</ol></div>
+</div>
+
+<h2>أين تُكوَّد لتقليل التوكن (مرتّبة بالعائد)</h2>
+<p>الترتيب بحسب حجم التوكن المقيس الذي يمسّه كل بند، مع الملف الذي يُعدَّل. كلها شيفرة محضة لا تستدعي Claude.</p>
+<ol class="steps">
+<li><span class="kt p1">الأعلى عائدًا</span><span class="kt tok">peer 16.2 مليار/30ي</span><br><b>موجّه الصندوق:</b> في <code>inbox.py</code> يُصنَّف كل وارد بقاعدة لا نموذج: <code>ack</code> و<code>block</code> وتذكيرات «إعادة» وتنبيهات الركود تُلحق بالدفتر وبملف حالة ولا توقظ أحدًا؛ لا يُسلَّم إلى الجلسة إلا <code>msg</code> يطلب قرارًا أو عملًا. <span class="why">49% من سجلات 14 يومًا إقرارات؛ كل تسليم يكلّف رد سياقه 209 ألف توكن. القياس بعد أسبوع: ردود peer/يوم في ميزان.</span></li>
+<li><span class="kt p1">الأعلى عائدًا</span><span class="kt tok">peer + إشعارات</span><br><b>خلاصة بدل تنبيهات:</b> <code>pump_health.escalation_pass</code> و<code>periodic_pass</code> يكتبان إلى طابور، و<code>flow_pump</code> يسلّم لكل هدف رسالة واحدة مجمَّعة كل 15 دقيقة وداخل نوافذ عمله فقط. <span class="why">147 تنبيهًا و986 سجلًّا يوم 11-03؛ الإصلاح #260 لم يظهر أثره في السجل.</span></li>
+<li><span class="kt p1">الأعلى عائدًا</span><span class="kt tok">السياق 200 ألف × آلاف الردود</span><br><b>حدود البطاقة حدود للسياق:</b> في خطّاف Stop (<code>session_state.py</code>) عند بلوغ البطاقة published أو closed يُكتب ملخّص الحالة في ملف ثم يُطلب مسح السياق؛ الجلسة التالية تقرأ الملف لا التاريخ. <span class="why">0501: 8,392 رد peer في جلسة واحدة بـ1.7 مليار توكن؛ 45% من ردود peer بسياق 200–400 ألف. هذا هو D-510م مكوَّدًا.</span></li>
+<li><span class="kt p2">عالٍ</span><span class="kt tok">صفر توكن + انتظام</span><br><b>ساعة نظام:</b> تسجيل مهمة Windows (schtasks) كل 10 دقائق تشغّل <code>flow_pump.py --apply</code> مع احترام القفل، وحذف ملف <code>flow-pump-10min</code> اليتيم و14 مجلد مهام ميتًا. <span class="why">يزيل الانقطاعات الليلية (9 فوق ساعتين) وتفويت نوافذ الدمج؛ لا يمسّ توكنًا لكنه يرفع الإنتاجية (published/يوم من 13 نحو 20–30).</span></li>
+<li><span class="kt p2">عالٍ</span><span class="kt tok">حقن 10,160 × 3.5 لكل بطاقة</span><br><b>دمج hook_runner وإخراج compact من مطابق SessionStart:</b> الفرع معتمد (11-03 19:02) ومحجوب لغياب إيصال prepush؛ ثم مطابقات (matcher) لكل خطّاف بدل الفارغ في lang_guard وinbox. <span class="why">47–53% من زمن الخطّافات، ونحو 35.6 ألف توكن حقن لكل بطاقة.</span></li>
+<li><span class="kt p2">عالٍ</span><span class="kt tok">إشعارات 2.8 مليار/30ي</span><br><b>تجميع إشعارات المهام الخلفية:</b> الوكلاء الفرعيون والمهام الطويلة تُبلّغ بملف نتيجة واحد عند الاكتمال بدل إشعار لكل مهمة، والجلسة الأم تقرأ الملخّص. <span class="why">12,968 ردًّا أصلها إشعار بمتوسط سياق 218 ألفًا، الأعلى بين الأصول.</span></li>
+<li><span class="kt p3">متوسط</span><span class="kt code">سلامة</span><br><b>تجديد القفل وعملية واحدة:</b> المضخّة تلمس ملف القفل كل 60 ثانية وتكتب رقم العملية وتتحقق منه قبل حذف قفل «ميت»؛ ونقل التحقق في <code>ledger.move</code> و<code>new_id</code> داخل القفل؛ وقفل وfsync في <code>inbox._append</code>. <span class="why">يمنع الدفع المزدوج والمعرّفات المكرّرة والرسائل المتكرّرة (#75 و#77 دليل فعلي).</span></li>
+<li><span class="kt p3">متوسط</span><span class="kt code">سلامة</span><br><b>مصادقة التفويض:</b> <code>--by 0101</code> يُقبل فقط إن حمل توقيعًا (رمز سرّي من ملف خارج المستودع أو رقم جلسة مُتحقَّق منه)، وإعادة قائمة <code>delegation_blockers</code> لملفات قاعدة الاعتماد (approval_check، ledger، flow_pump، settings) حتى تحت D-506م. <span class="why">يسدّ أخطر ثغرة دون العودة إلى المالك في كل خطوة.</span></li>
+<li><span class="kt p3">متوسط</span><span class="kt code">رصد</span><br><b>سجل بنيوي للمضخّة:</b> <code>logging</code> إلى JSONL بسطر لكل دورة (بداية، نهاية، المدة، كل مرحلة ونتيجتها، سبب rc=1)، وإحياء <code>wake_log</code>، وربط ميزان به لعرض «دورات/يوم ومدّتها» بلا نص. <span class="why">154 دورة rc=1 بلا سبب، ومدة الدورة غير مقيسة.</span></li>
+<li><span class="kt p3">متوسط</span><span class="kt code">أداء</span><br><b>فهرس الدفتر في الذاكرة:</b> <code>approval_check</code> يستورد <code>ledger</code> ويقرأ الأحداث مرة واحدة لكل دورة بدل 3 عمليات فرعية تقرأ 5.2 MB، وأرشفة شهرية لـ<code>events.jsonl</code> (ينمو 150 KB/يوم). <span class="why">يقصّر الدورة ويبعدها عن حدّ القفل 900 ث.</span></li>
+<li><span class="kt p3">متوسط</span><span class="kt code">حوكمة</span><br><b>مواءمة الوثيقة بالشيفرة:</b> حذف الثوابت الميتة والاختبار الفارغ، وتحديث docstrings ونص المساعدة بما قررته D-506م، وتثبيت خطّاف pre-push، ونسخة للدفتر خارج الجهاز (المستودع الخاص الاحتياطي).</li>
+</ol>
+<p class="note">ما لا يُنصح بتكويده الآن: عامل فرز بنموذج Haiku (D-508م المعلّق) قبل الموجّه المحدِّد؛ قواعد ثابتة على حقل <code>k</code> ونوع التنبيه تكفي لأغلب الحالات وبلا توكن، ويبقى Haiku للباقي إن ثبتت الحاجة بالقياس.</p>
+
+<h2>استراتيجيات TOWS</h2>
+<div class="wrap"><table>
+<thead><tr><th></th><th>الفرص</th><th>التهديدات</th></tr></thead>
+<tbody>
+<tr><th>القوة</th><td>اعتمادًا على أن الانتقالات تُقرأ من المصدر، يُوسَّع الدور نفسه إلى الرسائل: الدفتر مصدر الحقيقة للإقرارات والتنبيهات، والجلسة تقرأ لقطة لا تيّارًا (البنود 1–3).</td><td>تقييد الدمج بالرأس موجود؛ يُكمَّل بمصادقة التفويض وقائمة محظورات قاعدة الاعتماد (البند 8) فيزول خطر الدمج غير المقصود دون كسر D-506م.</td></tr>
+<tr><th>الضعف</th><td>الساعة الخارجية (4) وhook_runner (5) جاهزان تقنيًّا؛ تنفيذهما يعالج الانقطاع والحقن معًا في يومين.</td><td>قبل أي أتمتة جديدة: القفل المتجدّد والذرّية (7) والسجل البنيوي (9)، وإلا تضاعفت الأعطال الصامتة مع زيادة الدورات.</td></tr>
+</tbody></table></div>
+
+<h2>خارطة طريق مقترحة</h2>
+<ol>
+<li><b>الأسبوع 1 (بلا قرار جديد):</b> ساعة النظام، دمج hook_runner، تنظيف المهام اليتيمة، السجل البنيوي. قياس: دورات/يوم ≥ 140 بلا انقطاع فوق ساعة.</li>
+<li><b>الأسبوع 2 (بقرار واحد):</b> موجّه الصندوق وخلاصة التنبيهات. قياس في ميزان: ردود peer/يوم من نحو 2,500 إلى أقل من 800، وسجلات الصندوق/يوم أقل من 200.</li>
+<li><b>الأسبوع 3:</b> حدود البطاقة حدود للسياق على 0501 و0601 (تجربة D-510م). قياس: متوسط سياق ردود peer من 209 ألفًا إلى أقل من 120 ألفًا.</li>
+<li><b>الأسبوع 4:</b> مصادقة التفويض، التزامن، مواءمة الوثيقة. قياس: صفر rc=1 بلا سبب، وصفر رسائل مكرّرة.</li>
+</ol>
+<p>الهدف الرقمي الكلي: إجمالي يومي أقل من 150 مليون توكن (من 315) مع إنتاجية 20 بطاقة منشورة يوميًّا.</p>
+
+<h2>ما لم يُقَس وتحفظات</h2>
+<ul>
+<li>مدة دورة المضخّة الحقيقية (السجل يحمل طابع الانتهاء فقط)؛ المتاح حدّ أدنى على 15% من الدورات: وسيط 17 ث، أقصى 861 ث.</li>
+<li>سبب rc=1 في 154 دورة؛ وأسباب الإيقاظ بعد 10-29 (wake_log متوقف).</li>
+<li>آلي/يدوي في الدمج لا يُستنتج من GitHub (حساب واحد، autoMergeRequest صفر)؛ اعتمدنا حقل <code>by</code> في الدفتر، وفيه 116 انتقال merged غير مُعلَن في 30 يومًا.</li>
+<li>أرقام ميزان تعدّ التوكن بأصناف Claude Code الأربعة؛ 97% منها قراءة كاش فالكلفة الفعلية بالحصة أقل من الكلفة الاسمية، لكن النسب بين الأصول صحيحة.</li>
+<li>التوفير المتوقع في البنود 1–3 تقدير من حصص مقيسة، لا قياس بعدي؛ يُقاس بعد كل بند بالمقاييس المذكورة.</li>
+</ul>
+
+<h2>المصادر</h2>
+<p class="src">مستودع الحوكمة (قراءة فقط): tools/flow_pump.py، flow_pump_hook.py، ledger.py، inbox.py، approval_check.py، push_approved.py، session_state.py؛ ledger/events.jsonl (12,822 حدثًا)، flow_pump.log (2,789 دورة)، pump_health.jsonl، pump_escalations.jsonl، prepush_attempts.json، inbox/*.jsonl، periodic_log.jsonl، wake_log.jsonl؛ gh run list وgh pr list (قراءة)؛ docs/automation_architecture.md، automation_audit_2026-11-01.md، automation_status_2026-11-03.md، flow_automation_swot_2026-10-27.html، sessions_swot_2026-10-28.html، token_waste_card_journey_2026-11-01.md وتوصياته، card_journey_cost_permanent_sessions_2026-11-01.md؛ decisions.md (D-50م، D-60م، D-443م، D-451م، D-506م، D-508م..D-513م). ميزان: usage_turns وsessions وstartup_samples في flow_usage.sqlite3 (10-04 إلى 11-03).</p>
+</main>
+</body>
+</html>
