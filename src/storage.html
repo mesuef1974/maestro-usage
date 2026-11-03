@@ -14,45 +14,44 @@ __PAGEHEAD__
 
 <!--@sec src--><section class="card" aria-labelledby="hs">
   <div class="cardhead"><h2 id="hs">من أين تأتي هذه الأحجام</h2><span class="sub" id="ssum"></span></div>
-  <p class="sub">مجلد <code id="root"></code> فقط (لا يُمسّ غيره). كل مجلد أعلى مصنَّف بنوعه؛ ما ليس من Claude Code يُعرض للمعرفة ولا تمسّه الأدوات.</p>
+  <p class="note">مجلد <code id="root"></code> فقط (لا يُمسّ غيره). كل مجلد أعلى مصنَّف بنوعه؛ ما ليس من Claude Code يُعرض للمعرفة ولا تمسّه الأدوات.</p>
   <h3>بحسب النوع</h3>
   <div class="bars" id="kbars"></div>
   <div class="kinds" id="kinds"></div>
-  <h3 class="mt">المجلدات العليا</h3>
-  <div class="wrap mid" id="tops"></div>
+  <details class="mt"><summary>المجلدات العليا (جدول)</summary><div class="wrap free" id="tops"></div></details>
 </section><!--@/sec-->
 
 <!--@sec proj--><section class="card" aria-labelledby="hp">
   <div class="cardhead"><h2 id="hp">سجلات الجلسات بحسب المشروع</h2><span class="sub" id="psum"></span></div>
-  <p class="sub">كل مجلد في projects مشروعٌ (أو worktree). «مجلد العمل موجود؟» من مسارات الجلسات في القاعدة: «لا» يعني أن المجلد الأصلي اختفى وسجلاته يتيمة. «محمَّل» نسبة ما قرأته هذه المنصة من سجلاته.</p>
-  <div class="wrap" id="projs"></div>
+  <p class="note">كل مجلد في projects مشروعٌ (أو worktree). «مجلد العمل موجود؟» من مسارات الجلسات في القاعدة: «لا» يعني أن المجلد الأصلي اختفى وسجلاته يتيمة. «محمَّل» نسبة ما قرأته هذه المنصة من سجلاته.</p>
+  <div class="wrap free" id="projs"></div>
   <button type="button" class="more" id="pmore" hidden></button>
 </section><!--@/sec-->
 
 <!--@sec age--><section class="card" aria-labelledby="ha">
   <div class="cardhead"><h2 id="ha">عمر الملفات والامتدادات</h2><span class="sub" id="asum"></span></div>
-  <p class="sub">الحجم بحسب آخر تعديل: ما هو أقدم من 90 يومًا نادرًا ما يُحتاج إليه. ثم أكبر الامتدادات.</p>
+  <p class="note">الحجم بحسب آخر تعديل: ما هو أقدم من 90 يومًا نادرًا ما يُحتاج إليه. ثم أكبر الامتدادات.</p>
   <div class="row2">
     <div><h3>بحسب العمر</h3><div class="bars" id="abars"></div></div>
-    <div><h3>بحسب الامتداد</h3><div class="wrap mid" id="exts"></div></div>
+    <div><h3>بحسب الامتداد</h3><details><summary>الجدول</summary><div class="wrap free" id="exts"></div></details></div>
   </div>
 </section><!--@/sec-->
 
 <!--@sec growth--><section class="card" aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">نموّ الحجم</h2><span class="sub" id="gsum"></span></div>
-  <p class="sub">إجمالي المجلد عند كل مسح (كل ساعة). المنحنى يتكوّن مع الأيام.</p>
+  <p class="note">إجمالي المجلد عند كل مسح (كل ساعة). المنحنى يتكوّن مع الأيام.</p>
   <div class="chart" id="cg"></div>
   <p class="note" id="gnote"></p>
 </section><!--@/sec-->
 
 <!--@sec tools--><section class="card" aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">تحرير المساحة بأمان</h2><span class="sub" id="tsum"></span></div>
-  <p class="sub">لا حذف مباشر: «معاينة» تحسب المرشّحين بلا تغيير، و«نقل إلى الحجر» ينقلهم إلى <code id="qdir"></code> مع قائمة ملفات، فيمكن استرجاعهم كاملين بزر. لا يُنقل ملف لُمس خلال آخر <span id="minage"></span> ساعة، ولا سجل جلسة لم يُحمَّل كاملًا إلى القاعدة. الحذف النهائي من الحجر فقط وبتأكيد مزدوج.</p>
+  <p class="note">لا حذف مباشر: «معاينة» تحسب المرشّحين بلا تغيير، و«نقل إلى الحجر» ينقلهم إلى <code id="qdir"></code> مع قائمة ملفات، فيمكن استرجاعهم كاملين بزر. لا يُنقل ملف لُمس خلال آخر <span id="minage"></span> ساعة، ولا سجل جلسة لم يُحمَّل كاملًا إلى القاعدة. الحذف النهائي من الحجر فقط وبتأكيد مزدوج.</p>
   <p class="callout warn" id="toff" hidden>الأدوات تعمل من الخادم المحلي فقط: افتح الصفحة من 127.0.0.1:8790.</p>
   <div class="tools" id="tools"></div>
   <h3 class="mt">الحجر والعمليات</h3>
   <div class="act"><label class="tog"><input type="checkbox" id="purgeok"> أفهم أن «إفراغ نهائي» يحذف الملفات بلا رجعة</label><span class="sub" id="qmsg" role="status"></span></div>
-  <div class="wrap" id="acts"></div>
+  <div class="wrap free" id="acts"></div>
 </section><!--@/sec-->
 
 <!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
@@ -70,7 +69,7 @@ __LIB__
 function has(id){return !!document.getElementById(id)}
 var LIVE=location.protocol!=="file:";
 var S={pall:false,psk:"bytes",psd:-1};
-var PCAP=25;
+var PCAP=12; /* 12 صفًّا تدخل في ارتفاع .wrap بلا تمرير داخلي */
 
 /* أحجام بأرقام لاتينية ووحدات ثنائية */
 function fb(b){if(b==null||isNaN(b))return "—";var u=["بايت","KB","MB","GB","TB"],i=0,x=Number(b);while(x>=1024&&i<4){x/=1024;i++}return (i?x.toFixed(x>=100?0:1):Math.round(x))+" "+u[i]}

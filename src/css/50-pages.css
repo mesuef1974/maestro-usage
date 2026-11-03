@@ -42,6 +42,8 @@
 .tool{border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);background:var(--surface);display:grid;gap:var(--sp-2);align-content:start}
 .tool h3{margin:0;font-size:var(--t-md)}
 .tool .act{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
+.tool .act button,#acts .act button{min-block-size:var(--tap);padding-inline:var(--sp-3);font-size:var(--t-sm)}  /* أفعال مؤثرة: هدف 44px */
+#acts .act{display:flex;gap:var(--sp-2);flex-wrap:wrap}
 .tool .plan{font-size:var(--t-sm);color:var(--ink2);line-height:1.6}
 .tool .plan ul{margin:var(--sp-1) 0 0;padding-inline-start:1.2rem}
 .tool .msg{font-size:var(--t-sm);color:var(--ink)}

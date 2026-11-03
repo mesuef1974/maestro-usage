@@ -105,7 +105,7 @@ class TestDashboard(unittest.TestCase):
     def test_plan_snapshot_table_is_capped(self):
         """صفحة الحصة تسقف جدول اللقطات عند 50 صفًّا بزر يعرضها كلها؛ القسم غائب عن الرئيسية."""
         page = dashboard.render(self.data, "", "الآن", "plan.html")
-        for s in ('id="pmore"', "var PLAN_CAP=50", "rows.slice(0,PLAN_CAP)", "عرض كل اللقطات ("):
+        for s in ('id="pmore"', "var PLAN_CAP=30", "rows.slice(0,PLAN_CAP)", "عرض كل اللقطات ("):
             self.assertIn(s, page)
         self.assertNotIn('id="pmore"', dashboard.render(self.data, "", "الآن", "index.html"))
         self.assertNotIn("حدّ أدنى 20%", page)

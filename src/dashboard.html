@@ -122,7 +122,7 @@ D=unpack(D);
 /* ---------- الحالة والمرشِّحات ---------- */
 var LAST=D.last_day,FIRST=D.first_day;
 var S={from:null,to:LAST,preset:"30",models:new Set(D.models.map(function(_,i){return i})),sk:"ratio",sd:-1,lim:25,pall:false};
-var PLAN_CAP=50; /* سقف صفوف جدول اللقطات افتراضيًّا (لقطة كل 5 دقائق تُضخّم الصفحة)؛ الزر يعرضها كلها */
+var PLAN_CAP=30; /* سقف صفوف جدول اللقطات افتراضيًّا (لقطة كل 5 دقائق تُضخّم الصفحة)؛ الزر يعرضها كلها */
 
 /* ---------- حسابات ---------- */
 function selA(rangeOn){return D.a.filter(function(r){return S.models.has(r.m)&&(!rangeOn||inRange(r.d))})}
