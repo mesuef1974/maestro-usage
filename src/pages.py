@@ -18,9 +18,10 @@ ICON = {
     "grid": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     "db": '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
     "disk": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18M7 17h.01M7 8h.01"/>',
+    "flow": '<rect x="15" y="3" width="6" height="5" rx="1"/><rect x="3" y="10" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M15 5.5h-3v7h3M15 18.5h-3v-6H9"/>',
 }
 
-GROUPS = ["نظرة عامة", "الحصة والزمن", "الاستهلاك", "الأدوار والجلسات", "دراسات", "البيانات"]
+GROUPS = ["نظرة عامة", "الحصة والزمن", "الاستهلاك", "الأدوار والجلسات", "دراسات", "البيانات", "الحوكمة"]
 
 # (الملف، القالب، العنوان، السطر التمهيدي، المجموعة، الأيقونة، الأقسام بالترتيب)
 _ROWS = [
@@ -55,6 +56,9 @@ _ROWS = [
     ("storage.html", "storage.html", "حجم البيانات",
      "حجم مجلد كلود المحلي: من أين يأتي، كيف ينمو، وأدوات تحرير آمنة بالحجر.", "البيانات", "disk",
      ["tiles", "src", "proj", "age", "growth", "tools", "defs"]),
+    ("flow.html", "flow.html", "رسم الأتمتة",
+     "مسار البطاقة من الالتقاط إلى النشر: المسارات والمراحل والبوّابة البشرية وما تنقله المضخّة آليًّا.", "الحوكمة", "flow",
+     ["flow", "stages", "source"]),
 ]
 
 PAGES = [dict(file=f, template=t, title=ti, lede=le, group=g, icon=ic, sections=s) for f, t, ti, le, g, ic, s in _ROWS]

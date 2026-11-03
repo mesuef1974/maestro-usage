@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>رسم الأتمتة</title>
+__ASSETS__
+</head>
+<body>
+__SHELL_OPEN__
+__PAGEHEAD__
+
+<!--@sec flow--><section class="card" aria-labelledby="hf">
+  <div class="cardhead"><h2 id="hf">مسار البطاقة من الالتقاط إلى النشر</h2><span class="sub" id="fsum"></span></div>
+  <p class="note">الاتجاه من اليمين إلى اليسار. كل صفّ مسارٌ (من يقوم بالخطوة)، وكل صندوق مرحلة برقمها؛ الأخضر ما تنقله المضخّة بلا يد، والمعيّن هو البوّابة البشرية الوحيدة. مرّر أو ركّز على مرحلة لتضيء روابطها، وانقرها لتفاصيلها.</p>
+  <div class="ctl" id="fctl">
+    <div class="seg" role="group" aria-label="حجم الرسم"><button type="button" data-z="1" aria-pressed="true">ملائم</button><button type="button" data-z="2" aria-pressed="false">أكبر</button><button type="button" data-z="3" aria-pressed="false">أكبر كثيرًا</button></div>
+    <button type="button" class="mini" id="fdl">تنزيل SVG</button>
+    <button type="button" class="mini" id="fclr" hidden>إلغاء التحديد</button>
+  </div>
+  <figure class="flowfig z1" id="ffig">
+    <div class="fw" id="fw"></div>
+    <figcaption class="leg" id="fleg"></figcaption>
+  </figure>
+  <aside class="fdet" id="fdet" aria-live="polite" hidden></aside>
+</section><!--@/sec-->
+
+<!--@sec stages--><section class="card" aria-labelledby="hs">
+  <div class="cardhead"><h2 id="hs">المراحل بالترتيب</h2><span class="sub" id="ssum"></span></div>
+  <p class="note">الرقم هو الشارة في الرسم. الأمر أو الحالة كما في أدوات المضخّة والدفتر؛ انقر الصفّ لتضيء مرحلته في الرسم.</p>
+  <div class="wrap free" id="stages"></div>
+</section><!--@/sec-->
+
+<!--@sec source--><details class="card defs"><summary>المصدر والتحفظات</summary>
+<dl>
+<dt>المصدر</dt><dd id="dsrc"></dd>
+<dt>الأساس</dt><dd id="dbasis"></dd>
+<dt>طبيعة الصفحة</dt><dd>رسم توثيقي ساكن مبني من قائمة مراحل وروابط في <code>src/flow_page.py</code>؛ التخطيط يُحسب من الشبكة (المسار صفّ والمرحلة عمود) لا من إحداثيات يدوية. الصفحة لا تقرأ من القاعدة ولا تتّصل بالمضخّة أو الدفتر، فتغيّر المسار الفعلي لا ينعكس فيها إلا بتحديث القائمة.</dd>
+</dl>
+</details><!--@/sec-->
+
+__SHELL_CLOSE__
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent);
+__LIB__
+function has(id){return !!document.getElementById(id)}
+var F=D.flow,NS="http://www.w3.org/2000/svg";
+var G={m:20,lbl:176,colw:156,top:44,gap:10,nh:48,gh:64,r:12};
+var byId={},sel=null;
+F.nodes.forEach(function(n){byId[n.id]=n});
+
+function sv(tag,attrs,text){var e=document.createElementNS(NS,tag);if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e}
+function ltr(s){return "⁦"+s+"⁩"}
+
+/* ---------- التخطيط من الشبكة: x من العمود (اليمين أوّلًا)، y من المسار ---------- */
+function layout(){
+  var W=G.m*2+G.lbl+F.cols*G.colw,y=G.top,lanes={};
+  F.lanes.forEach(function(l){l.y=y;l.cy=y+l.h/2;lanes[l.k]=l;y+=l.h+G.gap});
+  var H=y-G.gap+G.m;
+  F.nodes.forEach(function(n){
+    var l=lanes[n.lane];n.x=W-G.m-G.lbl-(n.col+.5)*G.colw;n.y=l.cy;n.h=n.kind==="gate"?G.gh:G.nh;
+    n.l=n.x-n.w/2;n.r=n.x+n.w/2;n.t=n.y-n.h/2;n.b=n.y+n.h/2;
+  });
+  return {W:W,H:H,lanes:lanes};
+}
+/* نقطة الالتحام: جانب الصندوق المواجه للآخر */
+function side(n,other){return other.x<n.x?{x:n.l,y:n.y}:{x:n.r,y:n.y}}
+function elbow(pts){ /* مضلّع بزوايا مدوّرة نصف قطرها G.r */
+  elbow.last=pts;var d="M"+pts[0].x+" "+pts[0].y;
+  for(var i=1;i<pts.length-1;i++){
+    var p=pts[i-1],c=pts[i],q=pts[i+1],r=Math.min(G.r,Math.hypot(c.x-p.x,c.y-p.y)/2,Math.hypot(q.x-c.x,q.y-c.y)/2);
+    var a=dir(p,c),b=dir(c,q);
+    d+=" L"+(c.x-a.x*r)+" "+(c.y-a.y*r)+" Q"+c.x+" "+c.y+" "+(c.x+b.x*r)+" "+(c.y+b.y*r);
+  }
+  var e=pts[pts.length-1];return d+" L"+e.x+" "+e.y;
+}
+function dir(p,q){var dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1;return {x:dx/l,y:dy/l}}
+function gapY(a,b,lanes){ /* منتصف الفراغ بين مساري المرحلتين */
+  var la=lanes[a.lane],lb=lanes[b.lane],lo=la.y<lb.y?la:lb;return lo.y+lo.h+G.gap/2;
+}
+function gapX(a,b){ /* منتصف الفراغ بين عمود المرحلة الأولى والعمود المجاور لها في اتجاه الثانية (بحسب أوسع الصناديق فيهما) */
+  var toRight=b.x>a.x,nc=a.col+(toRight?-1:1);
+  var ea=F.nodes.filter(function(n){return n.col===a.col}).reduce(function(m,n){return toRight?Math.max(m,n.r):Math.min(m,n.l)},toRight?a.r:a.l);
+  var en=F.nodes.filter(function(n){return n.col===nc}).reduce(function(m,n){return toRight?Math.min(m,n.l):Math.max(m,n.r)},toRight?Infinity:-Infinity);
+  return (ea+en)/2;
+}
+function route(e,L){
+  var a=byId[e.a],b=byId[e.b],r=e.route;
+  if(!r)r=a.lane===b.lane?"h":a.col===b.col?"v":"vh";
+  var down=b.y>a.y,vs={x:a.x,y:down?a.b:a.t},ve={x:b.x,y:down?b.t:b.b};
+  elbow.last=null;
+  if(r==="h")return "M"+side(a,b).x+" "+a.y+" L"+side(b,a).x+" "+b.y;
+  if(r==="v")return "M"+vs.x+" "+vs.y+" L"+ve.x+" "+ve.y;
+  if(r==="vh")return elbow([vs,{x:a.x,y:b.y},side(b,a)]);
+  if(r==="hv")return elbow([side(a,b),{x:b.x,y:a.y},ve]);
+  if(r==="hvh"){var vx=e.via==="gap"?gapX(a,b):e.via;var s=vx<a.x?{x:a.l,y:a.y}:{x:a.r,y:a.y};return elbow([s,{x:vx,y:a.y},{x:vx,y:b.y},vx<b.x?{x:b.l,y:b.y}:{x:b.r,y:b.y}])}
+  if(r==="vhv"){var vy=e.via==="gap"?gapY(a,b,L.lanes):e.via;var s2=vy<a.y?{x:a.x,y:a.t}:{x:a.x,y:a.b};return elbow([s2,{x:a.x,y:vy},{x:b.x,y:vy},vy<b.y?{x:b.x,y:b.t}:{x:b.x,y:b.b}])}
+  return "M"+vs.x+" "+vs.y+" L"+ve.x+" "+ve.y;
+}
+
+/* ---------- الرسم ---------- */
+function draw(){
+  if(!has("fw"))return;
+  var L=layout(),svg=sv("svg",{viewBox:"0 0 "+L.W+" "+L.H,role:"img","aria-labelledby":"fsum",id:"fsvg"});
+  var defs=sv("defs");["plain","auto","dash","bad"].forEach(function(k){
+    var m=sv("marker",{id:"ah-"+k,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse",class:"mk "+k});
+    m.appendChild(sv("path",{d:"M0 0L10 5 0 10z"}));defs.appendChild(m)});
+  svg.appendChild(defs);
+  var gl=sv("g",{class:"lanes"});
+  F.lanes.forEach(function(l,i){
+    gl.appendChild(sv("rect",{class:"lane"+(i%2?" alt":""),x:G.m,y:l.y,width:L.W-G.m*2,height:l.h,rx:12}));
+    var lx=L.W-G.m-G.lbl/2;
+    gl.appendChild(sv("text",{class:"ln",x:lx,y:l.cy-4},l.name));
+    wrapText(gl,l.desc,lx,l.cy+13,G.lbl-16,"ls");
+  });
+  svg.appendChild(gl);
+  svg.appendChild(sv("line",{class:"sep",x1:L.W-G.m-G.lbl,y1:G.top,x2:L.W-G.m-G.lbl,y2:L.H-G.m}));
+  svg.appendChild(sv("text",{class:"ls dirn",x:(L.W-G.lbl)/2,y:G.top-16},"الاتجاه من اليمين إلى اليسار"));
+  var ge=sv("g",{class:"edges"}),gn=sv("g",{class:"nodes"}),gt=sv("g",{class:"elabels"});
+  F.edges.forEach(function(e,i){
+    e.id="e"+i;var p=sv("path",{class:"ar "+e.kind,d:route(e,L),"marker-end":"url(#ah-"+e.kind+")","data-a":e.a,"data-b":e.b,id:e.id});e.pts=elbow.last;ge.appendChild(p);
+  });
+  F.nodes.forEach(function(n){
+    var g=sv("g",{class:"nd "+n.kind,tabindex:"0",role:"button","data-id":n.id,"aria-label":"المرحلة "+n.n+": "+n.title+(n.code?"، "+n.code:"")});
+    if(n.kind==="gate")g.appendChild(sv("polygon",{points:n.x+","+n.t+" "+n.r+","+n.y+" "+n.x+","+n.b+" "+n.l+","+n.y}));
+    else g.appendChild(sv("rect",{x:n.l,y:n.t,width:n.w,height:n.h,rx:10}));
+    g.appendChild(sv("text",{class:"tt",x:n.x,y:n.y+(n.code?-3:5)},n.title));
+    if(n.code)g.appendChild(sv("text",{class:"cd",x:n.x,y:n.y+15},ltr(n.code)));
+    var bx=n.kind==="gate"?n.x+22:n.r-2,by=n.kind==="gate"?n.t+10:n.t;
+    g.appendChild(sv("circle",{class:"bd",cx:bx,cy:by,r:10}));
+    g.appendChild(sv("text",{class:"bn",x:bx,y:by+4},String(n.n)));
+    gn.appendChild(g);
+  });
+  svg.appendChild(ge);svg.appendChild(gn);svg.appendChild(gt);
+  var box=$("#fw");box.replaceChildren(svg);
+  /* تسميات الروابط بعد الإدراج (تحتاج طول المسار) مع خلفية تمنع تقاطع النص بالخط */
+  F.edges.forEach(function(e){
+    if(!e.label)return;var p=document.getElementById(e.id),o=e.lab||{},pt;
+    if(o.seg!=null&&e.pts){var k=o.seg<0?e.pts.length-1+o.seg:o.seg,p1=e.pts[k],p2=e.pts[k+1];pt={x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2}}
+    else{var len=p.getTotalLength();pt=p.getPointAtLength(len*(o.lp!=null?o.lp:.5))}
+    var t=sv("text",{class:"al",x:pt.x+(o.dx||0),y:pt.y+4+(o.dy||0)},e.label);gt.appendChild(t);var bb=t.getBBox();
+    gt.insertBefore(sv("rect",{class:"alb",x:bb.x-5,y:bb.y-2,width:bb.width+10,height:bb.height+4,rx:4}),t);
+  });
+  $("#fsum").textContent=F.nodes.length+" مرحلة في "+F.lanes.length+" مسارات و"+F.edges.length+" رابطًا";
+  legend();wire(svg);
+}
+function wrapText(parent,txt,x,y,maxw,cls){ /* يقسم الوصف إلى سطرين إن طال */
+  var words=txt.split(" "),lines=[],cur="";
+  words.forEach(function(w){var t=cur?cur+" "+w:w;if(t.length*5.6>maxw&&cur){lines.push(cur);cur=w}else cur=t});
+  if(cur)lines.push(cur);
+  lines.slice(0,3).forEach(function(l,i){parent.appendChild(sv("text",{class:cls,x:x,y:y+i*13},l))});
+}
+function legend(){
+  var box=$("#fleg");box.replaceChildren();
+  F.kinds.forEach(function(k){var s=mk("span",{class:"k "+k.k,title:k.desc});s.appendChild(mk("i"));s.appendChild(document.createTextNode(k.label));box.appendChild(s)});
+  [["dash","إحالة أو استثناء"],["bad","يُستثنى ويُبلَّغ"]].forEach(function(p){var s=mk("span",{class:"k ln-"+p[0]});s.appendChild(mk("i"));s.appendChild(document.createTextNode(p[1]));box.appendChild(s)});
+}
+
+/* ---------- التفاعل: إضاءة الجوار عند التمرير أو التركيز، والتحديد بالنقر ---------- */
+function neighbors(id){var ids={};ids[id]=1;F.edges.forEach(function(e){if(e.a===id){ids[e.b]=1;ids[e.id]=1}if(e.b===id){ids[e.a]=1;ids[e.id]=1}});return ids}
+function light(id){
+  var svg=$("#fsvg");if(!id){svg.classList.remove("on");svg.querySelectorAll(".hi").forEach(function(x){x.classList.remove("hi")});return}
+  var ids=neighbors(id);svg.classList.add("on");
+  svg.querySelectorAll(".nd,.ar").forEach(function(x){var k=x.getAttribute("data-id")||x.id;x.classList.toggle("hi",!!ids[k])});
+}
+function select(id){
+  sel=id;var svg=$("#fsvg");svg.querySelectorAll(".sel").forEach(function(x){x.classList.remove("sel")});
+  document.querySelectorAll("#stages tr.sel").forEach(function(x){x.classList.remove("sel")});
+  var det=$("#fdet"),clr=$("#fclr");
+  if(!id){det.hidden=true;clr.hidden=true;light(null);if(location.hash.indexOf("#st-")===0)history.replaceState(null,"",location.pathname);return}
+  var n=byId[id];svg.querySelector('[data-id="'+id+'"]').classList.add("sel");
+  var row=document.getElementById("st-"+n.n);if(row)row.classList.add("sel");
+  light(id);clr.hidden=false;history.replaceState(null,"","#st-"+n.n);
+  det.replaceChildren();det.hidden=false;
+  var h=mk("h3");h.appendChild(mk("span",{class:"num"},String(n.n)));h.appendChild(document.createTextNode(" "+n.title));det.appendChild(h);
+  var lane=F.lanes.filter(function(l){return l.k===n.lane})[0],kind=F.kinds.filter(function(k){return k.k===n.kind})[0];
+  var dl=mk("dl");
+  [["المسار",lane.name+" — "+lane.desc],["النوع",kind?kind.label:n.kind],["الأمر أو الحالة",n.code||"—"],["الوصف",n.note]].forEach(function(p){
+    dl.appendChild(mk("dt",null,p[0]));var dd=mk("dd");if(p[0]==="الأمر أو الحالة"&&n.code)dd.appendChild(mk("code",null,n.code));else dd.textContent=p[1];dl.appendChild(dd)});
+  var ins=F.edges.filter(function(e){return e.b===id}),outs=F.edges.filter(function(e){return e.a===id});
+  [["يسبقها",ins,"a"],["يليها",outs,"b"]].forEach(function(p){
+    dl.appendChild(mk("dt",null,p[0]));var dd=mk("dd");
+    if(!p[1].length)dd.textContent="—";
+    p[1].forEach(function(e,i){var m=byId[e[p[2]]],b=mk("button",{type:"button",class:"lnk","data-go":m.id},m.n+" "+m.title);dd.appendChild(b);if(e.label){dd.appendChild(document.createTextNode(" ("+e.label+")"))}if(i<p[1].length-1)dd.appendChild(document.createTextNode("، "))});
+    dl.appendChild(dd)});
+  det.appendChild(dl);
+}
+function wire(svg){
+  svg.addEventListener("mouseover",function(ev){var g=ev.target.closest(".nd");if(g&&!sel)light(g.getAttribute("data-id"))});
+  svg.addEventListener("mouseout",function(ev){var g=ev.target.closest(".nd");if(g&&!sel)light(null)});
+  svg.addEventListener("focusin",function(ev){var g=ev.target.closest(".nd");if(g&&!sel)light(g.getAttribute("data-id"))});
+  svg.addEventListener("focusout",function(ev){var g=ev.target.closest(".nd");if(g&&!sel)light(null)});
+  svg.addEventListener("click",function(ev){var g=ev.target.closest(".nd");var id=g?g.getAttribute("data-id"):null;select(id===sel?null:id)});
+  svg.addEventListener("keydown",function(ev){var g=ev.target.closest(".nd");if(!g)return;if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();var id=g.getAttribute("data-id");select(id===sel?null:id)}if(ev.key==="Escape")select(null)});
+  $("#fdet").addEventListener("click",function(ev){var b=ev.target.closest("[data-go]");if(b){select(b.getAttribute("data-go"));var g=svg.querySelector('[data-id="'+b.getAttribute("data-go")+'"]');if(g)g.focus()}});
+  $("#fclr").addEventListener("click",function(){select(null)});
+  $("#fctl").addEventListener("click",function(ev){var b=ev.target.closest("[data-z]");if(!b)return;
+    document.querySelectorAll("#fctl [data-z]").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false")});
+    $("#ffig").className="flowfig z"+b.getAttribute("data-z")});
+  $("#fdl").addEventListener("click",download);
+}
+
+/* ---------- الجدول ---------- */
+function stages(){
+  if(!has("stages"))return;
+  var t=mk("table"),th=mk("thead"),tr=mk("tr");
+  ["#","المرحلة","المسار","النوع","الأمر أو الحالة","ملاحظة"].forEach(function(h){tr.appendChild(mk("th",{scope:"col"},h))});th.appendChild(tr);t.appendChild(th);
+  var tb=mk("tbody"),laneName={},kindName={};
+  F.lanes.forEach(function(l){laneName[l.k]=l.name});F.kinds.forEach(function(k){kindName[k.k]=k.label});
+  F.nodes.slice().sort(function(a,b){return a.n-b.n}).forEach(function(n){
+    var r=mk("tr",{id:"st-"+n.n,"data-id":n.id,tabindex:"0"});
+    r.appendChild(mk("td",{class:"num"},String(n.n)));r.appendChild(mk("td",{class:"b"},n.title));r.appendChild(mk("td",null,laneName[n.lane]));
+    var k=mk("td");k.appendChild(mk("span",{class:"kt "+n.kind},kindName[n.kind]||n.kind));r.appendChild(k);
+    var c=mk("td",{class:"k"});if(n.code)c.appendChild(mk("code",null,n.code));else c.textContent="—";r.appendChild(c);
+    r.appendChild(mk("td",{class:"nt"},n.note));tb.appendChild(r);
+  });
+  t.appendChild(tb);$("#stages").replaceChildren(t);
+  $("#ssum").textContent=F.nodes.length+" مرحلة";
+  tb.addEventListener("click",function(ev){var r=ev.target.closest("tr");if(r){select(r.getAttribute("data-id"));$("#ffig").scrollIntoView({block:"nearest"})}});
+  tb.addEventListener("keydown",function(ev){var r=ev.target.closest("tr");if(r&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();select(r.getAttribute("data-id"))}});
+}
+
+/* ---------- تنزيل SVG مستقل: قواعد الأسلوب وقيم الرموز اللونية الحالية تُضمَّن فيه ---------- */
+function download(){
+  var svg=$("#fsvg").cloneNode(true),css="",root=getComputedStyle(document.documentElement);
+  svg.querySelectorAll(".hi,.sel").forEach(function(x){x.classList.remove("hi","sel")});svg.classList.remove("on");
+  try{for(var i=0;i<document.styleSheets.length;i++){var rules=document.styleSheets[i].cssRules;for(var j=0;j<rules.length;j++){var r=rules[j];if(r.selectorText&&r.selectorText.indexOf("#fsvg")>=0)css+=r.cssText+"\n"}}}catch(e){}
+  var vars=["--ink","--ink2","--ink3","--line","--line-strong","--surface","--raised","--accent","--accent-soft","--good","--good-soft","--warn","--warn-soft","--bad","--bad-soft","--brand","--on-brand","--font","--font-head","--font-num"];
+  css=":root{"+vars.map(function(v){return v+":"+root.getPropertyValue(v).trim()}).join(";")+"}\n"+css;
+  var st=sv("style");st.textContent=css;svg.insertBefore(st,svg.firstChild);
+  svg.setAttribute("xmlns",NS);svg.setAttribute("dir","rtl");svg.setAttribute("font-family",root.getPropertyValue("--font"));
+  var bg=sv("rect",{width:"100%",height:"100%",fill:root.getPropertyValue("--surface").trim()});svg.insertBefore(bg,st.nextSibling);
+  var blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(svg)],{type:"image/svg+xml"});
+  var a=mk("a",{href:URL.createObjectURL(blob),download:"automation_flow_"+F.source.date+".svg"});document.body.appendChild(a);a.click();a.remove();
+}
+
+function defs(){
+  if(!has("dsrc"))return;$("#dsrc").textContent=F.source.doc+" بتاريخ "+F.source.date+".";$("#dbasis").textContent=F.source.basis+".";
+}
+
+draw();stages();defs();
+if(location.hash.indexOf("#st-")===0){var n0=F.nodes.filter(function(n){return "st-"+n.n===location.hash.slice(1)})[0];if(n0&&has("fsvg"))select(n0.id)}
+})();
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
   --line:#d6cfc2;--line-strong:#857b6e;--grid:#e6e0d5;
   --brand:#a8541a;--brand-ink:#7b3c13;--brand-soft:#f5e9de;--on-brand:#fff;
   --accent:#775200;--accent-soft:#f6ecd2;
-  --focus:#1f6fd0;--warn:#955700;--bad:#b3261e;--good:#18794e;
+  --focus:#1f6fd0;--warn:#955700;--bad:#b3261e;--good:#18794e;--good-soft:#e3f2ea;--warn-soft:#faeedb;--bad-soft:#f9e3e1;
   --s1:#2a78d6;--s2:#eb6834;--s3:#15a070;--s4:#b87800;--s5:#d0507f;--s6:#008300;--s7:#6250d6;--s8:#e34948;--oth:#8f8e88;
   --m1:#9a4a14;--m2:#1f6aa8;
   /* النص: نسخ عربي؛ العناوين: كوفي بوزن 700 بلون العلامة؛ الأرقام: Inter. الخطوط الثلاثة لا تُحمَّل من الشبكة: تُستعمل إن كانت مثبّتة أو مضمَّنة محليًّا، وإلا تسقط البدائل */
@@ -32,7 +32,7 @@
   --line:#3a332b;--line-strong:#776d5f;--grid:#2d2720;
   --brand:#f0a15f;--brand-ink:#f4b887;--brand-soft:#443222;--on-brand:#1a1008;
   --accent:#e8bd4a;--accent-soft:#3b3115;
-  --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;
+  --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;--good-soft:#1c3a2a;--warn-soft:#3d2f14;--bad-soft:#44221f;
   --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--oth:#85847d;
   --m1:#d6782f;--m2:#3b88d4;}}
 :root[data-theme="dark"]{
@@ -42,6 +42,6 @@
   --line:#3a332b;--line-strong:#776d5f;--grid:#2d2720;
   --brand:#f0a15f;--brand-ink:#f4b887;--brand-soft:#443222;--on-brand:#1a1008;
   --accent:#e8bd4a;--accent-soft:#3b3115;
-  --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;
+  --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;--good-soft:#1c3a2a;--warn-soft:#3d2f14;--bad-soft:#44221f;
   --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--oth:#85847d;
   --m1:#d6782f;--m2:#3b88d4;}
