@@ -109,9 +109,14 @@ function drawStack(box,days,series,today,label,tf){
 /* ---------- رسم خطي عام (3 و5) ---------- */
 function drawLines(box,o){
   clear(box);
-  var W=chartW(box),H=W<480?220:260,ml=o.ml||52,mr=o.endLabel?44:14,mt=14,mb=26,iw=W-ml-mr,ih=H-mt-mb;
+  var W=chartW(box),ml=o.ml||52,mr=o.endLabel?44:14,mb=26,iw=W-ml-mr;
   var xs=o.xs,x0=o.x0,x1=o.x1,ymax=o.ymax;
-  var X=function(v){return ml+(x1===x0?iw/2:iw*(v-x0)/(x1-x0))},Y=function(v){return mt+ih-ih*v/ymax};
+  var X=function(v){return ml+(x1===x0?iw/2:iw*(v-x0)/(x1-x0))};
+  /* شارات العلامات المرقّمة (num): تُرصّ في صفوف فوق الرسم؛ شارة تتراكب مع سابقتها تنزل صفًّا، ولا تُقصّ عند الحافتين، والرسم ينزل بقدر الصفوف */
+  var mks=o.markers||(o.marker?[o.marker]:[]),rowEnd=[];
+  var badges=mks.filter(function(m){return m.num!=null}).map(function(m){var w=Math.max(18,String(m.num).length*7+8);return {m:m,w:w,cx:Math.min(W-mr-w/2,Math.max(ml+w/2,X(m.x)))}}).sort(function(a,b){return a.cx-b.cx});
+  badges.forEach(function(b){var r=0;while(r<rowEnd.length&&b.cx-b.w/2<rowEnd[r]+3)r++;rowEnd[r]=b.cx+b.w/2;b.row=r});
+  var rows=rowEnd.length,mt=14+18*rows,H=(W<480?220:260)+18*rows,ih=H-mt-mb,Y=function(v){return mt+ih-ih*v/ymax};
   var svg=sv("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H,role:"group","aria-label":o.label+"؛ استعمل الأسهم للتنقل بين النقاط"});
   for(var g=0;g<=4;g++){var v=ymax*g/4,y=Y(v);
     svg.appendChild(sv("line",{x1:ml,x2:W-mr,y1:y,y2:y,class:g?"grid":"axis"}));
@@ -121,8 +126,15 @@ function drawLines(box,o){
     svg.appendChild(sv("text",{x:X(xv),y:H-8,"text-anchor":"middle"},o.xfmt(xv)))}
   (o.vlines||[]).forEach(function(vl){var vx=X(vl.x);if(vx<ml||vx>W-mr)return; /* خطوط رأسية خافتة (مثل تصفير النافذة) */
     svg.appendChild(sv("line",{x1:vx,x2:vx,y1:mt,y2:mt+ih,stroke:css("--ink3"),"stroke-width":1,"stroke-dasharray":"3 4",opacity:.7}))});
-  (o.markers||(o.marker?[o.marker]:[])).forEach(function(mk2,qi){var mx=X(mk2.x);
-    var la={x1:mx,x2:mx,y1:mt,y2:mt+ih,stroke:css("--ink"),"stroke-width":1};if(qi)la["stroke-dasharray"]="4 3";
+  /* العلامات: نص بجانب الخط حين تكون قليلة، أو شارة مرقّمة أعلى الخط (num) حين تكثر فلا تتكدّس النصوص فوق الرسم؛ القائمة المرقّمة تحت الرسم */
+  mks.forEach(function(mk2,qi){var mx=X(mk2.x);
+    var la={x1:mx,x2:mx,y1:mt,y2:mt+ih,stroke:css("--ink"),"stroke-width":1};if(qi||mk2.num!=null)la["stroke-dasharray"]="4 3";
+    if(mk2.num!=null){var b=badges.filter(function(x){return x.m===mk2})[0],by=4+18*b.row;la.opacity=.55;la.y1=by+16;
+      svg.appendChild(sv("line",la));
+      var g=sv("g",{class:"mkb"});
+      g.appendChild(sv("rect",{x:b.cx-b.w/2,y:by,width:b.w,height:16,rx:8,style:"fill:var(--surface);stroke:var(--ink2)"}));
+      g.appendChild(sv("text",{x:b.cx,y:by+12,"text-anchor":"middle",style:"fill:var(--ink);font-size:10px"},"⁦"+mk2.num+"⁩")); /* عزل LTR كي لا ينقلب «1–9» في RTL */
+      var tt=sv("title");tt.textContent=mk2.label||String(mk2.num);g.appendChild(tt);svg.appendChild(g);return}
     svg.appendChild(sv("line",la));
     var tx=sv("text",{x:mx+(mx>W/2?-6:6),y:mt+11+13*qi,"text-anchor":mx>W/2?"end":"start",style:"fill:var(--ink)"},mk2.label);svg.appendChild(tx)});
   var cross=sv("line",{y1:mt,y2:mt+ih,stroke:css("--ink3"),"stroke-width":1,visibility:"hidden"});svg.appendChild(cross);

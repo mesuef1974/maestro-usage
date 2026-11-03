@@ -95,6 +95,7 @@ __PAGEHEAD__
   <section class="tiles" id="t6tiles" aria-label="مؤشرات كلفة البدء"></section>
   <h3>وسيط سياق البدء يوميًّا (توكن)</h3>
   <div class="chart" id="c6"></div>
+  <ol class="marklist" id="c6m" aria-label="التعديلات المعلَّمة على الرسم بأرقامها"></ol>
   <h3 class="mt">أثر كل تعديل في مصادر السياق الثابت</h3>
   <div class="wrap" id="t6"></div>
   <p class="warn" id="n6"></p>
@@ -416,20 +417,23 @@ function renderStartup(){
   var dd=sc.daily,days=eachDay(dd[0].d,LAST>dd[dd.length-1].d?LAST:dd[dd.length-1].d),byd={};
   dd.forEach(function(r){byd[r.d]=r});
   var med=days.map(function(d){return byd[d]?byd[d].med:null}),xi=days.map(function(_,i){return i});
-  var marks=sc.fx.map(function(f){var ix=days.indexOf(f.ts.slice(0,10));return ix>=0?{x:ix,label:f.label+" ("+dm(f.ts.slice(0,10))+")"}:null}).filter(Boolean);
+  /* التعديلات مرقّمة زمنيًّا (1 الأقدم)؛ تعديلات اليوم الواحد تتشارك خطًّا وشارة واحدة «3–7» كي لا تتكدّس، وتفاصيلها في القائمة تحت الرسم */
+  var byday={},order=[];sc.fx.forEach(function(f,i){var d=f.ts.slice(0,10),ix=days.indexOf(d);if(ix<0)return;if(!byday[d]){byday[d]={x:ix,a:i+1,b:i+1,labels:[]};order.push(d)}byday[d].b=i+1;byday[d].labels.push(f.label)});
+  var marks=order.map(function(d){var g=byday[d];return {x:g.x,num:g.a===g.b?String(g.a):g.a+"–"+g.b,label:dm(d)+": "+g.labels.join("؛ ")}});
+  var ml6=$("#c6m");clear(ml6);sc.fx.forEach(function(f){var li=mk("li");li.appendChild(mk("b",{},dm(f.ts.slice(0,10))));li.appendChild(document.createTextNode(" "+f.label));ml6.appendChild(li)});ml6.hidden=!sc.fx.length;
   var mx=Math.max.apply(null,med.filter(function(x){return x!=null}).concat([1]));
   drawLines($("#c6"),{label:"وسيط سياق البدء",xs:xi,x0:0,x1:days.length-1,ml:58,ymax:niceMax(mx),markers:marks,
     xfmt:function(v){return dm(days[Math.round(v)])},yfmt:function(v){return compact(v,0)},tfmt:function(v){return compact(v,1)+" توكن"},
     title:function(i){var r=byd[days[i]];return days[i]+(r?" · "+r.n+" جلسة · "+compact(r.p25,0)+"–"+compact(r.p75,0):"")},
     series:[{name:"الوسيط",c:"--m1",v:med}]});
-  var rows=sc.fx.slice().reverse().map(function(f){return {ts:f.ts.slice(0,16).replace("T"," "),label:f.label,sz:f.size0!=null?num(f.size0)+" ← "+num(f.size1)+" بايت":"يدوي",
+  var rows=sc.fx.map(function(f,i){return {i:i+1,ts:f.ts.slice(0,16).replace("T"," "),label:f.label,sz:f.size0!=null?num(f.size0)+" ← "+num(f.size1)+" بايت":"يدوي",
     nb:f.nb,na:f.na,mb:f.mb,ma:f.ma,delta:f.delta,v:f.verdict+(f.overlap?"*":"")}});
   var n6=$("#n6");
   if(!rows.length){clear($("#t6"));n6.textContent="لا تعديل مرصودًا بعد. تُسجَّل بصمات المصادر كل دقيقة؛ أي تعديل لاحق يظهر هنا بزمنه ويُقاس أثره تلقائيًّا.";}
   else{
-    drawTable($("#t6"),[{k:"ts",l:"الزمن (UTC)"},{k:"label",l:"المصدر"},{k:"sz",l:"الحجم"},{k:"nb",l:"جلسات قبل",n:1,f:function(r){return num(r.nb)}},{k:"na",l:"جلسات بعد",n:1,f:function(r){return num(r.na)}},
+    drawTable($("#t6"),[{k:"i",l:"#",n:1,f:function(r){return num(r.i)}},{k:"ts",l:"الزمن (UTC)"},{k:"label",l:"المصدر"},{k:"sz",l:"الحجم"},{k:"nb",l:"جلسات قبل",n:1,f:function(r){return num(r.nb)}},{k:"na",l:"جلسات بعد",n:1,f:function(r){return num(r.na)}},
       {k:"mb",l:"وسيط قبل",n:1,f:function(r){return r.mb==null?"—":compact(r.mb,1)}},{k:"ma",l:"وسيط بعد",n:1,f:function(r){return r.ma==null?"—":compact(r.ma,1)}},
-      {k:"delta",l:"الفرق",n:1,f:function(r){return signed(r.delta)}},{k:"v",l:"الحكم",f:function(r){var b=r.v.replace("*","");return (FXV[b]||b)+(r.v.slice(-1)==="*"?"*":"")}}],rows);
+      {k:"delta",l:"الفرق",n:1,f:function(r){return signed(r.delta)}},{k:"v",l:"الحكم",f:function(r){var b=r.v.replace("*","");return (FXV[b]||b)+(r.v.slice(-1)==="*"?"*":"")}}],rows.slice().reverse());
     n6.textContent="الحكم: «انخفاض/ارتفاع» عند فرق وسيطين ≥ "+num(sc.min_delta)+" توكن وأكبر من ضعفي الخطأ المعياري؛ «معلّق» حتى "+sc.min_n+" جلسة على الأقل في كل جانب (النافذة "+sc.k+" جلسة). * النافذة قُصّت بتعديل لاحق في النطاق نفسه. الترابط ظاهري؛ ويتأثر بإصدار Claude Code وبنوع الجلسات.";
   }
   drawTable($("#t6f"),[{k:"f",l:"المجلد"},{k:"n",l:"جلسات",n:1,f:function(r){return num(r.n)}},{k:"med",l:"وسيط البدء",n:1,f:function(r){return compact(r.med,1)}}],c.folders);

@@ -95,6 +95,13 @@ class TestDashboard(unittest.TestCase):
                   "RATE_SRC[f.rate_src]", "o.mt+=r.mt", "c.last_ts", "(جزئي من ", "، ناقص)", "حدّ أدنى 10%"):
             self.assertIn(s, page)
 
+    def test_startup_markers_are_numbered_badges(self):
+        """تعديلات مصادر السياق تُعلَّم على الرسم بشارات مرقّمة (تجميع اليوم الواحد) وقائمة مرقّمة تحته وعمود # في الجدول."""
+        page = dashboard.render(self.data, "", "الآن", "startup.html")
+        for s in ('id="c6m"', 'num:g.a===g.b?String(g.a):g.a+"–"+g.b', '{k:"i",l:"#"', "byday[d].labels.push(f.label)"):
+            self.assertIn(s, page)
+        self.assertIn("mk2.num!=null", page)  # drawLines ترسم الشارة بدل النص
+
     def test_plan_snapshot_table_is_capped(self):
         """صفحة الحصة تسقف جدول اللقطات عند 50 صفًّا بزر يعرضها كلها؛ القسم غائب عن الرئيسية."""
         page = dashboard.render(self.data, "", "الآن", "plan.html")

@@ -21,5 +21,11 @@
 .dups span{border:1px solid var(--line);background:var(--chip);border-radius:var(--r-sm);padding:0 .35rem;font-size:var(--t-xs);direction:ltr}
 .zero{color:var(--warn)}
 .est{color:var(--ink3);font-size:var(--t-xs);margin-inline-start:var(--sp-2);white-space:nowrap}
+/* قائمة التعديلات المرقّمة تحت رسم كلفة البدء: أرقامها هي شارات الرسم */
+.marklist{columns:2;column-gap:var(--sp-5);font-size:var(--t-xs);color:var(--ink2);margin:var(--sp-2) 0 0;padding-inline-start:1.6rem;line-height:1.6}
+.marklist li{break-inside:avoid;padding-inline-start:var(--sp-1)}
+.marklist li::marker{font-variant-numeric:tabular-nums;color:var(--ink3)}
+.marklist b{font-weight:500;color:var(--ink3)}
+@media (max-width:640px){.marklist{columns:1}}
 .sav{color:var(--good);font-weight:700}
 .gone td{white-space:nowrap}
