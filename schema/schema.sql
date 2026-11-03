@@ -156,3 +156,39 @@ CREATE TABLE IF NOT EXISTS config_fingerprints (
     bytes INTEGER NOT NULL,
     PRIMARY KEY (item, ts)
 );
+
+-- حجم بيانات كلود المحلية (~/.claude): لقطة كل ساعة (الإجمالي) وصفوف مجمّعة بحسب المجلد الأعلى والمشروع والامتداد. لا أسماء ملفات.
+CREATE TABLE IF NOT EXISTS storage_scans (
+    ts          TEXT PRIMARY KEY,
+    total_bytes INTEGER NOT NULL,
+    files       INTEGER NOT NULL,
+    seconds     REAL
+);
+CREATE TABLE IF NOT EXISTS storage_dirs (
+    ts     TEXT NOT NULL,
+    kind   TEXT NOT NULL,                      -- top | proj | ext
+    name   TEXT NOT NULL,                      -- اسم مجلد أو امتداد
+    bytes  INTEGER NOT NULL,
+    files  INTEGER NOT NULL,
+    newest TEXT,
+    oldest TEXT,
+    b7     INTEGER NOT NULL DEFAULT 0,         -- بايتات بحسب عمر الملف: ≤7 و≤30 و≤90 و>90 يومًا
+    b30    INTEGER NOT NULL DEFAULT 0,
+    b90    INTEGER NOT NULL DEFAULT 0,
+    b90p   INTEGER NOT NULL DEFAULT 0,
+    jsonl  INTEGER NOT NULL DEFAULT 0,         -- عدد سجلات الجلسات (للمشاريع)
+    sub    INTEGER NOT NULL DEFAULT 0,         -- بايتات الوكلاء الفرعيين (للمشاريع)
+    PRIMARY KEY (ts, kind, name)
+);
+-- عمليات تحرير المساحة: نقل إلى الحجر واسترجاع وإفراغ نهائي؛ قائمة الملفات في manifest.json داخل مجلد الحجر لا هنا.
+CREATE TABLE IF NOT EXISTS storage_actions (
+    id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts     TEXT NOT NULL,
+    action TEXT NOT NULL,                      -- quarantine | restore | purge
+    grp    TEXT NOT NULL,
+    days   INTEGER NOT NULL DEFAULT 0,
+    files  INTEGER NOT NULL DEFAULT 0,
+    bytes  INTEGER NOT NULL DEFAULT 0,
+    qdir   TEXT NOT NULL,                      -- مجلد الحجر
+    status TEXT NOT NULL                       -- quarantined | restored | purged | done
+);

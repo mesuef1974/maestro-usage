@@ -1,7 +1,8 @@
 """خادم محلي اختياري للّوحة: يقدّم reports\\index.html ويشغّل دورة تحميل فورية عند ضغط «تحديث فوري».
 
 يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8790]
-المسارات: GET / وكل صفحة في pages.PAGES، GET /assets/platform.css (الأسلوب المركزي)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON).
+المسارات: GET / وكل صفحة في pages.PAGES، GET /assets/platform.css (الأسلوب المركزي)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON)،
+POST /storage/{scan|plan|apply|restore|purge} (أدوات حجم البيانات؛ التغييرات تتطلّب confirm=true).
 """
 import argparse
 import json
@@ -17,6 +18,7 @@ import hourly_page  # noqa: E402
 import pages  # noqa: E402
 import reports  # noqa: E402
 import run_cycle  # noqa: E402
+import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
 
 PAGES = {"/": "index.html", "/sessions.html": "roles.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
@@ -33,8 +35,24 @@ def live_plan():
         con.close()
 
 
-def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
+STORAGE_RE = re.compile(r"^/storage/(scan|plan|apply|restore|purge)$")
+
+
+def live_storage(op, params):
+    """أدوات حجم البيانات على اتصال خاص؛ بعد أي تغيير يُعاد المسح فورًا كي تعكسه الصفحة عند إعادة البناء."""
+    con = usage_db.connect()
+    try:
+        out = storage_scan.handle(op, params, con)
+        if op in ("apply", "restore", "purge"):
+            out["rescan"] = storage_scan.run(con, force=True)
+        return out
+    finally:
+        con.close()
+
+
+def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_fn=None):
     reports_dir = reports_dir or reports.REPORTS_DIR
+    storage_fn = storage_fn or live_storage
     refresh_fn = refresh_fn or run_cycle.force_or_wait  # زر التحديث يفرض البناء وينتظر دورة مجدولة إن كانت تعمل؛ يأخذ لحظة الطلب
     plan_fn = plan_fn or live_plan
     lock = threading.Lock()  # دورة واحدة في وقت واحد
@@ -88,10 +106,24 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None):
             self._send(200, body, ctype)
 
         def do_POST(self):
-            if self.path.split("?", 1)[0] != "/refresh":
+            path = self.path.split("?", 1)[0]
+            m = STORAGE_RE.match(path)
+            if path != "/refresh" and not m:
                 return self._send(404, b"not found", "text/plain; charset=utf-8")
-            if not self._host_ok():  # يمنع صفحة غريبة من تشغيل الدورة عبر المتصفح
+            if not self._host_ok():  # يمنع صفحة غريبة من تشغيل الدورة أو أدوات الحجر عبر المتصفح
                 return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+            if m:  # أدوات حجم البيانات: JSON صغير في الجسم؛ التغييرات تحت قفل الدورة نفسه
+                try:
+                    n = int(self.headers.get("Content-Length") or 0)
+                    params = json.loads(self.rfile.read(n).decode("utf-8") or "{}") if n else {}
+                    if not isinstance(params, dict):
+                        raise ValueError("جسم غير صالح")
+                    with lock:
+                        out = storage_fn(m.group(1), params)
+                    code = 200
+                except (ValueError, OSError) as exc:
+                    out, code = {"ok": False, "error": str(exc)[:200]}, 400
+                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
             t = time.time()
             with lock:  # طلب متراكم خلف قفل الخادم يأخذ لحظته الأصلية فيكتفي ببناء سبقه
                 rc = refresh_fn(t)

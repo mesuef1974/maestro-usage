@@ -37,8 +37,10 @@ class TestServe(unittest.TestCase):
             f.write("لا يُقدَّم")
         self.calls = []
         self.rc = 0
+        self.ops = []
         self.srv = serve.make_server(0, self.tmp, lambda t0: self.calls.append(t0) or self.rc,
-                                     lambda: [{"ts": "2026-10-30T10:00:00Z", "f": 1.0, "src": "cli_usage"}])
+                                     lambda: [{"ts": "2026-10-30T10:00:00Z", "f": 1.0, "src": "cli_usage"}],
+                                     lambda op, p: self.ops.append((op, p)) or {"ok": True, "op": op, "files": 3})
         self.port = self.srv.server_address[1]
         threading.Thread(target=self.srv.serve_forever, daemon=True).start()
 
@@ -47,11 +49,11 @@ class TestServe(unittest.TestCase):
         self.srv.server_close()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def req(self, method, path, headers=None):
+    def req(self, method, path, headers=None, body=None):
         c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
         h = {"Host": "127.0.0.1:%d" % self.port}
         h.update(headers or {})
-        c.request(method, path, headers=h)
+        c.request(method, path, body=body, headers=h)
         r = c.getresponse()
         body = r.read()
         c.close()
@@ -89,6 +91,16 @@ class TestServe(unittest.TestCase):
         j = json.loads(body)
         self.assertEqual((code, j["ok"], j["busy"]), (200, False, True))
         self.assertAlmostEqual(self.calls[-1], time.time(), delta=5)  # لحظة الطلب تُمرَّر إلى الدورة
+
+    def test_storage_endpoints_pass_json_and_guard_host(self):
+        """أدوات حجم البيانات: JSON في الجسم إلى الدالة المحقونة، 404 لعملية مجهولة، 403 لمضيف غريب، 400 لجسم غير صالح."""
+        code, body = self.req("POST", "/storage/plan", body=json.dumps({"group": "file_history", "days": 30}).encode())
+        self.assertEqual((code, json.loads(body)["files"]), (200, 3))
+        self.assertEqual(self.ops[-1], ("plan", {"group": "file_history", "days": 30}))
+        self.assertEqual(self.req("POST", "/storage/delete")[0], 404)
+        self.assertEqual(self.req("POST", "/storage/apply", {"Host": "evil.example"})[0], 403)
+        self.assertEqual(self.req("POST", "/storage/apply", body=b"[1,2]")[0], 400)
+        self.assertEqual(self.req("GET", "/storage/plan")[0], 404)
 
     def test_refresh_rejects_foreign_host_or_origin(self):
         self.assertEqual(self.req("POST", "/refresh", {"Host": "evil.example"})[0], 403)

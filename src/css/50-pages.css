@@ -29,3 +29,23 @@
 @media (max-width:640px){.marklist{columns:1}}
 .sav{color:var(--good);font-weight:700}
 .gone td{white-space:nowrap}
+
+/* صفحة حجم البيانات: شبكة الأنواع (تعريف لكل نوع)، بطاقات الأدوات، وأزرار الخطر بحدّ ملوّن وكلمة في النص */
+.kinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--sp-3);margin-block-start:var(--sp-3)}
+.kind{border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-3);background:var(--surface);display:grid;gap:var(--sp-1);font-size:var(--t-sm);align-content:start}
+.kind .kh{display:flex;justify-content:space-between;gap:var(--sp-2);align-items:baseline}
+.kind .kh b{font-weight:700;color:var(--ink)}
+.kind .kh span{font-family:var(--font-num);font-variant-numeric:tabular-nums;color:var(--ink2)}
+.kind p{margin:0;color:var(--ink2);line-height:1.6}
+.kind .safe{color:var(--ink3);font-size:var(--t-xs)}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(18rem,1fr));gap:var(--sp-3)}
+.tool{border:1px solid var(--line);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4);background:var(--surface);display:grid;gap:var(--sp-2);align-content:start}
+.tool h3{margin:0;font-size:var(--t-md)}
+.tool .act{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
+.tool .plan{font-size:var(--t-sm);color:var(--ink2);line-height:1.6}
+.tool .plan ul{margin:var(--sp-1) 0 0;padding-inline-start:1.2rem}
+.tool .msg{font-size:var(--t-sm);color:var(--ink)}
+.danger{border-color:var(--bad);color:var(--bad)}
+.danger:hover{background:var(--bad);color:var(--surface);border-color:var(--bad)}
+.danger[aria-pressed="true"]{background:var(--bad);color:var(--surface)}
+.yn{font-size:var(--t-xs);color:var(--ink3)}

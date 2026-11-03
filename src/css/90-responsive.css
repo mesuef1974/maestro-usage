@@ -19,13 +19,13 @@
   /* شاشة قصيرة (1024×768): يُضغط الشريط الجانبي ليتّسع لـ14 صفحة والزرّين بلا تمرير داخلي */
   .side{padding:var(--sp-2);gap:var(--sp-2)}
   .brand{padding-block:0 var(--sp-2)}
-  .nav a{min-block-size:28px;padding-block:.15rem}
-  .navgroup{margin-block:var(--sp-1) 2px}
+  .nav a{min-block-size:26px;padding-block:.1rem}
+  .navgroup{margin-block:3px 1px}
 }
 @media (min-width:1024px) and (max-height:760px){
   /* أقصر (1280×720): روابط 26px وبلا هامش فوق عناوين المجموعات */
-  .nav a{min-block-size:26px;padding-block:.1rem;line-height:1.25}
-  .navgroup{margin-block:3px 1px;line-height:1.25}
+  .nav a{min-block-size:24px;padding-block:.05rem}
+  .navgroup{margin-block:2px 1px}
 }
 @media (max-width:640px){
   .brow{grid-template-columns:1fr;gap:.2rem}

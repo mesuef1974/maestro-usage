@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>حجم البيانات</title>
+__ASSETS__
+</head>
+<body>
+__SHELL_OPEN__
+__PAGEHEAD__
+
+<!--@sec tiles--><section class="tiles dense" id="tiles" aria-label="ملخص الحجم"></section><!--@/sec-->
+
+<!--@sec src--><section class="card" aria-labelledby="hs">
+  <div class="cardhead"><h2 id="hs">من أين تأتي هذه الأحجام</h2><span class="sub" id="ssum"></span></div>
+  <p class="sub">مجلد <code id="root"></code> فقط (لا يُمسّ غيره). كل مجلد أعلى مصنَّف بنوعه؛ ما ليس من Claude Code يُعرض للمعرفة ولا تمسّه الأدوات.</p>
+  <h3>بحسب النوع</h3>
+  <div class="bars" id="kbars"></div>
+  <div class="kinds" id="kinds"></div>
+  <h3 class="mt">المجلدات العليا</h3>
+  <div class="wrap mid" id="tops"></div>
+</section><!--@/sec-->
+
+<!--@sec proj--><section class="card" aria-labelledby="hp">
+  <div class="cardhead"><h2 id="hp">سجلات الجلسات بحسب المشروع</h2><span class="sub" id="psum"></span></div>
+  <p class="sub">كل مجلد في projects مشروعٌ (أو worktree). «مجلد العمل موجود؟» من مسارات الجلسات في القاعدة: «لا» يعني أن المجلد الأصلي اختفى وسجلاته يتيمة. «محمَّل» نسبة ما قرأته هذه المنصة من سجلاته.</p>
+  <div class="wrap" id="projs"></div>
+  <button type="button" class="more" id="pmore" hidden></button>
+</section><!--@/sec-->
+
+<!--@sec age--><section class="card" aria-labelledby="ha">
+  <div class="cardhead"><h2 id="ha">عمر الملفات والامتدادات</h2><span class="sub" id="asum"></span></div>
+  <p class="sub">الحجم بحسب آخر تعديل: ما هو أقدم من 90 يومًا نادرًا ما يُحتاج إليه. ثم أكبر الامتدادات.</p>
+  <div class="row2">
+    <div><h3>بحسب العمر</h3><div class="bars" id="abars"></div></div>
+    <div><h3>بحسب الامتداد</h3><div class="wrap mid" id="exts"></div></div>
+  </div>
+</section><!--@/sec-->
+
+<!--@sec growth--><section class="card" aria-labelledby="hg">
+  <div class="cardhead"><h2 id="hg">نموّ الحجم</h2><span class="sub" id="gsum"></span></div>
+  <p class="sub">إجمالي المجلد عند كل مسح (كل ساعة). المنحنى يتكوّن مع الأيام.</p>
+  <div class="chart" id="cg"></div>
+  <p class="note" id="gnote"></p>
+</section><!--@/sec-->
+
+<!--@sec tools--><section class="card" aria-labelledby="ht">
+  <div class="cardhead"><h2 id="ht">تحرير المساحة بأمان</h2><span class="sub" id="tsum"></span></div>
+  <p class="sub">لا حذف مباشر: «معاينة» تحسب المرشّحين بلا تغيير، و«نقل إلى الحجر» ينقلهم إلى <code id="qdir"></code> مع قائمة ملفات، فيمكن استرجاعهم كاملين بزر. لا يُنقل ملف لُمس خلال آخر <span id="minage"></span> ساعة، ولا سجل جلسة لم يُحمَّل كاملًا إلى القاعدة. الحذف النهائي من الحجر فقط وبتأكيد مزدوج.</p>
+  <p class="callout warn" id="toff" hidden>الأدوات تعمل من الخادم المحلي فقط: افتح الصفحة من 127.0.0.1:8790.</p>
+  <div class="tools" id="tools"></div>
+  <h3 class="mt">الحجر والعمليات</h3>
+  <div class="act"><label class="tog"><input type="checkbox" id="purgeok"> أفهم أن «إفراغ نهائي» يحذف الملفات بلا رجعة</label><span class="sub" id="qmsg" role="status"></span></div>
+  <div class="wrap" id="acts"></div>
+</section><!--@/sec-->
+
+<!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
+<p class="sub">آخر مسح <span id="scanat"></span> واستغرق <span id="scansec"></span> ثانية؛ يُعاد كل <span id="interval"></span> دقيقة داخل الدورة، وزر «مسح الآن» يعيده فورًا ثم يعيد بناء الصفحة.</p>
+__DEFS__
+</details><!--@/sec-->
+
+__SHELL_CLOSE__
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent);
+__LIB__
+function has(id){return !!document.getElementById(id)}
+var LIVE=location.protocol!=="file:";
+var S={pall:false,psk:"bytes",psd:-1};
+var PCAP=25;
+
+/* أحجام بأرقام لاتينية ووحدات ثنائية */
+function fb(b){if(b==null||isNaN(b))return "—";var u=["بايت","KB","MB","GB","TB"],i=0,x=Number(b);while(x>=1024&&i<4){x/=1024;i++}return (i?x.toFixed(x>=100?0:1):Math.round(x))+" "+u[i]}
+function dt(ts){return ts?ts.slice(5,16).replace("T"," ").replace("-","/"):"—"}
+function tile(l,v,d){var t=mk("div",{class:"tile"});t.appendChild(mk("div",{class:"l"},l));t.appendChild(mk("div",{class:"v"},v));t.appendChild(mk("div",{class:"d"},d||""));return t}
+function kindOf(k){for(var i=0;i<D.kinds.length;i++)if(D.kinds[i].k===k)return D.kinds[i];return {label:k}}
+
+function growth(){
+  var h=D.history;if(h.length<2)return null;
+  var a=h[0],b=h[h.length-1],days=(Date.parse(b.ts)-Date.parse(a.ts))/864e5;
+  return days>=1?{perDay:(b.bytes-a.bytes)/days,days:days}:null;
+}
+function qbytes(){return D.actions.filter(function(a){return a.status==="quarantined"}).reduce(function(s,a){return s+a.disk},0)}
+
+function renderTiles(){
+  var box=$("#tiles");clear(box);var sc=D.scan;
+  if(!sc){box.appendChild(tile("حجم المجلد","—","لم يُمسح بعد"));return}
+  var foreign=kindOf("foreign"),g=growth();
+  box.appendChild(tile("حجم "+D.root,fb(sc.bytes),num(sc.files)+" ملف · مسح "+dt(sc.ts)+" UTC"));
+  box.appendChild(tile("سجلات الجلسات",fb(kindOf("transcripts").bytes),pct(kindOf("transcripts").bytes/sc.bytes,0)+" من المجلد"));
+  box.appendChild(tile("ليست من Claude Code",fb(foreign.bytes),foreign.bytes?pct(foreign.bytes/sc.bytes,0)+" · لا تمسّها الأدوات":"لا شيء"));
+  box.appendChild(tile("النموّ",g?(g.perDay>=0?"+":"−")+fb(Math.abs(g.perDay))+"/يوم":"—",g?"عبر "+num(g.days,1)+" يومًا من المسوح":"يحتاج مسحين بينهما يوم"));
+  box.appendChild(tile("في الحجر",fb(qbytes()),D.actions.filter(function(a){return a.status==="quarantined"}).length+" عملية قابلة للاسترجاع"));
+}
+
+function renderSrc(){
+  if(!has("kbars"))return;
+  $("#root").textContent=D.root;
+  var sc=D.scan;if(!sc){$("#ssum").textContent="";return}
+  $("#ssum").textContent=fb(sc.bytes)+" في "+num(sc.files)+" ملف";
+  var ks=D.kinds.filter(function(k){return k.bytes>0}).sort(function(a,b){return b.bytes-a.bytes});
+  barRows($("#kbars"),ks.map(function(k){return {name:k.label,val:k.bytes,text:fb(k.bytes)+" · "+pct(k.bytes/sc.bytes,0),
+    tip:[{name:"ملفات",value:num(k.files)},{name:"أقدم من 90 يومًا",value:fb(k.b90p)}]}}),"--m1");
+  var kb=$("#kinds");clear(kb);
+  ks.forEach(function(k){var d=mk("div",{class:"kind"});var h=mk("div",{class:"kh"});h.appendChild(mk("b",null,k.label));h.appendChild(mk("span",null,fb(k.bytes)+" · "+num(k.files)+" ملف"));d.appendChild(h);
+    d.appendChild(mk("p",null,k.what));d.appendChild(mk("p",null,"لماذا يكبر: "+k.why));d.appendChild(mk("p",{class:"safe"},"هل حذفه آمن؟ "+k.safe));kb.appendChild(d)});
+  drawTable($("#tops"),[{k:"name",l:"المجلد"},{k:"kind",l:"النوع",f:function(r){return kindOf(r.kind).label}},{k:"bytes",l:"الحجم",n:1,f:function(r){return fb(r.bytes)}},
+    {k:"files",l:"ملفات",n:1,f:function(r){return num(r.files)}},{k:"b90p",l:"أقدم من 90 يومًا",n:1,f:function(r){return fb(r.b90p)}},{k:"newest",l:"آخر تعديل",f:function(r){return dt(r.newest)}}],
+    D.top.slice(0,20));
+}
+
+function yn(v){return v===true?"نعم":v===false?"لا":"—"}
+function renderProj(){
+  if(!has("projs"))return;
+  var rows=D.proj.slice().sort(function(a,b){var x=a[S.psk],y=b[S.psk];if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*S.psd});
+  var shown=S.pall?rows:rows.slice(0,PCAP),orphan=D.proj.filter(function(p){return p.exists===false});
+  $("#psum").textContent=num(D.proj.length)+" مشروعًا · "+num(orphan.length)+" اختفى مجلده ("+fb(orphan.reduce(function(s,p){return s+p.bytes},0))+")";
+  drawTable($("#projs"),[{k:"name",l:"المجلد"},{k:"bytes",l:"الحجم",n:1,f:function(r){return fb(r.bytes)}},{k:"jsonl",l:"سجلات",n:1,f:function(r){return num(r.jsonl)}},
+    {k:"sub",l:"وكلاء فرعيون",n:1,f:function(r){return fb(r.sub)}},{k:"b90p",l:"أقدم من 90 يومًا",n:1,f:function(r){return fb(r.b90p)}},{k:"newest",l:"آخر تعديل",f:function(r){return dt(r.newest)}},
+    {k:"exists",l:"مجلد العمل موجود؟",f:function(r){return yn(r.exists)}},{k:"ingested",l:"محمَّل",n:1,f:function(r){return r.ingested==null?"—":pct(r.ingested,0)}}],
+    shown,{k:S.psk,d:S.psd},function(k){S.psd=S.psk===k?-S.psd:-1;S.psk=k;renderProj()});
+  var more=$("#pmore");more.hidden=rows.length<=PCAP;more.textContent=S.pall?"عرض أكبر "+PCAP+" فقط":"عرض كل المشاريع ("+num(rows.length)+")";more.onclick=function(){S.pall=!S.pall;renderProj()};
+}
+
+function renderAge(){
+  if(!has("abars"))return;var sc=D.scan;if(!sc)return;
+  var t=D.kinds.reduce(function(a,k){a.b7+=k.b7;a.b30+=k.b30;a.b90+=k.b90;a.b90p+=k.b90p;return a},{b7:0,b30:0,b90:0,b90p:0});
+  $("#asum").textContent="أقدم من 90 يومًا: "+fb(t.b90p)+" ("+pct(t.b90p/sc.bytes,0)+")";
+  barRows($("#abars"),[["≤ 7 أيام",t.b7],["8–30 يومًا",t.b30],["31–90 يومًا",t.b90],["> 90 يومًا",t.b90p]].map(function(x){return {name:x[0],val:x[1],text:fb(x[1])+" · "+pct(x[1]/sc.bytes,0),tip:[]}}),"--m2");
+  drawTable($("#exts"),[{k:"name",l:"الامتداد"},{k:"bytes",l:"الحجم",n:1,f:function(r){return fb(r.bytes)}},{k:"files",l:"ملفات",n:1,f:function(r){return num(r.files)}},{k:"b90p",l:"أقدم من 90 يومًا",n:1,f:function(r){return fb(r.b90p)}}],D.ext);
+}
+
+function renderGrowth(){
+  if(!has("cg"))return;var h=D.history,box=$("#cg"),g=growth();
+  $("#gsum").textContent=num(h.length)+" مسحًا";
+  if(h.length<2){clear(box);box.appendChild(mk("div",{class:"empty"},"يحتاج المنحنى إلى مسحين على الأقل."));$("#gnote").textContent="";return}
+  var ms=h.map(function(r){return Date.parse(r.ts)}),x0=ms[0],x1=ms[ms.length-1];if(x1-x0<36e5){x0-=18e5;x1+=18e5}
+  var two=x1-x0<2*864e5,mx=Math.max.apply(null,h.map(function(r){return r.bytes}));
+  drawLines(box,{label:"حجم المجلد عبر المسوح",xs:ms,x0:x0,x1:x1,ymax:niceMax(mx),ml:70,gap:3*36e5,yfmt:function(v){return fb(v)},
+    xfmt:function(v){var d=new Date(v),hh=d.toISOString().slice(11,16);return two?hh+" "+dm(ymd(v)):dm(ymd(v))},tfmt:function(v){return fb(v)},endLabel:function(v){return fb(v)},
+    title:function(i){return dt(h[i].ts)+" UTC · "+num(h[i].files)+" ملف"},series:[{name:"الحجم",c:"--m1",v:h.map(function(r){return r.bytes})}]});
+  $("#gnote").textContent=g?"النموّ "+(g.perDay>=0?"+":"−")+fb(Math.abs(g.perDay))+" في اليوم عبر "+num(g.days,1)+" يومًا.":"النموّ يُحسب حين يفصل المسوح يوم كامل.";
+}
+
+/* ---------- الأدوات ---------- */
+function api(op,params){return fetch("/storage/"+op,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(params||{})}).then(function(r){return r.json()})}
+function rebuild(msg){msg.textContent+=" يُعاد بناء الصفحة…";refreshNow($("#rmsg"),$("#refresh"))}
+function toolCard(g){
+  var d=mk("div",{class:"tool"});d.appendChild(mk("h3",null,g.label));d.appendChild(mk("p",{class:"sub"},g.desc));
+  var act=mk("div",{class:"act"}),sel=mk("select",{"aria-label":"أقدم من"});
+  g.options.forEach(function(o){var op=mk("option",{value:String(o)},o?"أقدم من "+o+" يومًا":"كل ما هو أقدم من يوم");if(o===g.days)op.selected=true;sel.appendChild(op)});
+  var pb=mk("button",{type:"button",class:"mini"},"معاينة"),ab=mk("button",{type:"button",class:"mini danger"},"نقل إلى الحجر");ab.disabled=true;
+  var ok=mk("label",{class:"tog"});var cb=mk("input",{type:"checkbox"});ok.appendChild(cb);ok.appendChild(document.createTextNode(" أؤكد النقل"));
+  act.appendChild(sel);act.appendChild(pb);act.appendChild(ok);act.appendChild(ab);d.appendChild(act);
+  var plan=mk("div",{class:"plan"},"اضغط «معاينة» لحساب المرشّحين."),msg=mk("div",{class:"msg",role:"status"});d.appendChild(plan);d.appendChild(msg);
+  var last=null;
+  function arm(){ab.disabled=!(last&&last.files>0&&cb.checked)}
+  cb.addEventListener("change",arm);sel.addEventListener("change",function(){last=null;plan.textContent="تغيّرت المدة؛ أعد المعاينة.";arm()});
+  pb.addEventListener("click",function(){pb.disabled=true;msg.textContent="";plan.textContent="جارٍ الحساب…";
+    api("plan",{group:g.k,days:Number(sel.value)}).then(function(j){pb.disabled=false;
+      if(!j||j.ok===false){plan.textContent="تعذّر: "+(j&&j.error||"");last=null;arm();return}
+      last=j;clear(plan);plan.appendChild(mk("b",null,j.files?num(j.files)+" ملف · "+fb(j.bytes):"لا مرشّحين بهذه الشروط."));
+      if(j.by.length){var ul=mk("ul");j.by.slice(0,8).forEach(function(b){ul.appendChild(mk("li",null,b.name+": "+num(b.files)+" ملف · "+fb(b.bytes)))});if(j.by.length>8)ul.appendChild(mk("li",null,"… و"+num(j.by.length-8)+" مجلدًا آخر"));plan.appendChild(ul)}
+      arm()}).catch(function(){pb.disabled=false;plan.textContent="تعذّر الوصول إلى الخادم المحلي.";last=null;arm()})});
+  ab.addEventListener("click",function(){ab.disabled=true;pb.disabled=true;msg.textContent="جارٍ النقل…";
+    api("apply",{group:g.k,days:Number(sel.value),confirm:true}).then(function(j){pb.disabled=false;cb.checked=false;last=null;
+      if(!j||!j.ok){msg.textContent="تعذّر: "+(j&&j.error||"");return}
+      msg.textContent="نُقل "+num(j.files)+" ملف ("+fb(j.bytes)+") إلى الحجر"+(j.skipped?"؛ تُرك "+num(j.skipped)+" ملفًا مقفلًا":"")+".";rebuild(msg)})
+    .catch(function(){pb.disabled=false;msg.textContent="تعذّر الوصول إلى الخادم المحلي."})});
+  return d;
+}
+var ACT={quarantine:"نقل إلى الحجر",restore:"استرجاع",purge:"إفراغ نهائي"},STS={quarantined:"في الحجر",restored:"استُرجع",purged:"أُفرغ",done:"تم"};
+function twoStep(label,cls,run){var b=mk("button",{type:"button",class:"mini "+cls},label),armed=null;
+  b.addEventListener("click",function(){if(armed){clearTimeout(armed);armed=null;b.textContent=label;b.setAttribute("aria-pressed","false");run(b);return}
+    b.textContent="تأكيد: "+label;b.setAttribute("aria-pressed","true");armed=setTimeout(function(){armed=null;b.textContent=label;b.setAttribute("aria-pressed","false")},8000)});return b}
+function renderActs(){
+  if(!has("acts"))return;var box=$("#acts"),q=$("#qmsg");
+  if(!D.actions.length){clear(box);box.appendChild(mk("div",{class:"empty"},"لا عمليات بعد."));return}
+  drawTable(box,[{k:"ts",l:"الزمن (UTC)",f:function(r){return dt(r.ts)}},{k:"action",l:"العملية",f:function(r){return ACT[r.action]||r.action}},{k:"grp",l:"المجموعة",f:function(r){var g=D.groups.filter(function(x){return x.k===r.grp})[0];return g?g.label:r.grp}},
+    {k:"files",l:"ملفات",n:1,f:function(r){return num(r.files)}},{k:"bytes",l:"الحجم",n:1,f:function(r){return fb(r.bytes)}},{k:"status",l:"الحالة",f:function(r){return STS[r.status]||r.status}},
+    {k:"id",l:"",el:function(r){var w=mk("span",{class:"act"});if(r.status!=="quarantined"||!LIVE)return w;
+      w.appendChild(twoStep("استرجاع","",function(b){b.disabled=true;q.textContent="جارٍ الاسترجاع…";api("restore",{id:r.id,confirm:true}).then(function(j){q.textContent=j&&j.ok?"استُرجع "+num(j.files)+" ملف ("+fb(j.bytes)+").":"تعذّر: "+(j&&j.error||"");if(j&&j.ok)rebuild(q);else b.disabled=false}).catch(function(){q.textContent="تعذّر الوصول إلى الخادم.";b.disabled=false})}));
+      w.appendChild(twoStep("إفراغ نهائي","danger",function(b){if(!$("#purgeok").checked){q.textContent="علّم «أفهم أن الإفراغ نهائي» أولًا.";return}b.disabled=true;q.textContent="جارٍ الحذف النهائي…";
+        api("purge",{id:r.id,confirm:true}).then(function(j){q.textContent=j&&j.ok?"حُذف نهائيًّا "+fb(j.bytes)+".":"تعذّر: "+(j&&j.error||"");if(j&&j.ok)rebuild(q);else b.disabled=false}).catch(function(){q.textContent="تعذّر الوصول إلى الخادم.";b.disabled=false})}));
+      return w}}],D.actions);
+}
+function renderTools(){
+  if(!has("tools"))return;
+  $("#qdir").textContent=D.quarantine;$("#minage").textContent=D.min_age_h;
+  $("#tsum").textContent=D.groups.length+" مجموعات";
+  var box=$("#tools");clear(box);
+  if(!LIVE){$("#toff").hidden=false}
+  D.groups.forEach(function(g){var c=toolCard(g);if(!LIVE)[].forEach.call(c.querySelectorAll("button,select,input"),function(e){e.disabled=true});box.appendChild(c)});
+  renderActs();
+}
+
+function renderDefs(){
+  if(D.scan){$("#scanat").textContent=dt(D.scan.ts)+" UTC";$("#scansec").textContent=num(D.scan.seconds,1)}
+  else{$("#scanat").textContent="—";$("#scansec").textContent="—"}
+  $("#interval").textContent=D.interval_min;
+  fillDefs({});
+}
+
+renderTiles();renderSrc();renderProj();renderAge();renderGrowth();renderTools();renderDefs();
+if(has("refresh")){
+  /* زر «مسح الآن» بجانب التحديث: مسح كامل فوري ثم إعادة بناء الصفحة */
+  var sb=mk("button",{type:"button",class:"mini",id:"scannow"},"مسح الآن");$("#refresh").insertAdjacentElement("afterend",sb);
+  if(!LIVE)sb.disabled=true;
+  sb.addEventListener("click",function(){sb.disabled=true;$("#rmsg").textContent="جارٍ المسح…";api("scan",{}).then(function(j){$("#rmsg").textContent=j&&j.scanned?"مُسح "+num(j.files)+" ملف في "+num(j.seconds,1)+" ث.":"تعذّر المسح.";if(j&&j.scanned)rebuild($("#rmsg"));else sb.disabled=false}).catch(function(){$("#rmsg").textContent="تعذّر الوصول إلى الخادم.";sb.disabled=false})});
+  initRefresh(function(){});
+}
+})();
+</script>
+</body>
+</html>

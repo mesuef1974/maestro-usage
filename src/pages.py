@@ -17,6 +17,7 @@ ICON = {
     "power": '<path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/>',
     "grid": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     "db": '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    "disk": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18M7 17h.01M7 8h.01"/>',
 }
 
 GROUPS = ["نظرة عامة", "الحصة والزمن", "الاستهلاك", "الأدوار والجلسات", "دراسات", "البيانات"]
@@ -51,11 +52,14 @@ _ROWS = [
      "كل مهارة وأمر: فائدتها واستعمالها الفعلي وتوصية الإبقاء أو الأرشفة.", "دراسات", "grid", ["tiles", "filters2", "tbl", "gone", "defs"]),
     ("data.html", "dashboard.html", "الجداول والملفات",
      "الجداول الساكنة والتحفظات وملفات CSV.", "البيانات", "db", ["static"]),
+    ("storage.html", "storage.html", "حجم البيانات",
+     "حجم مجلد كلود المحلي: من أين يأتي، كيف ينمو، وأدوات تحرير آمنة بالحجر.", "البيانات", "disk",
+     ["tiles", "src", "proj", "age", "growth", "tools", "defs"]),
 ]
 
 PAGES = [dict(file=f, template=t, title=ti, lede=le, group=g, icon=ic, sections=s) for f, t, ti, le, g, ic, s in _ROWS]
 BY_FILE = {p["file"]: p for p in PAGES}
-LIVE_TEMPLATES = {"dashboard.html", "sessions.html", "hourly.html"}  # قوالب فيها زرّ التحديث الفوري وعمر البيانات
+LIVE_TEMPLATES = {"dashboard.html", "sessions.html", "hourly.html", "storage.html"}  # قوالب فيها زرّ التحديث الفوري وعمر البيانات
 
 
 def for_template(template):

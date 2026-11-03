@@ -1,5 +1,5 @@
 /* غلاف المنصة: شريط جانبي (يمين في RTL) ≥1024px يصير شريطًا علويًّا لاصقًا أدناه؛ ترويسة الصفحة بمسطرة القياس (توقيع الهوية).
-   مقاس الشريط مضبوط ليتّسع لـ14 صفحة وزرّي الأسفل (44px) في ارتفاع 900px بلا تمرير داخلي. */
+   مقاس الشريط مضبوط ليتّسع لـ15 صفحة وزرّي الأسفل (44px) في ارتفاع 900px بلا تمرير داخلي (درجات أضيق في 90-responsive). */
 .skip{position:absolute;inset-inline-start:var(--sp-2);inset-block-start:-4rem;z-index:100;background:var(--ink);color:var(--surface);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);text-decoration:none}
 .skip:focus{inset-block-start:var(--sp-2)}
 .app{display:grid;grid-template-columns:var(--side-w) minmax(0,1fr);min-block-size:100vh}
@@ -10,8 +10,8 @@
 .brand small{display:block;color:var(--ink3);font-size:var(--t-xs);line-height:1.3}
 .nav{overflow-y:auto;min-block-size:0}
 .nav ul,.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:1px}
-.navgroup{margin:var(--sp-2) var(--sp-2) var(--sp-1);font-size:var(--t-xs);color:var(--ink3);font-weight:500}
-.nav a,.toc a{display:flex;align-items:center;gap:var(--sp-2);color:var(--ink2);text-decoration:none;border-radius:var(--r-sm);padding:.25rem var(--sp-2);min-block-size:32px;font-size:var(--t-sm);transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
+.navgroup{margin:var(--sp-2) var(--sp-2) 2px;line-height:1.25;font-size:var(--t-xs);color:var(--ink3);font-weight:500}
+.nav a,.toc a{display:flex;align-items:center;gap:var(--sp-2);color:var(--ink2);text-decoration:none;border-radius:var(--r-sm);padding:.2rem var(--sp-2);min-block-size:30px;font-size:var(--t-sm);line-height:1.25;transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
 .nav a svg{inline-size:18px;block-size:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .nav a:hover,.toc a:hover{background:var(--hover);color:var(--ink)}
 .nav a[aria-current="page"]{background:var(--brand-soft);color:var(--brand-ink);font-weight:700;box-shadow:inset -3px 0 0 var(--brand)}
