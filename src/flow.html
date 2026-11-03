@@ -48,7 +48,7 @@ var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 function has(id){return !!document.getElementById(id)}
 var F=D.flow,NS="http://www.w3.org/2000/svg";
-var G={m:20,lbl:176,colw:156,top:44,gap:10,nh:48,gh:64,r:12};
+var G={m:20,lbl:176,colw:156,top:44,gap:10,nh:52,gh:68,r:12}; /* ارتفاع المرحلة 52 ليبلغ 44px لمسًا على الهاتف عند عرض 1400px */
 var byId={},sel=null;
 F.nodes.forEach(function(n){byId[n.id]=n});
 
