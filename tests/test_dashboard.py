@@ -85,7 +85,7 @@ class TestDashboard(unittest.TestCase):
 
     def test_template_uses_main_thread_and_live_forecast(self):
         """القالب يقرأ الحقول الرئيسة في المؤشرات والجلسات والضغط، ويُعيد حساب المتوقَّع من النسبة الحيّة، ويعرض زمن آخر عيّنة بدء."""
-        page = dashboard.render(self.data, "", "الآن", "index.html")
+        page = dashboard.render(self.data, "", "الآن", "plan.html")
         for s in ('sum(rows,"mt")', "(الخيط الرئيس)", "function quotaForecast", 'quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now)',
                   'id="lalert"', "function quotaAlert", "تحذير: بمعدل الحرق الحالي",
                   "RATE_SRC[f.rate_src]", "(جزئي من ", "، ناقص)", "حدّ أدنى 10%"):
@@ -97,7 +97,7 @@ class TestDashboard(unittest.TestCase):
         page = dashboard.render(self.data, "", "الآن", "plan.html")
         for s in ('id="pmore"', "var PLAN_CAP=30", "rows.slice(0,PLAN_CAP)", "عرض كل اللقطات ("):
             self.assertIn(s, page)
-        self.assertNotIn('id="pmore"', dashboard.render(self.data, "", "الآن", "index.html"))
+        self.assertNotIn('id="pmore"', dashboard.render(self.data, "", "الآن", "cache.html"))
         self.assertNotIn("حدّ أدنى 20%", page)
 
     def test_plan_payload_carries_fable(self):
@@ -107,7 +107,7 @@ class TestDashboard(unittest.TestCase):
         data = dashboard.payload(self.con, reports.NOT_APPLIED_MARK, 50)
         last = data["plan"][-1]
         self.assertEqual((last["fa"], last["far"]), (2.0, "2026-11-04T17:00:00Z"))
-        page = dashboard.render(data, "", "الآن", "index.html")
+        page = dashboard.render(data, "", "الآن", "plan.html")
         self.assertIn('id="lrf"', page)
 
     def test_payload_has_only_numbers_and_known_names(self):

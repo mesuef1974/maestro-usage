@@ -5,8 +5,9 @@
   .brand{display:none}
   .navgroup,.toc-title,.toc .tg{display:none}
   .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:.2rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
-  .nav ul{display:flex;gap:var(--sp-1)}
+  .nav ul{display:flex;gap:var(--sp-1);flex:none}
   .nav li{flex:none}
+  .nav a{white-space:nowrap}
   .toc{padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0;overflow:visible;flex:none;border:0}
   .toc ol{display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
   .toc li{flex:none}
@@ -51,3 +52,4 @@
   .app{display:block}
   .card,.limits,.tiles{break-inside:avoid;border-color:#999}
 }
+@media (min-width:1024px){.sidefoot{min-block-size:calc(2*var(--tap) + var(--sp-2))}}  /* مكان زرّي السمة والتحديث محجوز قبل أن يضيفهما JS فلا ينزاح الشريط */

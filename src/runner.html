@@ -195,9 +195,12 @@ function tick(){
 
 function setLive(ok){$i("rlLive").className="rl-live"+(ok?"":" off");$i("rlLiveTxt").textContent=ok?"حيّ":"انقطع";}
 
+var lastSig="";
 function poll(){
   fetch(API,{cache:"no-store"}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})}).then(function(x){
-    state=x.j;if(state&&state.now)skew=Date.now()-Date.parse(state.now);setLive(x.ok);render();
+    var sig=JSON.stringify(x.j,function(k,v){return k==="now"?undefined:v});
+    state=x.j;if(state&&state.now)skew=Date.now()-Date.parse(state.now);setLive(x.ok);
+    if(sig!==lastSig){lastSig=sig;render()}else tick();  // لا إعادة رسم إن لم يتغيّر شيء: كانت الجداول ترمش كل ثانيتين
     $i("rlUpd").textContent=new Date(nowMs()).toLocaleTimeString("en-GB",{hour12:false});
   }).catch(function(){setLive(false);});
 }

@@ -19,6 +19,7 @@ import pages  # noqa: E402
 import reports  # noqa: E402
 import request_page  # noqa: E402
 import run_cycle  # noqa: E402
+import server_guard  # noqa: E402
 import runner_page  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
@@ -191,6 +192,7 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8790)
     a = ap.parse_args(argv)
     srv = make_server(a.port)
+    server_guard.write_state(a.port)  # بصمة الكود التي يعمل بها هذا الخادم، تفحصها الدورة المجدولة
     print("http://127.0.0.1:%d/  (Ctrl+C للإيقاف)" % a.port, flush=True)
     try:
         srv.serve_forever()

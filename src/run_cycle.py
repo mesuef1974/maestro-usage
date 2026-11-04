@@ -147,4 +147,9 @@ def force_or_wait(t0=None, timeout=WAIT_TIMEOUT_SEC, poll=2.0):
 
 if __name__ == "__main__":
     rc = main()
+    import server_guard  # بعد الدورة وفي المدخل المجدول فقط (لا داخل الخادم نفسه): خادم بكود قديم يُعاد تشغيله
+
+    res = server_guard.ensure()
+    if res in ("restarted", "skip"):
+        log("server_guard " + res)
     sys.exit(0 if rc == SKIPPED else rc)

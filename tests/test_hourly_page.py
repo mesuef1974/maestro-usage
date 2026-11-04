@@ -85,8 +85,9 @@ class TestHourlyPage(unittest.TestCase):
         self.assertNotIn("wsel", page)  # لا محدّد نافذة عالميًّا: النافذة بحسب الجلسة والنموذج
         self.assertNotIn("250 ألفًا = 100%", page)
         for want in ('id="wdesc"', "النافذة الفعلية لكل جلسة", "w250_spans", "(ناقص)", "الجارية ناقصة", "بعد خمول",
-                     "Fable %", "غير مقروءة من /usage منذ", "r.w||WIN", "كل 5 دقائق، وكل دقيقة عند تغيّر النسب"):
+                     "r.w||WIN"):
             self.assertIn(want, page)
+        self.assertNotIn("function renderQuota", page)  # الحصة في صفحة «الحصة الأسبوعية» وحدها لا تتكرر هنا
         self.assertNotIn("أُزيلت من الخطة", page)
         self.assertNotIn("خمس ساعات %", page)
         self.assertNotIn("num(p.w,1)", page)  # النسب أعداد صحيحة بلا خانة عشرية
