@@ -192,3 +192,29 @@ CREATE TABLE IF NOT EXISTS storage_actions (
     qdir   TEXT NOT NULL,                      -- مجلد الحجر
     status TEXT NOT NULL                       -- quarantined | restored | purged | done
 );
+
+-- الإصدار 6: تجميعات الاستهلاك (يوم/أسبوع/شهر × نموذج). تُعاد كتابتها كاملةً من usage_turns في معاملة واحدة (rollups.refresh)، فهي مشتقّة لا مصدر.
+-- الأسبوع يبدأ الاثنين بالتوقيت العالمي؛ period_start يوم البداية (YYYY-MM-DD). جدول عادي بلا ميزات SQLite فينتقل إلى Postgres كما هو.
+CREATE TABLE IF NOT EXISTS usage_rollups (
+    grain                 TEXT NOT NULL,          -- day | week | month
+    period_start          TEXT NOT NULL,
+    model                 TEXT NOT NULL,
+    turns                 INTEGER NOT NULL,
+    sessions              INTEGER NOT NULL,
+    input_tokens          INTEGER NOT NULL,
+    cache_creation_tokens INTEGER NOT NULL,
+    cache_read_tokens     INTEGER NOT NULL,
+    output_tokens         INTEGER NOT NULL,
+    thinking_tokens       INTEGER NOT NULL DEFAULT 0,
+    refreshed_at          TEXT NOT NULL,
+    PRIMARY KEY (grain, period_start, model)
+);
+CREATE INDEX IF NOT EXISTS ix_rollups_period ON usage_rollups(grain, period_start);
+CREATE INDEX IF NOT EXISTS ix_turns_model_ts ON usage_turns(model, ts);
+
+-- إجمالي كل جلسة: أول وآخر نشاط وعدد الأدوار والنماذج المستعملة.
+CREATE VIEW IF NOT EXISTS v_session_totals AS
+SELECT session_key, MIN(ts) AS first_ts, MAX(ts) AS last_ts, COUNT(*) AS turns, COUNT(DISTINCT model) AS models,
+       SUM(input_tokens) AS input_tokens, SUM(cache_creation_tokens) AS cache_creation_tokens,
+       SUM(cache_read_tokens) AS cache_read_tokens, SUM(output_tokens) AS output_tokens
+FROM usage_turns GROUP BY session_key;

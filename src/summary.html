@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ملخص الاستهلاك</title>
+__ASSETS__
+</head>
+<body>
+__SHELL_OPEN__
+__PAGEHEAD__
+
+<!--@sec sum--><section aria-label="ملخص الاستهلاك">
+  <div class="tiles" id="sTiles" aria-label="آخر جلسة"></div>
+  <section class="card" aria-labelledby="hsm"><div class="cardhead"><h2 id="hsm">نماذج آخر جلسة</h2><span class="sub" id="sKey"></span></div>
+    <div class="wrap free" id="sModels"></div></section>
+  <section class="card" aria-labelledby="hw"><div class="cardhead"><h2 id="hw">الأسبوعي</h2><span class="sub">يبدأ الأسبوع الاثنين (توقيت عالمي)</span></div>
+    <div class="wrap free" id="sWeek"></div>
+    <h3 class="mt">نماذج الأسبوع الأحدث</h3><div class="wrap free" id="sWeekModels"></div></section>
+  <section class="card" aria-labelledby="hm"><div class="cardhead"><h2 id="hm">الشهري</h2></div>
+    <div class="wrap free" id="sMonth"></div>
+    <h3 class="mt">نماذج الشهر الأحدث</h3><div class="wrap free" id="sMonthModels"></div></section>
+</section><!--@/sec-->
+
+<!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
+<p class="sub">المصدر جدول <bdi dir="ltr">usage_rollups</bdi> المبنيّ من <bdi dir="ltr">usage_turns</bdi> عند كل بناء للتقارير. «قراءة الكاش» توكنز تُقرأ من الذاكرة المؤقتة وتُحسب بوزن أقل من الإدخال؛ المقياس نسبة الحصة لا الدولار.</p>
+__DEFS__
+</details><!--@/sec-->
+
+__SHELL_CLOSE__
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent).summary;
+__LIB__
+function has(id){return !!document.getElementById(id)}
+function cell(t,cls){var c=document.createElement("td");c.textContent=t;if(cls)c.className=cls;return c}
+function table(box,head,rows){
+  var t=document.createElement("table"),h=t.createTHead().insertRow();
+  head.forEach(function(x){var th=document.createElement("th");th.textContent=x;h.appendChild(th)});
+  var b=t.createTBody();
+  rows.forEach(function(r){var tr=b.insertRow();r.forEach(function(v,i){tr.appendChild(cell(typeof v==="number"?num(v):v,i?"num":""))})});
+  box.textContent="";box.appendChild(t);
+}
+var HEAD=["الدورات","إدخال","كتابة كاش","قراءة كاش","إخراج"];
+function nums(x){return [x.turns,x.input,x.cache_creation,x.cache_read,x.output]}
+function modelsTable(id,list){if(has(id))table(document.getElementById(id),["النموذج"].concat(HEAD),list.map(function(m){return [m.model].concat(nums(m))}))}
+function periodsTable(id,list){if(has(id))table(document.getElementById(id),["الفترة","الجلسات"].concat(HEAD),list.map(function(p){return [p.period,p.sessions].concat(nums(p))}))}
+var S=D.session;
+if(has("sTiles")&&S){
+  document.getElementById("sTiles").innerHTML=[["الدورات",S.turns],["إخراج",S.output],["قراءة كاش",S.cache_read],["كتابة كاش",S.cache_creation]]
+    .map(function(x){return '<div class="tile"><div class="l">'+x[0]+'</div><div class="v">'+num(x[1])+'</div></div>'}).join("");
+  document.getElementById("sKey").textContent=S.key.slice(0,8)+" · "+S.first.slice(0,16)+" ← "+S.last.slice(0,16);
+  modelsTable("sModels",S.models);
+}
+periodsTable("sWeek",D.weekly);periodsTable("sMonth",D.monthly);
+modelsTable("sWeekModels",D.week_models);modelsTable("sMonthModels",D.month_models);
+})();
+</script>
+</body>
+</html>

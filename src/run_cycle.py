@@ -13,7 +13,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import agents_cli  # noqa: E402
 import startup_cost  # noqa: E402
 import backup_db  # noqa: E402
+import import_external  # noqa: E402
 import reports  # noqa: E402
+import rollups  # noqa: E402
 import statusline_loader  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
@@ -90,9 +92,12 @@ def main(argv=None):
         t = time.time()
         con = usage_db.connect()
         st = usage_ingest.run(con)
+        ext = import_external.run_dir(con)  # جلسات سحابية مصدَّرة أرقامًا فقط إلى data/external
         sp = statusline_loader.load_spool(con)
         ag = agents_cli.run(con)  # صفر توكنات؛ كل 5 دقائق
-        new_data = bool(st["turns_new"] or st["turns_updated"] or st["turns_reassigned"] or sp.get("plans_new"))
+        new_data = bool(ext or st["turns_new"] or st["turns_updated"] or st["turns_reassigned"] or sp.get("plans_new"))
+        if new_data:
+            rollups.refresh(con)  # تجميعات الاستهلاك تتبع كل بيانات جديدة (تُعاد كتابتها كاملةً في معاملة)
         sc = startup_cost.run(con, new_data)  # كلفة بدء الجلسة + بصمات مصادر السياق؛ صفر توكنات
         sg = storage_scan.run(con)  # حجم ~/.claude كل ساعة؛ صفر توكنات
         state = load_state()

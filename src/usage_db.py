@@ -6,7 +6,7 @@ from pathlib import Path
 
 DB_PATH = Path(os.environ.get("MAESTRO_USAGE_DB", r"C:\Users\mesue\.maestro\flow_usage.sqlite3"))
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema" / "schema.sql"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 6  # 5 سُجّل في القاعدة الحيّة قبل هذا الإصدار؛ 6: usage_rollups وv_session_totals وix_turns_model_ts
 
 # بذور config_changes (قرارات المالك في 2026-10-29)؛ الوقت اليوم فقط لأن الساعة غير معروفة.
 CONFIG_SEEDS = [
