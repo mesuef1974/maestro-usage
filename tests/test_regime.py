@@ -7,7 +7,6 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import regime  # noqa: E402
-import sessions_page  # noqa: E402
 import usage_db  # noqa: E402
 
 D, W250, W1M, U = regime.DEFAULT, regime.W250, regime.W1M, regime.UNKNOWN
@@ -38,30 +37,3 @@ class TestRegime(unittest.TestCase):
         self.assertEqual(regime.classify(DAY29, DAY29, []), W250)                # جلسة وُلدت بعد أول تغيير وقبل الأخير
         self.assertEqual(regime.classify(EARLY30, BEFORE, []), U)                # جلسة أقدم: قد تكون افتراضية
         self.assertEqual(regime.classify(AFTER, DAY29, []), U)                   # بعد آخر تغيير: قد تكون العملية أقدم
-
-
-class TestPayloadRegime(unittest.TestCase):
-    def test_facts_split_by_regime_and_session_start_exposed(self):
-        tmp = tempfile.mkdtemp()
-        try:
-            con = usage_db.connect(os.path.join(tmp, "u.sqlite3"))
-            con.execute("INSERT INTO sessions(session_key, number, cwd) VALUES ('s1','0101','D:/x')")
-            for i, ts in enumerate((BEFORE, EARLY30, AFTER)):
-                con.execute("INSERT INTO usage_turns(message_id,session_key,ts,model,input_tokens,cache_creation_tokens,cache_read_tokens,"
-                            "output_tokens,thinking_tokens,is_sidechain,source_path,turn_origin) VALUES (?,?,?,?,1,0,10,1,0,0,'p.jsonl','human')",
-                            (str(i), "s1", ts, "claude-sonnet-5-5"))
-            con.execute("INSERT INTO agent_starts(session_id, started_at, number, kind, first_seen, last_seen) VALUES "
-                        "('s1','2026-10-30T04:00:00.000Z','0101','interactive','2026-10-30T13:00:00Z','2026-10-30T13:00:00Z')")
-            con.commit()
-            data = sessions_page.payload(con)
-            got = sorted((r["d"], r["x"]) for r in data["c"])
-            self.assertEqual(got, [("2026-10-20", D), ("2026-10-30", W1M), ("2026-10-30", U)])  # ردّ 01:00 قبل البدء المعروف: غير محدد
-            self.assertEqual(data["sessions"][0]["st"], "2026-10-30T04:00:00.000Z")
-            self.assertEqual(data["sessions"][0]["ns"], 1)
-            con.close()
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -10,7 +10,6 @@ import time
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import agents_cli  # noqa: E402
 import startup_cost  # noqa: E402
 import backup_db  # noqa: E402
 import import_external  # noqa: E402
@@ -94,7 +93,6 @@ def main(argv=None):
         st = usage_ingest.run(con)
         ext = import_external.run_dir(con)  # جلسات سحابية مصدَّرة أرقامًا فقط إلى data/external
         sp = statusline_loader.load_spool(con)
-        ag = agents_cli.run(con)  # صفر توكنات؛ كل 5 دقائق
         new_data = bool(ext or st["turns_new"] or st["turns_updated"] or st["turns_reassigned"] or sp.get("plans_new"))
         if new_data:
             rollups.refresh(con)  # تجميعات الاستهلاك تتبع كل بيانات جديدة (تُعاد كتابتها كاملةً في معاملة)
@@ -115,9 +113,9 @@ def main(argv=None):
             state["pending"] = state["pending"] or new_data
         save_state(state)
         con.close()
-        if new_data or ag.get("agents_new") or ag.get("agents") == "fail" or sc.get("config_changed") or sg.get("scanned") or st["files_error"] or rep != "skipped" or force:  # دورة بلا جديد ولا بناء لا تُسجَّل (كل دقيقة)
+        if new_data or sc.get("config_changed") or sg.get("scanned") or st["files_error"] or rep != "skipped" or force:  # دورة بلا جديد ولا بناء لا تُسجَّل (كل دقيقة)
             log("ingest " + json.dumps({k: st[k] for k in ("files_ingested", "turns_new", "turns_updated", "turns_reassigned", "files_error", "turns_total")})
-                + " spool " + json.dumps(sp) + " agents " + json.dumps(ag) + " startup " + json.dumps(sc) + " storage " + json.dumps(sg)
+                + " spool " + json.dumps(sp) + " startup " + json.dumps(sc) + " storage " + json.dumps(sg)
                 + " reports " + rep + " sec %.1f" % (time.time() - t))
         if backup_due():
             dest, res = backup_db.backup()

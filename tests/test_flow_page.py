@@ -29,7 +29,7 @@ class FlowPageTest(unittest.TestCase):
             self.assertIn(e["b"], ids)
             self.assertIn(e["kind"], ("plain", "auto", "dash", "bad"))
             self.assertIn(e["route"], ("", "h", "v", "vh", "hv", "hvh", "vhv"))
-        self.assertEqual(sum(1 for n in f["nodes"] if n["kind"] == "gate"), 1)  # بوّابة بشرية واحدة
+        self.assertEqual(sum(1 for n in f["nodes"] if n["kind"] == "gate"), 1)  # معاينة المالك الاختيارية: القرار البشري الوحيد
         self.assertEqual(sum(1 for n in f["nodes"] if n["kind"] == "end"), 1)
 
     def test_render_builds_page_without_db(self):

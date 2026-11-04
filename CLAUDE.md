@@ -1,12 +1,12 @@
-# maestro_usage (جلسة 0440 «التحوّل»)
+# maestro_usage (ميزان)
 
-قياس استهلاك Claude Code بالتوكن (اشتراك Max 20x: المقياس نسبة الحصة لا الدولار) في SQLite وتقارير HTML/CSV. مستقل عن الفلو: لا بطاقات ولا مضخّة ولا دفع ولا نشر. المراجع عند الحاجة (بلا استيراد @): `CHARTER.md` ثم `SPEC.md` ثم `TASKS.md`. كل عمل يُدوَّن في `LOG.md` (ماذا، لماذا، ما تحقّقتُ وما لم أتحقّق).
+قياس استهلاك Claude Code بالتوكن (اشتراك Max 20x: المقياس نسبة الحصة لا الدولار) في SQLite وتقارير HTML/CSV. الأتمتة الحالية جلسة واحدة (D-519م) والمشغّل ينفّذ؛ ميزان يقيس ويعرض فقط: لا بطاقات ولا دفع ولا نشر. المراجع عند الحاجة (بلا استيراد @): `CHARTER.md` ثم `SPEC.md` ثم `TASKS.md`. كل عمل يُدوَّن في `LOG.md` (ماذا، لماذا، ما تحقّقتُ وما لم أتحقّق).
 
 ## الأوامر
 ```bash
 python src/run_cycle.py --force   # تحميل ثم إعادة بناء كل التقارير (المهمة المجدولة كل دقيقة)
 python src/serve.py               # 127.0.0.1:8790، عملية منفصلة تُعاد بعد إضافة مسار
-python src/usage_cli.py --health  # وكذلك src/agents_cli.py --health
+python src/usage_cli.py --health
 python src/skill_usage.py         # مسح استعمال المهارات (دقائق، يدوي ← data/skill_usage.json)
 python -m pytest tests -q && ruff check src tests
 ```

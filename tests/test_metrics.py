@@ -26,7 +26,7 @@ class TestMetrics(unittest.TestCase):
         self.assertIn("quota_cost", [m["key"] for m in metrics.for_page("index.html")])
 
     def test_defs_html_escapes_meta_and_keeps_fill_slots(self):
-        h = metrics.defs_html("roles.html")
+        h = metrics.defs_html("cache.html")
         self.assertIn('data-fill="threshold"', h)
         self.assertIn('<span class="mu">توكن · usage_turns · الفترة المحدّدة</span>', h)
         self.assertNotIn("__DEFS__", h)

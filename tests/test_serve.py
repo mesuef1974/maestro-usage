@@ -21,7 +21,7 @@ class TestServe(unittest.TestCase):
             f.write("<p>لوحة</p>")
         with open(os.path.join(self.tmp, "hourly.html"), "w", encoding="utf-8") as f:
             f.write("<html>ساعة</html>")
-        with open(os.path.join(self.tmp, "roles.html"), "w", encoding="utf-8") as f:
+        with open(os.path.join(self.tmp, "cache.html"), "w", encoding="utf-8") as f:
             f.write("<p>أدوار</p>")
         os.makedirs(os.path.join(self.tmp, "assets"))
         with open(os.path.join(self.tmp, "assets", "platform.css"), "w", encoding="utf-8") as f:
@@ -63,7 +63,7 @@ class TestServe(unittest.TestCase):
         self.assertEqual(self.req("GET", "/")[0], 200)
         self.assertIn("لوحة".encode(), self.req("GET", "/index.html")[1])
         self.assertEqual(self.req("GET", "/report1_x.csv")[0], 200)
-        self.assertIn("أدوار".encode(), self.req("GET", "/roles.html")[1])
+        self.assertIn("أدوار".encode(), self.req("GET", "/cache.html")[1])
         code, css = self.req("GET", "/assets/platform.css")
         self.assertEqual(code, 200)
         self.assertIn(b"--brand", css)
