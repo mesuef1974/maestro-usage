@@ -1,6 +1,8 @@
 /* الأساس: إعادة ضبط، الطباعة العربية (بلا letter-spacing، ارتفاع سطر ≥1.6)، الروابط، التركيز، عناصر النماذج الخام. */
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@view-transition{navigation:auto}
+::view-transition-group(root){animation-duration:.12s}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);font:var(--t-base)/var(--lh-body) var(--font);font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:var(--font-head);font-weight:700;color:var(--head-ink);text-wrap:balance}
 h1{font-size:var(--t-xl);line-height:var(--lh-tight);margin:0}

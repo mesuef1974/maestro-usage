@@ -1,4 +1,4 @@
 /* خطوط الهوية مضمَّنة محليًّا (ترخيص OFL، النصوص في src/fonts): تُنسخ إلى assets/fonts ولا تُطلب من أي شبكة. */
-@font-face{font-family:"Noto Kufi Arabic";src:url(fonts/NotoKufiArabic.ttf) format("truetype");font-weight:100 900;font-display:swap}
-@font-face{font-family:"Noto Naskh Arabic";src:url(fonts/NotoNaskhArabic.ttf) format("truetype");font-weight:400 700;font-display:swap}
-@font-face{font-family:"Inter";src:url(fonts/Inter.ttf) format("truetype");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Noto Kufi Arabic";src:url(fonts/NotoKufiArabic.ttf) format("truetype");font-weight:100 900;font-display:block}
+@font-face{font-family:"Noto Naskh Arabic";src:url(fonts/NotoNaskhArabic.ttf) format("truetype");font-weight:400 700;font-display:block}
+@font-face{font-family:"Inter";src:url(fonts/Inter.ttf) format("truetype");font-weight:100 900;font-display:block}

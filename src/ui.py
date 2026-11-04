@@ -15,6 +15,7 @@ SRC = Path(__file__).resolve().parent
 CSS_DIR = SRC / "css"
 FONT_DIR = SRC / "fonts"
 ASSET_URL = "assets/platform.css"
+PRELOAD_FONTS = ("NotoNaskhArabic", "NotoKufiArabic", "Inter")  # تُحمَّل مبكرًا لئلا يرمش النص عند الانتقال بين الصفحات
 SEC_RE = re.compile(r"<!--@sec (\w+)-->(.*?)<!--@/sec-->", re.S)
 
 # علامة «ميزان»: تميمة مبنية بالبكسل (أصلية، مستوحاة من فكرة تميمة المساعد لا نسخة منها): جسم نحاسي بعينين وذراعين وأربع أرجل،
@@ -124,7 +125,8 @@ def render(page_file, data, parts):
     if page_file == "plan.html":  # رابط الصفحة إلى نفسها بلا معنى
         html_ = re.sub(r'<a href="plan.html">[^<]*</a>', "", html_)
     top, bottom = shell(page_file)
-    assets = FAVICON_LINK + '<link rel="stylesheet" href="%s?v=%s">' % (ASSET_URL, css_hash())
+    preload = "".join('<link rel="preload" as="font" type="font/ttf" crossorigin href="assets/fonts/%s.ttf">' % f for f in PRELOAD_FONTS)
+    assets = FAVICON_LINK + preload + '<link rel="stylesheet" href="%s?v=%s">' % (ASSET_URL, css_hash())
     for token, value in (("__ASSETS__", assets), ("__PAGEHEAD__", pagehead(page, page["template"], parts.get("__STAMP__", ""))), ("__SHELL_OPEN__", top), ("__SHELL_CLOSE__", bottom),
                          ("__LIB__", lib_js()), ("__DEFS__", metrics.defs_html(page_file)), *parts.items(), ("__DATA__", embed_json(data))):
         if token in ("__STATIC__", "__STAMP__", "__DEFS__") and token not in html_:
