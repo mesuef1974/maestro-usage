@@ -14,6 +14,7 @@ import backup_db  # noqa: E402
 import import_external  # noqa: E402
 import reports  # noqa: E402
 import rollups  # noqa: E402
+import server_guard  # noqa: E402
 import statusline_loader  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
@@ -60,9 +61,9 @@ def load_state():
     try:
         with open(STATE, encoding="utf-8") as f:
             s = json.load(f)
-        return {"last_build": float(s.get("last_build", 0)), "pending": bool(s.get("pending", False))}
+        return {"last_build": float(s.get("last_build", 0)), "pending": bool(s.get("pending", False)), "fp": str(s.get("fp", ""))}
     except (OSError, ValueError, TypeError):
-        return {"last_build": 0.0, "pending": False}
+        return {"last_build": 0.0, "pending": False, "fp": ""}
 
 
 def save_state(state):
@@ -99,12 +100,13 @@ def main(argv=None):
         sg = storage_scan.run(con)  # حجم ~/.claude كل ساعة؛ صفر توكنات
         state = load_state()
         rep = "skipped"
-        if should_build(state, new_data, t, force):
+        fp = server_guard.fingerprint()  # تغيّر الكود (قوالب/أنماط) يعني إعادة بناء الصفحات فورًا لا بعد 15 دقيقة
+        if should_build(state, new_data, t, force or state.get("fp") != fp):
             try:
                 t2 = time.time()
                 reports.build(con)  # يُولّد reports\index.html وملفات CSV؛ فشله لا يوقف الدورة
                 rep = "ok sec %.1f" % (time.time() - t2)
-                state = {"last_build": time.time(), "pending": False}
+                state = {"last_build": time.time(), "pending": False, "fp": fp}
             except Exception as exc:  # noqa: BLE001
                 rep = "ERROR " + type(exc).__name__
                 state["pending"] = True
@@ -147,8 +149,7 @@ def force_or_wait(t0=None, timeout=WAIT_TIMEOUT_SEC, poll=2.0):
 
 if __name__ == "__main__":
     rc = main()
-    import server_guard  # بعد الدورة وفي المدخل المجدول فقط (لا داخل الخادم نفسه): خادم بكود قديم يُعاد تشغيله
-
+    # بعد الدورة وفي المدخل المجدول فقط (لا داخل الخادم نفسه): خادم بكود قديم يُعاد تشغيله
     res = server_guard.ensure()
     if res in ("restarted", "skip"):
         log("server_guard " + res)

@@ -51,14 +51,14 @@ class TestStateFile(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_missing_or_corrupt_file_means_first_run(self):
-        self.assertEqual(run_cycle.load_state(), {"last_build": 0.0, "pending": False})
+        self.assertEqual(run_cycle.load_state(), {"last_build": 0.0, "pending": False, "fp": ""})
         with open(run_cycle.STATE, "w", encoding="utf-8") as f:
             f.write("{غير صالح")
-        self.assertEqual(run_cycle.load_state(), {"last_build": 0.0, "pending": False})
+        self.assertEqual(run_cycle.load_state(), {"last_build": 0.0, "pending": False, "fp": ""})
 
     def test_round_trip(self):
         run_cycle.save_state({"last_build": 123.5, "pending": True})
-        self.assertEqual(run_cycle.load_state(), {"last_build": 123.5, "pending": True})
+        self.assertEqual(run_cycle.load_state(), {"last_build": 123.5, "pending": True, "fp": ""})
 
 
 if __name__ == "__main__":
