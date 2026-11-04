@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+import ui  # noqa: E402
 import skill_usage  # noqa: E402
 import skills_page  # noqa: E402
 
@@ -57,13 +58,13 @@ class SkillsPageTest(unittest.TestCase):
             if r["file_chars"] is not None:
                 self.assertFalse(r["est"], r["k"])
             self.assertNotIn("size", r)
-        page = skills_page.render(p, "2026-11-01 05:00")
+        page = ui.render("skills", p, {"__STAMP__": "2026-11-01 05:00"})
         self.assertIn("≈ تقدير", page)
 
     def test_render_escapes_and_fills(self):
         p = skills_page.payload(dict(files=0, scanned_at=None, usage={}))
-        page = skills_page.render(p, "2026-10-30 12:00")
-        self.assertIn("حصر المهارات", page)
+        page = ui.render("skills", p, {"__STAMP__": "2026-10-30 12:00"})
+        self.assertIn('<h2 class="gh" id="skills">', page)
         self.assertNotIn("__DATA__", page)
         self.assertNotIn("__LIB__", page)
 

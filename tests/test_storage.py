@@ -9,6 +9,7 @@ import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+import ui  # noqa: E402
 import storage_page  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
@@ -85,7 +86,7 @@ class StorageTest(unittest.TestCase):
         self.assertEqual(kinds["foreign"]["bytes"], 5000)  # .git ليس من Claude Code
         self.assertEqual(kinds["transcripts"]["bytes"], 3900)
         self.assertEqual(len(p["history"]), 1)
-        html = storage_page.render(p, "الآن")
+        html = ui.render("storage", p, {"__STAMP__": "الآن"})
         for s in ("من أين تأتي هذه الأحجام", "تحرير المساحة بأمان", 'id="tools"', "function fb("):
             self.assertIn(s, html)
 

@@ -252,6 +252,7 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden&&aut
 function initRefresh(saveView){
   var b=$("#refresh"),msg=$("#rmsg");
   AUTO.save=saveView;
+  if(window.__refreshBound)return;window.__refreshBound=1;  // الصفحة الواحدة تضمّ عدّة نسخ من هذا الملف: زرّ التحديث يُربط مرة واحدة
   b.addEventListener("click",function(){refreshNow(msg,b)});
   age();setInterval(age,30000);autoArm();
 }
@@ -304,7 +305,7 @@ function bindFilters(){
 /* ---------- السمة (نهاري/ليلي/تلقائي): مشتركة بين كل الصفحات، تُحفظ في localStorage وتُطبَّق مبكرًا من ui_theme_head.js ---------- */
 (function(){
   var KEY="mu_theme",ORDER=["auto","light","dark"],LBL={auto:"السمة: تلقائية",light:"السمة: نهارية",dark:"السمة: ليلية"},nav=document.getElementById("themeslot")||document.querySelector(".nav");
-  if(!nav)return;
+  if(!nav||nav.querySelector(".themebtn"))return;
   function get(){try{var t=localStorage.getItem(KEY);return t==="light"||t==="dark"?t:"auto"}catch(e){return "auto"}}
   function apply(t){
     if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
@@ -318,7 +319,7 @@ function bindFilters(){
 /* ---------- التحديث الدوري: زر تحت زر السمة يدور بين إيقاف و5 و15 و30 دقيقة (مؤقّته في autoArm بعد تهيئة الصفحة) ---------- */
 (function(){
   var nav=document.getElementById("themeslot");
-  if(!nav)return;
+  if(!nav||nav.querySelector("#autobtn"))return;
   function lbl(m){return m?"التحديث الدوري: كل "+m+(m<=10?" دقائق":" دقيقة"):"التحديث الدوري: إيقاف"}
   var b=document.createElement("button");b.type="button";b.className="themebtn autobtn";b.id="autobtn";
   function apply(m){b.textContent=lbl(m);b.setAttribute("aria-label",lbl(m)+"؛ اضغط للتبديل")}

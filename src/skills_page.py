@@ -230,14 +230,6 @@ def payload(usage_data=None):
     return dict(rows=rows, gone=gone, scanned_at=ud.get("scanned_at"), files=ud.get("files"), t0=tot0, t1=tot1, cpt=CHARS_PER_TOKEN)
 
 
-def render(data, stamp, page="skills.html"):
-    return ui.render(page, data, {"__STAMP__": stamp})
-
-
-def write(path, data, stamp, page="skills.html"):
-    ui.write(path, render(data, stamp, page))
-
-
 if __name__ == "__main__":
     d = payload()
     out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reports", "skills.html")

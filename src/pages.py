@@ -23,40 +23,32 @@ ICON = {
     "flow": '<rect x="15" y="3" width="6" height="5" rx="1"/><rect x="3" y="10" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M15 5.5h-3v7h3M15 18.5h-3v-6H9"/>',
 }
 
-GROUPS = ["نظرة عامة", "الحصة والزمن", "الاستهلاك", "دراسات", "البيانات", "الحوكمة"]
-
-# (الملف، القالب، العنوان، السطر التمهيدي، المجموعة، الأيقونة، الأقسام بالترتيب)
-_ROWS = [
-    ("index.html", "dashboard.html", "نظرة عامة",
-     "توكنز كل شهر، ثم دليل صفحات المنصة.", "نظرة عامة", "home", ["month", "hub", "defs"]),
-    ("plan.html", "dashboard.html", "الحصة الأسبوعية",
-     "نسبة الحصة المستهلكة عبر الأسبوع ومقارنتها بالتوكنات المقاسة.", "الحصة والزمن", "gauge", ["limits", "filters", "h3", "defs"]),
-    ("hourly.html", "hourly.html", "الإجمالي بالساعة",
-     "منحنى التوكنات التراكمي بالساعة.", "الحصة والزمن", "clock", ["filters", "tiles", "hp", "ht", "defs"]),
-    ("cache.html", "dashboard.html", "التخزين المؤقت",
-     "حصّة القراءة من الكاش لكل نموذج وأثرها في التوكنات.", "الاستهلاك", "layers", ["filters", "tiles", "h1", "defs"]),
-    ("origins.html", "dashboard.html", "مصادر الاستهلاك",
-     "من أين يأتي الاستهلاك: الأصل والنموذج.", "الاستهلاك", "pie", ["filters", "h2", "defs"]),
-    ("skills.html", "skills.html", "حصر المهارات",
-     "كل مهارة وأمر: فائدتها واستعمالها الفعلي وتوصية الإبقاء أو الأرشفة.", "دراسات", "grid", ["tiles", "filters2", "tbl", "gone", "defs"]),
-    ("data.html", "dashboard.html", "الجداول والملفات",
-     "الجداول الساكنة والتحفظات وملفات CSV.", "البيانات", "db", ["static"]),
-    ("storage.html", "storage.html", "حجم البيانات",
-     "حجم مجلد كلود المحلي: من أين يأتي، كيف ينمو، وأدوات تحرير آمنة بالحجر.", "البيانات", "disk",
-     ["tiles", "src", "proj", "age", "growth", "tools", "defs"]),
-    ("flow.html", "flow.html", "رسم الأتمتة",
-     "مسار الطلب في المشغّل ذي الجلسة الواحدة: من الاستمارة إلى النشر، ومعاينة المالك الاختيارية.", "الحوكمة", "flow",
-     ["flow", "stages", "source"]),
-    ("runner.html", "runner.html", "المشغّل الحيّ",
-     "رحلة البطاقة في المشغّل لحظةً بلحظة: من الطابور إلى الإنتاج بلا جلسات، والنموذج يكتب الشيفرة فقط (D-519م).", "الحوكمة", "pulse",
-     ["runner"]),
-    ("summary.html", "summary.html", "ملخص الاستهلاك",
-     "آخر جلسة ونماذجها، والاستهلاك الأسبوعي والشهري.", "الاستهلاك", "gauge", ["sum", "defs"]),
-    ("request.html", "request.html", "طلب جديد",
-     "استمارة تكتب طلبًا في requests/ يلتقطه المشغّل.", "الحوكمة", "plus", ["request"]),
+# أقسام الصفحة الواحدة بالترتيب: (المعرّف، العنوان، الأيقونة). الشريط الجانبي وعناوين المجموعات يقرآن من هنا وحده.
+SECTIONS = [
+    ("quota", "الحصة الأسبوعية", "gauge"),
+    ("usage", "الاستهلاك", "layers"),
+    ("skills", "المهارات", "grid"),
+    ("data", "البيانات والتخزين", "db"),
+    ("auto", "الأتمتة", "flow"),
 ]
+SECTION_TITLE = {sid: title for sid, title, _ in SECTIONS}
 
-PAGES = [dict(file=f, template=t, title=ti, lede=le, group=g, icon=ic, sections=s) for f, t, ti, le, g, ic, s in _ROWS]
+# أجزاء الصفحة الواحدة بالترتيب: (المعرّف، القالب، الأقسام). يخدم كل قالب جزءًا واحدًا (نسخة JS واحدة) إلا «static» فهو HTML بلا نص برمجي.
+# الاسم الذي يبدأ بـ@ يولّد عنوان قسم من SECTIONS قبل ما يليه.
+_ROWS = [
+    ("main", "dashboard.html", ["@quota", "limits", "h3", "@usage", "filters", "tiles", "month", "h1", "h2"]),
+    ("hourly", "hourly.html", ["ht"]),
+    ("summary", "summary.html", ["sum"]),
+    ("skills", "skills.html", ["@skills", "tiles", "filters2", "tbl", "gone"]),
+    ("storage", "storage.html", ["@data", "tiles", "src", "proj", "age", "growth", "tools"]),
+    ("static", "dashboard.html", ["static"]),
+    ("flow", "flow.html", ["@auto", "flow", "stages", "source"]),
+    ("runner", "runner.html", ["runner"]),
+    ("request", "request.html", ["request"]),
+]
+SCRIPTLESS = {"static"}  # أجزاء تؤخذ منها الأقسام فقط (نصّها البرمجي نسخة مكرّرة من جزء آخر)
+
+PAGES = [dict(file=f, template=t, sections=s) for f, t, s in _ROWS]
 BY_FILE = {p["file"]: p for p in PAGES}
 LIVE_TEMPLATES = {"dashboard.html", "sessions.html", "hourly.html", "storage.html"}  # قوالب فيها زرّ التحديث الفوري وعمر البيانات
 
@@ -88,7 +80,7 @@ def prune_data(data, template, sections):
 
 
 # قوائم الكائنات الكبيرة المنتظمة التي تُضمَّن بصيغة أعمدة (المفاتيح مرة واحدة)؛ `unpack` في ui_common.js تعيدها.
-PACK_KEYS = {"dashboard.html": ("a", "plan"), "hourly.html": ("h", "plan")}
+PACK_KEYS = {"dashboard.html": ("a", "plan")}
 
 
 def pack_data(data, template):

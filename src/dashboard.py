@@ -66,9 +66,3 @@ def payload(con, not_applied_mark, min_turns):
                 plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, quota=quota_model.payload(con))
 
 
-def render(data, static_html, stamp, page="index.html"):
-    return ui.render(page, data, {"__STAMP__": stamp, "__STATIC__": static_html})
-
-
-def write(path, data, static_html, stamp, page="index.html"):
-    ui.write(path, render(data, static_html, stamp, page))

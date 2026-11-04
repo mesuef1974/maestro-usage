@@ -1,7 +1,7 @@
 """خادم محلي اختياري للّوحة: يقدّم reports\\index.html ويشغّل دورة تحميل فورية عند ضغط «تحديث فوري».
 
 يربط 127.0.0.1 فقط، ولا يعمل إلا ما تشغّله بيدك (ليس مهمة دائمة). التشغيل: python src\\serve.py [--port 8790]
-المسارات: GET / وكل صفحة في pages.PAGES، GET /assets/platform.css (الأسلوب المركزي)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON)،
+المسارات: GET / (الصفحة الواحدة، والصفحات القديمة تحوَّل إلى أقسامها)، GET /assets/platform.css (الأسلوب المركزي)، GET /reportN_*.csv (ملفات التقارير)، POST /refresh (دورة تحميل ثم JSON)،
 POST /storage/{scan|plan|apply|restore|purge} (أدوات حجم البيانات؛ التغييرات تتطلّب confirm=true).
 """
 import argparse
@@ -15,7 +15,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
-import pages  # noqa: E402
 import reports  # noqa: E402
 import request_page  # noqa: E402
 import run_cycle  # noqa: E402
@@ -24,7 +23,10 @@ import runner_page  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
 
-PAGES = {"/": "index.html", **{"/" + p["file"]: p["file"] for p in pages.PAGES}}  # من سجلّ الصفحات
+PAGES = {"/": "index.html", "/index.html": "index.html"}
+# روابط الصفحات القديمة تحوَّل إلى قسمها في الصفحة الواحدة (محفوظات المتصفح والإشارات المرجعية لا تنكسر)
+LEGACY = {"plan.html": "quota", "hourly.html": "usage", "cache.html": "usage", "origins.html": "usage", "summary.html": "usage", "skills.html": "skills",
+          "data.html": "data", "storage.html": "data", "flow.html": "auto", "runner.html": "auto", "request.html": "auto"}
 FONT_RE = re.compile(r"^/assets/fonts/[A-Za-z]+\.ttf$")
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
@@ -100,6 +102,12 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 except Exception as exc:  # noqa: BLE001 — مصدر خارجيّ (دفتر مجلّد المدير): لا يُسقط الخادم
                     out, code = {"ok": False, "error": str(exc)[:200]}, 503
                 return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
+            if path[1:] in LEGACY:
+                self.send_response(301)
+                self.send_header("Location", "/#" + LEGACY[path[1:]])
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             if path in PAGES:
                 name, ctype = PAGES[path], "text/html; charset=utf-8"
             elif path == "/assets/platform.css":

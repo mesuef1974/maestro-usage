@@ -4,12 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>طلب جديد</title>
-__ASSETS__
 </head>
 <body>
 __SHELL_OPEN__
-__PAGEHEAD__
-
 <!--@sec request--><section class="card rq" aria-labelledby="rqh">
   <div class="cardhead"><h2 id="rqh">طلب جديد للمشغّل</h2><span class="sub">يلتقطه المشغّل من <bdi dir="ltr">requests/</bdi> خلال 5 دقائق</span></div>
   <form id="rqForm" novalidate>
@@ -37,7 +34,7 @@ __PAGEHEAD__
     <fieldset class="rq-touch"><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div></fieldset>
     <p><button type="submit" class="rq-send" id="rqSend">إرسال الطلب</button> <span id="rqMsg" role="status" aria-live="polite"></span></p>
   </form>
-  <p class="sub">بعد الإرسال تتابعه في <a href="runner.html">المشغّل الحيّ</a>.</p>
+  <p class="sub">بعد الإرسال تتابعه في «المشغّل الحيّ» أعلاه.</p>
 </section><!--@/sec-->
 
 __SHELL_CLOSE__
@@ -54,7 +51,6 @@ fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);$("rqPrio").value="P2";fi
 function defApproval(){$("rqApproval").value=$("rqSize").value==="تصميم"?"معاينة":"مباشر";}
 defApproval();$("rqSize").addEventListener("change",defApproval);
 $("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+t+'"> '+t+'</label>';}).join("");
-var ab=$("autobtn");if(ab)ab.hidden=true;  // لا تحديث دوريّ هنا: لا شيء يُحدَّث ولا يُفقد ما كُتب
 function clearErrors(){Object.keys(ERR).forEach(function(k){$(ERR[k]).hidden=true;$(ERR[k]).textContent="";$(FIELDS[k]).removeAttribute("aria-invalid");});}
 function showError(field,msg){var id=ERR[field];if(!id)return false;$(id).textContent=msg;$(id).hidden=false;$(FIELDS[field]).setAttribute("aria-invalid","true");return true;}
 function dirty(){return ["rqTitle","rqAsk","rqAccept"].some(function(i){return $(i).value.trim();});}

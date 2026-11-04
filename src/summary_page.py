@@ -11,9 +11,3 @@ def payload(con):
     return dict(summary=rollups.payload(con))
 
 
-def render(data, stamp, page="summary.html"):
-    return ui.render(page, data, {"__STAMP__": stamp})
-
-
-def write(path, data, stamp, page="summary.html"):
-    ui.write(path, render(data, stamp, page))

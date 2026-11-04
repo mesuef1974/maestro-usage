@@ -6,6 +6,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import flow_page  # noqa: E402
 import pages  # noqa: E402
+import ui  # noqa: E402
 
 
 class FlowPageTest(unittest.TestCase):
@@ -33,13 +34,12 @@ class FlowPageTest(unittest.TestCase):
         self.assertEqual(sum(1 for n in f["nodes"] if n["kind"] == "end"), 1)
 
     def test_render_builds_page_without_db(self):
-        html = flow_page.render(flow_page.payload(), "2026-11-03 21:00")
-        for s in ('id="fw"', 'id="stages"', "function layout()", "function download()", "المصدر والتحفظات", "رسم الأتمتة · ميزان"):
+        html = ui.render("flow", flow_page.payload(), {"__STAMP__": "2026-11-03 21:00"})
+        for s in ('id="fw"', 'id="stages"', "function layout()", "function download()", "المصدر والتحفظات"):
             self.assertIn(s, html)
         self.assertNotIn("__DEFS__", html)
         self.assertNotIn('id="refresh"', html)  # صفحة ساكنة بلا زرّ التحديث الفوري
-        p = pages.BY_FILE["flow.html"]
-        self.assertEqual((p["group"], p["sections"]), ("الحوكمة", ["flow", "stages", "source"]))
+        self.assertEqual(pages.BY_FILE["flow"]["sections"], ["@auto", "flow", "stages", "source"])
 
 
 if __name__ == "__main__":

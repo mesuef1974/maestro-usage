@@ -3,30 +3,14 @@
   .app{display:block}
   .side{display:contents}
   .brand{display:none}
-  .navgroup,.toc-title,.toc .tg{display:none}
   .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:.2rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
   .nav ul{display:flex;gap:var(--sp-1);flex:none}
   .nav li{flex:none}
   .nav a{white-space:nowrap}
-  .toc{padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0;overflow:visible;flex:none;border:0}
-  .toc ol{display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
-  .toc li{flex:none}
-  .toc a{border:1px solid var(--line);border-radius:var(--r-pill);padding-inline:var(--sp-3);white-space:nowrap;background:var(--surface)}
+  .gh{margin-block-start:var(--sp-6);scroll-margin-block-start:4.5rem}
   .sidefoot{padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0}
   .themebtn{inline-size:fit-content}
-  main [id]{scroll-margin-block-start:6rem}
-}
-@media (min-width:1024px) and (max-height:840px){
-  /* شاشة قصيرة (1024×768): يُضغط الشريط الجانبي ليتّسع لـ14 صفحة والزرّين بلا تمرير داخلي */
-  .side{padding:var(--sp-2);gap:var(--sp-2)}
-  .brand{padding-block:0 var(--sp-2)}
-  .nav a{min-block-size:26px;padding-block:.1rem}
-  .navgroup{margin-block:3px 1px}
-}
-@media (min-width:1024px) and (max-height:760px){
-  /* أقصر (1280×720): روابط 26px وبلا هامش فوق عناوين المجموعات */
-  .nav a{min-block-size:24px;padding-block:.05rem}
-  .navgroup{margin-block:2px 1px}
+  main [id]{scroll-margin-block-start:4.5rem}
 }
 @media (max-width:640px){
   .brow{grid-template-columns:1fr;gap:.2rem}
@@ -37,7 +21,7 @@
   .card,.limits{padding-inline:var(--sp-4)}
 }
 @media (max-width:640px),(pointer:coarse){
-  button,.chip,.rchip,.nav a,.toc a,summary,select,.seg button,.mini,.reset,.refresh,.exp,.more{min-block-size:var(--tap)}
+  button,.chip,.rchip,.nav a,summary,select,.seg button,.mini,.reset,.refresh,.exp,.more{min-block-size:var(--tap)}
   input:not([type=checkbox]):not([type=radio]){min-block-size:var(--tap)}
   input[type=checkbox],input[type=radio]{inline-size:1.5rem;block-size:1.5rem}
   th button,td button,.mini{min-block-size:var(--tap);min-inline-size:var(--tap)}
@@ -48,7 +32,7 @@
   *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important;scroll-behavior:auto!important}
 }
 @media print{
-  .side,.nav,.toc,.sidefoot,.filterbox,.live{display:none}
+  .side,.nav,.sidefoot,.filterbox,.live{display:none}
   .app{display:block}
   .card,.limits,.tiles{break-inside:avoid;border-color:#999}
 }

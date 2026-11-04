@@ -73,9 +73,3 @@ def payload():
     return dict(flow=dict(lanes=lanes, nodes=nodes, edges=edges, kinds=kinds, source=SOURCE, cols=1 + max(n["col"] for n in nodes)))
 
 
-def render(data, stamp, page="flow.html"):
-    return ui.render(page, data, {"__STAMP__": stamp})
-
-
-def write(path, data, stamp, page="flow.html"):
-    ui.write(path, render(data, stamp, page))

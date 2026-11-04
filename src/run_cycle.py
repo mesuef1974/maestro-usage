@@ -40,9 +40,27 @@ def log(msg):
         f.write(datetime.now().strftime("%Y-%m-%dT%H:%M:%S ") + msg + "\n")
 
 
+def lock_owner_alive():
+    """هل ما زالت العملية التي كتبت القفل حيّة؟ (ويندوز: tasklist). دورة قُتلت بلا تنظيف كانت تحجز القفل 30 دقيقة فتتخطّى كل الدورات."""
+    try:
+        with open(LOCK) as f:
+            pid = int((f.read() or "0").strip())
+    except (OSError, ValueError):
+        return True
+    if os.name != "nt" or pid <= 0:
+        return True
+    try:
+        import subprocess
+        out = subprocess.run(["tasklist", "/FI", "PID eq %d" % pid, "/NH"], capture_output=True, text=True, timeout=15,
+                             stdin=subprocess.DEVNULL, creationflags=0x08000000).stdout
+        return str(pid) in out
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def acquire():
     os.makedirs(DATA, exist_ok=True)
-    if os.path.exists(LOCK) and time.time() - os.path.getmtime(LOCK) < LOCK_STALE_SECONDS:
+    if os.path.exists(LOCK) and time.time() - os.path.getmtime(LOCK) < LOCK_STALE_SECONDS and lock_owner_alive():
         return False
     with open(LOCK, "w") as f:
         f.write(str(os.getpid()))

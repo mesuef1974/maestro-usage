@@ -38,9 +38,3 @@ def payload():
     return dict(runner=dict(api="runner.json", source=str(source_path())))
 
 
-def render(data, stamp, page="runner.html"):
-    return ui.render(page, data, {"__STAMP__": stamp})
-
-
-def write(path, data, stamp, page="runner.html"):
-    ui.write(path, render(data, stamp, page))

@@ -63,12 +63,11 @@ class TestServe(unittest.TestCase):
         self.assertEqual(self.req("GET", "/")[0], 200)
         self.assertIn("لوحة".encode(), self.req("GET", "/index.html")[1])
         self.assertEqual(self.req("GET", "/report1_x.csv")[0], 200)
-        self.assertIn("أدوار".encode(), self.req("GET", "/cache.html")[1])
+        self.assertEqual(self.req("GET", "/cache.html")[0], 301)  # الصفحة القديمة تُحوَّل إلى قسمها
         code, css = self.req("GET", "/assets/platform.css")
         self.assertEqual(code, 200)
         self.assertIn(b"--brand", css)
         self.assertEqual(self.req("GET", "/assets/../secret.txt")[0], 404)
-        self.assertIn("ساعة".encode(), self.req("GET", "/hourly.html")[1])
         for bad in ("/secret.txt", "/../x", "/report1_x.csv/../secret.txt", "/%2e%2e/secret.txt"):
             self.assertEqual(self.req("GET", bad)[0], 404, bad)
 

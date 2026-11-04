@@ -4,14 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>رسم الأتمتة</title>
-__ASSETS__
 </head>
 <body>
 __SHELL_OPEN__
-__PAGEHEAD__
-
 <!--@sec flow--><section class="card" aria-labelledby="hf">
-  <div class="cardhead"><h2 id="hf">مسار البطاقة من الالتقاط إلى النشر</h2><span class="sub" id="fsum"></span></div>
+  <div class="cardhead"><h2 id="hf">مسار البطاقة من الالتقاط إلى النشر</h2><span class="sub" id="flsum"></span></div>
   <p class="note">الاتجاه من اليمين إلى اليسار. كل صفّ مسارٌ (من يقوم بالخطوة)، وكل صندوق مرحلة برقمها؛ الأخضر ما تنقله المضخّة بلا يد، والمعيّن هو البوّابة البشرية الوحيدة. مرّر أو ركّز على مرحلة لتضيء روابطها، وانقرها لتفاصيلها.</p>
   <div class="ctl" id="fctl">
     <div class="seg" role="group" aria-label="حجم الرسم"><button type="button" data-z="1" aria-pressed="true">ملائم</button><button type="button" data-z="2" aria-pressed="false">أكبر</button><button type="button" data-z="3" aria-pressed="false">أكبر كثيرًا</button></div>
@@ -25,8 +22,8 @@ __PAGEHEAD__
   <aside class="fdet" id="fdet" aria-live="polite" hidden></aside>
 </section><!--@/sec-->
 
-<!--@sec stages--><section class="card" aria-labelledby="hs">
-  <div class="cardhead"><h2 id="hs">المراحل بالترتيب</h2><span class="sub" id="ssum"></span></div>
+<!--@sec stages--><section class="card" aria-labelledby="flhs">
+  <div class="cardhead"><h2 id="flhs">المراحل بالترتيب</h2><span class="sub" id="flssum"></span></div>
   <p class="note">الرقم هو الشارة في الرسم. الأمر أو الحالة كما في المشغّل والدفتر؛ انقر الصفّ لتضيء مرحلته في الرسم.</p>
   <div class="wrap free" id="stages"></div>
 </section><!--@/sec-->
@@ -104,7 +101,7 @@ function route(e,L){
 /* ---------- الرسم ---------- */
 function draw(){
   if(!has("fw"))return;
-  var L=layout(),svg=sv("svg",{viewBox:"0 0 "+L.W+" "+L.H,role:"img","aria-labelledby":"fsum",id:"fsvg"});
+  var L=layout(),svg=sv("svg",{viewBox:"0 0 "+L.W+" "+L.H,role:"img","aria-labelledby":"flsum",id:"fsvg"});
   var defs=sv("defs");["plain","auto","dash","bad"].forEach(function(k){
     var m=sv("marker",{id:"ah-"+k,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse",class:"mk "+k});
     m.appendChild(sv("path",{d:"M0 0L10 5 0 10z"}));defs.appendChild(m)});
@@ -144,7 +141,7 @@ function draw(){
     var t=sv("text",{class:"al",x:pt.x+(o.dx||0),y:pt.y+4+(o.dy||0)},e.label);gt.appendChild(t);var bb=t.getBBox();
     gt.insertBefore(sv("rect",{class:"alb",x:bb.x-5,y:bb.y-2,width:bb.width+10,height:bb.height+4,rx:4}),t);
   });
-  $("#fsum").textContent=F.nodes.length+" مرحلة في "+F.lanes.length+" مسارات و"+F.edges.length+" رابطًا";
+  $("#flsum").textContent=F.nodes.length+" مرحلة في "+F.lanes.length+" مسارات و"+F.edges.length+" رابطًا";
   legend();wire(svg);
 }
 function wrapText(parent,txt,x,y,maxw,cls){ /* يقسم الوصف إلى سطرين إن طال */
@@ -218,7 +215,7 @@ function stages(){
     r.appendChild(mk("td",{class:"nt"},n.note));tb.appendChild(r);
   });
   t.appendChild(tb);$("#stages").replaceChildren(t);
-  $("#ssum").textContent=F.nodes.length+" مرحلة";
+  $("#flssum").textContent=F.nodes.length+" مرحلة";
   tb.addEventListener("click",function(ev){var r=ev.target.closest("tr");if(r){select(r.getAttribute("data-id"));$("#ffig").scrollIntoView({block:"nearest"})}});
   tb.addEventListener("keydown",function(ev){var r=ev.target.closest("tr");if(r&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();select(r.getAttribute("data-id"))}});
 }

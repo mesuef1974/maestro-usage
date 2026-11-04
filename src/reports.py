@@ -19,6 +19,7 @@ import flow_page  # noqa: E402
 import request_page  # noqa: E402
 import runner_page  # noqa: E402
 import summary_page  # noqa: E402
+import onepage  # noqa: E402
 import ui  # noqa: E402
 import usage_db  # noqa: E402
 
@@ -164,24 +165,17 @@ def build(con, out_dir=REPORTS_DIR):
     payloads = {"dashboard.html": dashboard.payload(con, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY),
                 "hourly.html": hourly_page.payload(con), "skills.html": skills_page.payload(),
                 "storage.html": storage_page.payload(con), "flow.html": flow_page.payload(), "runner.html": runner_page.payload(), "request.html": request_page.payload(), "summary.html": summary_page.payload(con)}
-    for p in pages.PAGES:  # صفحة لكل سطر في السجلّ؛ القالب الواحد يخدم عدّة صفحات (الأقسام في pages.py)
-        target, data = os.path.join(out_dir, p["file"]), payloads[p["template"]]
-        if p["template"] == "dashboard.html":
-            dashboard.write(target, data, static, gen, p["file"])
-        elif p["template"] == "hourly.html":
-            hourly_page.write(target, data, gen, p["file"])
-        elif p["template"] == "storage.html":
-            storage_page.write(target, data, gen, p["file"])
-        elif p["template"] == "flow.html":
-            flow_page.write(target, data, gen, p["file"])
-        elif p["template"] == "runner.html":
-            runner_page.write(target, data, gen, p["file"])
-        elif p["template"] == "summary.html":
-            summary_page.write(target, data, gen, p["file"])
-        elif p["template"] == "request.html":
-            request_page.write(target, data, gen, p["file"])
-        else:
-            skills_page.write(target, data, gen, p["file"])
+    parts = []
+    for p in pages.PAGES:  # جزء لكل سطر في السجلّ؛ تجمعها onepage في index.html
+        tokens = {"__STAMP__": gen, "__STATIC__": static}
+        parts.append((p["file"], ui.render(p["file"], payloads[p["template"]], tokens), p["file"] in pages.SCRIPTLESS))
+    ui.write(os.path.join(out_dir, "index.html"), onepage.build(parts, gen))
+    for name in os.listdir(out_dir):  # صفحات المنصة القديمة (قبل الصفحة الواحدة) تُزال كي لا تُقدَّم قديمة
+        if name.endswith(".html") and name != "index.html":
+            try:
+                os.remove(os.path.join(out_dir, name))
+            except OSError:
+                pass
     return os.path.join(out_dir, "index.html")
 
 

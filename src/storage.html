@@ -4,13 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>حجم البيانات</title>
-__ASSETS__
 </head>
 <body>
 __SHELL_OPEN__
-__PAGEHEAD__
-
-<!--@sec tiles--><section class="tiles dense" id="tiles" aria-label="ملخص الحجم"></section><!--@/sec-->
+<!--@sec tiles--><section class="tiles dense" id="sttiles" aria-label="ملخص الحجم"></section><!--@/sec-->
 
 <!--@sec src--><section class="card" aria-labelledby="hs">
   <div class="cardhead"><h2 id="hs">من أين تأتي هذه الأحجام</h2><span class="sub" id="ssum"></span></div>
@@ -25,7 +22,7 @@ __PAGEHEAD__
   <div class="cardhead"><h2 id="hp">سجلات الجلسات بحسب المشروع</h2><span class="sub" id="psum"></span></div>
   <p class="note">كل مجلد في projects مشروعٌ (أو worktree). «مجلد العمل موجود؟» من مسارات الجلسات في القاعدة: «لا» يعني أن المجلد الأصلي اختفى وسجلاته يتيمة. «محمَّل» نسبة ما قرأته هذه المنصة من سجلاته.</p>
   <div class="wrap free" id="projs"></div>
-  <button type="button" class="more" id="pmore" hidden></button>
+  <button type="button" class="more" id="stpmore" hidden></button>
 </section><!--@/sec-->
 
 <!--@sec age--><section class="card" aria-labelledby="ha">
@@ -54,11 +51,6 @@ __PAGEHEAD__
   <div class="wrap free" id="acts"></div>
 </section><!--@/sec-->
 
-<!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
-<p class="sub">آخر مسح <span id="scanat"></span> واستغرق <span id="scansec"></span> ثانية؛ يُعاد كل <span id="interval"></span> دقيقة داخل الدورة، وزر «مسح الآن» يعيده فورًا ثم يعيد بناء الصفحة.</p>
-__DEFS__
-</details><!--@/sec-->
-
 __SHELL_CLOSE__
 <script type="application/json" id="data">__DATA__</script>
 <script>
@@ -85,7 +77,7 @@ function growth(){
 function qbytes(){return D.actions.filter(function(a){return a.status==="quarantined"}).reduce(function(s,a){return s+a.disk},0)}
 
 function renderTiles(){
-  var box=$("#tiles");clear(box);var sc=D.scan;
+  var box=$("#sttiles");clear(box);var sc=D.scan;
   if(!sc){box.appendChild(tile("حجم المجلد","—","لم يُمسح بعد"));return}
   var foreign=kindOf("foreign"),g=growth();
   box.appendChild(tile("حجم "+D.root,fb(sc.bytes),num(sc.files)+" ملف · مسح "+dt(sc.ts)+" UTC"));
@@ -121,7 +113,7 @@ function renderProj(){
     {k:"sub",l:"وكلاء فرعيون",n:1,f:function(r){return fb(r.sub)}},{k:"b90p",l:"أقدم من 90 يومًا",n:1,f:function(r){return fb(r.b90p)}},{k:"newest",l:"آخر تعديل",f:function(r){return dt(r.newest)}},
     {k:"exists",l:"مجلد العمل موجود؟",f:function(r){return yn(r.exists)}},{k:"ingested",l:"محمَّل",n:1,f:function(r){return r.ingested==null?"—":pct(r.ingested,0)}}],
     shown,{k:S.psk,d:S.psd},function(k){S.psd=S.psk===k?-S.psd:-1;S.psk=k;renderProj()});
-  var more=$("#pmore");more.hidden=rows.length<=PCAP;more.textContent=S.pall?"عرض أكبر "+PCAP+" فقط":"عرض كل المشاريع ("+num(rows.length)+")";more.onclick=function(){S.pall=!S.pall;renderProj()};
+  var more=$("#stpmore");more.hidden=rows.length<=PCAP;more.textContent=S.pall?"عرض أكبر "+PCAP+" فقط":"عرض كل المشاريع ("+num(rows.length)+")";more.onclick=function(){S.pall=!S.pall;renderProj()};
 }
 
 function renderAge(){

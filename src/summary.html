@@ -4,12 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ملخص الاستهلاك</title>
-__ASSETS__
 </head>
 <body>
 __SHELL_OPEN__
-__PAGEHEAD__
-
 <!--@sec sum--><section aria-label="ملخص الاستهلاك">
   <div class="tiles" id="sTiles" aria-label="آخر جلسة"></div>
   <section class="card" aria-labelledby="hsm"><div class="cardhead"><h2 id="hsm">نماذج آخر جلسة</h2><span class="sub" id="sKey"></span></div>
@@ -17,15 +14,10 @@ __PAGEHEAD__
   <section class="card" aria-labelledby="hw"><div class="cardhead"><h2 id="hw">الأسبوعي</h2><span class="sub">يبدأ الأسبوع الاثنين (توقيت عالمي)</span></div>
     <div class="wrap free" id="sWeek"></div>
     <h3 class="mt">نماذج الأسبوع الأحدث</h3><div class="wrap free" id="sWeekModels"></div></section>
-  <section class="card" aria-labelledby="hm"><div class="cardhead"><h2 id="hm">الشهري</h2></div>
+  <section class="card" aria-labelledby="smhm"><div class="cardhead"><h2 id="smhm">الشهري</h2></div>
     <div class="wrap free" id="sMonth"></div>
     <h3 class="mt">نماذج الشهر الأحدث</h3><div class="wrap free" id="sMonthModels"></div></section>
 </section><!--@/sec-->
-
-<!--@sec defs--><details class="card defs"><summary>التعريفات والتحفظات</summary>
-<p class="sub">المصدر جدول <bdi dir="ltr">usage_rollups</bdi> المبنيّ من <bdi dir="ltr">usage_turns</bdi> عند كل بناء للتقارير. «قراءة الكاش» توكنز تُقرأ من الذاكرة المؤقتة وتُحسب بوزن أقل من الإدخال؛ المقياس نسبة الحصة لا الدولار.</p>
-__DEFS__
-</details><!--@/sec-->
 
 __SHELL_CLOSE__
 <script type="application/json" id="data">__DATA__</script>

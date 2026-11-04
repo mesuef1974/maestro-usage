@@ -1,4 +1,4 @@
-"""غلاف المنصة الموحّد وسجلّ الصفحات: كل قالب يستعمل الغلاف، والتنقّل من السجلّ، وتصفية الأقسام، والأسلوب المركزي."""
+"""غلاف الصفحة الواحدة وسجلّ أجزائها: كل قالب يستعمل الغلاف، والتنقّل من أقسام السجلّ، وتصفية الأقسام، والأسلوب المركزي."""
 import os
 import re
 import sys
@@ -22,12 +22,12 @@ class UiShellTest(unittest.TestCase):
     def test_templates_use_shell(self):
         for name in {p["template"] for p in pages.PAGES}:
             s = open(os.path.join(SRC, name), encoding="utf-8").read()
-            for token in ("__SHELL_OPEN__", "__SHELL_CLOSE__", "__PAGEHEAD__", "__ASSETS__"):
+            for token in ("__SHELL_OPEN__", "__SHELL_CLOSE__"):
                 self.assertEqual(s.count(token), 1, (name, token))
             self.assertNotIn("<style", s, name)  # الأسلوب مركزي في src/css لا في القوالب
             self.assertNotIn('<nav class="nav"', s, name)  # لا تنقّل مكتوب يدويًّا
             self.assertEqual(s.count("<!--@sec "), s.count("<!--@/sec-->"), name)
-            self.assertEqual(len(re.findall(r"<h1[ >]", s)), 0, name)  # العنوان من السجلّ عبر __PAGEHEAD__
+            self.assertEqual(len(re.findall(r"<h1[ >]", s)), 0, name)  # العنوان يكتبه onepage مرة واحدة
 
     def test_refresh_button_handles_busy_cycle(self):
         """زر التحديث: جواب busy لا يعيد تحميل صفحة قديمة، ورسالة بعد 15 ثانية تشرح الانتظار."""
@@ -38,42 +38,37 @@ class UiShellTest(unittest.TestCase):
     def test_registry_is_consistent(self):
         files = [p["file"] for p in pages.PAGES]
         self.assertEqual(len(files), len(set(files)))
-        self.assertGreaterEqual(len(files), 12)
-        self.assertIn("index.html", files)
         for p in pages.PAGES:
-            self.assertIn(p["group"], pages.GROUPS, p["file"])
-            self.assertIn(p["icon"], pages.ICON, p["file"])
-            known = set(template_sections(p["template"])) | {"hub"}
+            known = set(template_sections(p["template"]))
             for sec in p["sections"]:
-                self.assertIn(sec, known, (p["file"], sec))
+                if sec.startswith("@"):
+                    self.assertIn(sec[1:], pages.SECTION_TITLE, (p["file"], sec))
+                else:
+                    self.assertIn(sec, known, (p["file"], sec))
+        for _sid, _title, icon in pages.SECTIONS:
+            self.assertIn(icon, pages.ICON)
+        headed = [s[1:] for p in pages.PAGES for s in p["sections"] if s.startswith("@")]
+        self.assertEqual(headed, [sid for sid, _t, _i in pages.SECTIONS])  # كل قسم له عنوان واحد بالترتيب نفسه
 
-    def test_every_template_section_is_used_by_some_page(self):
+    def test_every_template_section_is_used_by_some_part(self):
         for t in {p["template"] for p in pages.PAGES}:
-            used = {s for p in pages.for_template(t) for s in p["sections"]}
+            used = {s for p in pages.PAGES if p["template"] == t for s in p["sections"]}
             self.assertEqual(set(template_sections(t)) - used, set(), t)
 
-    def test_shell_marks_current_page_only(self):
-        for p in pages.PAGES:
-            top, bottom = ui.shell(p["file"])
-            self.assertEqual(top.count('aria-current="page"'), 1, p["file"])
-            self.assertIn('href="%s" aria-current="page"' % p["file"], top)
-            self.assertIn('id="main"', top)
-            self.assertIn('class="skip" href="#main"', top)
-            self.assertNotIn('id="toc"', top)  # لا فهرس «في هذه الصفحة»
-            self.assertEqual(bottom, "</main></div>")
+    def test_shell_nav_links_every_section_once(self):
+        top, bottom = ui.shell()
+        hrefs = re.findall(r'<li><a href="#([^"]+)"', top)
+        self.assertEqual(hrefs, [sid for sid, _t, _i in pages.SECTIONS])
+        self.assertIn('id="main"', top)
+        self.assertIn('class="skip" href="#main"', top)
+        self.assertEqual(bottom, "</main></div>")
 
-    def test_nav_lists_every_page_once(self):
-        top, _ = ui.shell("index.html")
-        hrefs = re.findall(r'<li><a href="([^"]+)"', top)
-        self.assertEqual(sorted(hrefs), sorted(p["file"] for p in pages.PAGES))
-
-    def test_render_keeps_only_page_sections(self):
-        page = skills_page.render(skills_page.payload(dict(files=0, scanned_at=None, usage={})), "2026-10-30 12:00", "skills.html")
+    def test_render_keeps_only_part_sections(self):
+        page = ui.render("skills", skills_page.payload(dict(files=0, scanned_at=None, usage={})), {"__STAMP__": "2026-10-30 12:00"})
         self.assertNotIn("__SHELL_", page)
         self.assertNotIn("<!--@", page)
-        self.assertEqual(page.count("<h1>"), 1)
+        self.assertIn('<h2 class="gh" id="skills">', page)
         self.assertIn('<main id="main"', page)
-        self.assertIn('href="assets/platform.css?v=%s"' % ui.css_hash(), page)
 
     def test_central_css_build(self):
         with tempfile.TemporaryDirectory() as d:
@@ -109,12 +104,13 @@ class TestPayloadSlimming(unittest.TestCase):
 
     def test_pack_data_columnar_roundtrip_shape(self):
         rows = [{"s": i, "d": "2026-10-01", "t": i * 2} for i in range(30)]
-        got = pages.pack_data({"h": rows, "x": [1]}, "hourly.html")
-        self.assertEqual(got["h"]["$cols"], ["s", "d", "t"])
-        self.assertEqual(got["h"]["rows"][3], [3, "2026-10-01", 6])
+        got = pages.pack_data({"a": rows, "x": [1]}, "dashboard.html")
+        self.assertEqual(got["a"]["$cols"], ["s", "d", "t"])
+        self.assertEqual(got["a"]["rows"][3], [3, "2026-10-01", 6])
         self.assertEqual(got["x"], [1])
         ragged = rows[:-1] + [{"s": 1}]
-        self.assertEqual(pages.pack_data({"h": ragged}, "hourly.html")["h"], ragged)  # صفوف غير منتظمة لا تُعبّأ
+        self.assertEqual(pages.pack_data({"a": ragged}, "dashboard.html")["a"], ragged)  # صفوف غير منتظمة لا تُعبّأ
+
 
 if __name__ == "__main__":
     unittest.main()

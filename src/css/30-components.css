@@ -84,3 +84,11 @@
 #tip .r b{font-weight:700;color:var(--ink);margin-inline-start:auto;padding-inline-start:var(--sp-3)}
 #tip .k{inline-size:10px;block-size:2px;display:inline-block;flex:none}
 #tip .nm{color:var(--ink2)}
+
+/* طيّ البطاقات (fold.js): الرأس يبقى ظاهرًا، وما عداه يختفي */
+.card>.cardhead{position:relative;align-items:center}
+.foldbtn{margin-inline-start:auto;flex:none;inline-size:var(--tap);block-size:var(--tap);display:grid;place-items:center;border:0;background:transparent;color:var(--ink2);border-radius:var(--r-sm);cursor:pointer}
+.foldbtn:hover{background:var(--hover);color:var(--ink)}
+.foldbtn svg{inline-size:20px;block-size:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.card.folded>.foldbtn svg,.card.folded>.cardhead>.foldbtn svg{transform:rotate(-90deg)}
+.card.folded>:not(.cardhead){display:none}

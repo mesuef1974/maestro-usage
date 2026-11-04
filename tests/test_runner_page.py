@@ -9,20 +9,19 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pages  # noqa: E402
+import ui  # noqa: E402
 import runner_page  # noqa: E402
 import serve  # noqa: E402
 
 
 class RunnerPageTest(unittest.TestCase):
-    def test_registered_right_after_flow_in_governance(self):
+    def test_registered_right_after_flow(self):
         files = [p["file"] for p in pages.PAGES]
-        self.assertEqual(files[files.index("flow.html") + 1], "runner.html")
-        self.assertEqual(pages.BY_FILE["runner.html"]["group"], "الحوكمة")
+        self.assertEqual(files[files.index("flow") + 1], "runner")
 
     def test_render_uses_shell_and_live_api(self):
-        page = runner_page.render(runner_page.payload(), "2026-11-04 15:00")
-        self.assertIn('href="runner.html" aria-current="page"', page)
-        for token in ("__SHELL_", "__DATA__", "__LIB__", "__PAGEHEAD__", "<!--@"):
+        page = ui.render("runner", runner_page.payload(), {"__STAMP__": "2026-11-04 15:00"})
+        for token in ("__SHELL_", "__DATA__", "__LIB__", "<!--@"):
             self.assertNotIn(token, page)
         self.assertIn("fetch(API", page)
         self.assertIn('"api":"runner.json"', page)

@@ -133,9 +133,3 @@ def payload():
     return dict(request=dict(api="request", sizes=list(SIZES), priorities=list(PRIORITIES), touches=list(TOUCHES), approvals=list(APPROVALS)))
 
 
-def render(data, stamp, page="request.html"):
-    return ui.render(page, data, {"__STAMP__": stamp})
-
-
-def write(path, data, stamp, page="request.html"):
-    ui.write(path, render(data, stamp, page))

@@ -8,9 +8,17 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-import dashboard  # noqa: E402
+import dashboard
+import ui  # noqa: E402
 import reports  # noqa: E402
 import usage_db  # noqa: E402
+
+
+
+def _render(data, static, stamp, page="main"):
+    """جزء الصفحة الواحدة كما تبنيه ui.render؛ «data.html» القديم صار الجزء الساكن."""
+    part = "static" if page == "data.html" else "main"
+    return ui.render(part, data, {"__STAMP__": stamp, "__STATIC__": static})
 
 
 class TestDashboard(unittest.TestCase):
@@ -67,17 +75,17 @@ class TestDashboard(unittest.TestCase):
 
     def test_render_embeds_valid_json_and_escapes(self):
         self.data["models"][0] = "</script><b>"
-        page = dashboard.render(self.data, "<p>ساكن</p>", "الآن", "cache.html")  # صفحة فيها قسم الجلسات فلا تُقلَّم حمولتها
+        page = _render(self.data, "<p>ساكن</p>", "الآن", "cache.html")  # صفحة فيها قسم الجلسات فلا تُقلَّم حمولتها
         m = re.search(r'<script type="application/json" id="data">(.*?)</script>', page, re.S)
         got = json.loads(m.group(1))
         self.assertEqual(got["models"][0], "</script><b>")
         self.assertNotIn("__DATA__", page)
         self.assertNotIn("__STATIC__", page)
-        self.assertIn("ساكن", dashboard.render(self.data, "<p>ساكن</p>", "الآن", "data.html"))  # الجزء الساكن في صفحة البيانات فقط
+        self.assertIn("ساكن", _render(self.data, "<p>ساكن</p>", "الآن", "data.html"))  # الجزء الساكن في صفحة البيانات فقط
 
     def test_index_has_month_bars_with_needed_data(self):
         """الصفحة الرئيسية فيها قسم توكنز كل شهر وحمولتها تحمل المصفوفة a التي يجمّع منها JS الأشهر."""
-        page = dashboard.render(self.data, "", "الآن", "index.html")
+        page = _render(self.data, "", "الآن", "index.html")
         self.assertIn('id="cm"', page)
         self.assertIn("function renderMonth", page)
         m = re.search(r'<script type="application/json" id="data">(.*?)</script>', page, re.S)
@@ -85,7 +93,7 @@ class TestDashboard(unittest.TestCase):
 
     def test_template_uses_main_thread_and_live_forecast(self):
         """القالب يقرأ الحقول الرئيسة في المؤشرات والجلسات والضغط، ويُعيد حساب المتوقَّع من النسبة الحيّة، ويعرض زمن آخر عيّنة بدء."""
-        page = dashboard.render(self.data, "", "الآن", "plan.html")
+        page = _render(self.data, "", "الآن", "plan.html")
         for s in ('sum(rows,"mt")', "(الخيط الرئيس)", "function quotaForecast", 'quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now)',
                   'id="lalert"', "function quotaAlert", "تحذير: بمعدل الحرق الحالي",
                   "RATE_SRC[f.rate_src]", "(جزئي من ", "، ناقص)", "حدّ أدنى 10%"):
@@ -93,11 +101,10 @@ class TestDashboard(unittest.TestCase):
 
 
     def test_plan_snapshot_table_is_capped(self):
-        """صفحة الحصة تسقف جدول اللقطات عند 50 صفًّا بزر يعرضها كلها؛ القسم غائب عن الرئيسية."""
-        page = dashboard.render(self.data, "", "الآن", "plan.html")
+        """قسم الحصة يسقف جدول اللقطات بزر يعرضها كلها."""
+        page = _render(self.data, "", "الآن", "plan.html")
         for s in ('id="pmore"', "var PLAN_CAP=30", "rows.slice(0,PLAN_CAP)", "عرض كل اللقطات ("):
             self.assertIn(s, page)
-        self.assertNotIn('id="pmore"', dashboard.render(self.data, "", "الآن", "cache.html"))
         self.assertNotIn("حدّ أدنى 20%", page)
 
     def test_plan_payload_carries_fable(self):
@@ -107,7 +114,7 @@ class TestDashboard(unittest.TestCase):
         data = dashboard.payload(self.con, reports.NOT_APPLIED_MARK, 50)
         last = data["plan"][-1]
         self.assertEqual((last["fa"], last["far"]), (2.0, "2026-11-04T17:00:00Z"))
-        page = dashboard.render(data, "", "الآن", "plan.html")
+        page = _render(data, "", "الآن", "plan.html")
         self.assertIn('id="lrf"', page)
 
     def test_payload_has_only_numbers_and_known_names(self):

@@ -63,9 +63,7 @@ class TestReports(unittest.TestCase):
         self.assertTrue(all('href="data:image/svg+xml' in ln or 'href="assets/platform.css?v=' in ln or 'href="assets/fonts/' in ln for ln in links), links)
         for bad in ("@import", "XMLHttpRequest", "src=\"http", "<script src"):
             self.assertNotIn(bad, html)
-        # الطلب الوحيد المسموح: زر التحديث الفوري نحو الخادم المحلي بمسار نسبي
-        # الطلبات الوحيدة مسارات نسبية إلى الخادم المحلي نفسه: التحديث الفوري والقراءة الحيّة للقطات الحصة
-        self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"') + html.count('fetch("/plan.json"'))
+        self.assertNotIn('fetch("http', html)  # كل الطلبات مسارات نسبية إلى الخادم المحلي
 
 
 if __name__ == "__main__":

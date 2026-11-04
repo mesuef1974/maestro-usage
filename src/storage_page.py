@@ -45,9 +45,3 @@ def payload(con):
                 interval_min=storage_scan.SCAN_INTERVAL_SEC // 60)
 
 
-def render(data, stamp, page="storage.html"):
-    return ui.render(page, data, {"__STAMP__": stamp})
-
-
-def write(path, data, stamp, page="storage.html"):
-    ui.write(path, render(data, stamp, page))
