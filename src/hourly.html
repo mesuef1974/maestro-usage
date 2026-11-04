@@ -21,8 +21,6 @@ __PAGEHEAD__
   <label class="dates">من <input type="date" id="from"></label>
   <label class="dates">إلى <input type="date" id="to"></label>
   <div class="chips" id="chips" role="group" aria-label="النماذج"></div>
-  <input type="search" class="search" id="q" placeholder="بحث في الأدوار (مثل 05)" aria-label="بحث في الأدوار">
-  <label class="tog"><input type="checkbox" id="unnum"> إظهار غير المرقّمة (فئات بحسب المجلد)</label>
   <button type="button" class="reset" id="reset">إعادة الضبط</button>
 </div>
 </details><!--@/sec-->
@@ -39,26 +37,18 @@ __PAGEHEAD__
 </section><!--@/sec-->
 
 <!--@sec hp--><section class="card" aria-labelledby="hp">
-  <div class="cardhead"><h2 id="hp">الأدوار والعرض</h2><span class="sub" id="psum"></span></div>
+  <div class="cardhead"><h2 id="hp">العرض</h2><span class="sub" id="psum"></span></div>
   <div class="ctl">
     <div class="seg" id="mode" role="group" aria-label="نوع التوكنات"><button type="button" data-v="cum">تراكمي</button><button type="button" data-v="per">لكل فترة</button></div>
-    <div class="seg" id="scale" role="group" aria-label="المقياس"><button type="button" data-v="abs">مقياس موحّد</button><button type="button" data-v="rel">نسبي لكل دور</button></div>
+    <div class="seg" id="scale" role="group" aria-label="المقياس"><button type="button" data-v="abs">مقياس موحّد</button></div>
     <div class="seg" id="bk" role="group" aria-label="التجميع"><button type="button" data-v="h">ساعة</button><button type="button" data-v="d">يوم</button></div>
     <span class="sub" id="wdesc"></span>
-    <label class="tog"><input type="checkbox" id="idle"> تظليل الفترات الخاملة</label>
     <button type="button" class="exp" id="csv">تصدير CSV</button>
   </div>
-  <div class="ctl">
-    <button type="button" class="mini" data-top="4">الأثقل 4</button>
-    <button type="button" class="mini" data-top="6">الأثقل 6</button>
-    <button type="button" class="mini" data-top="8">الأثقل 8</button>
-    <span class="sub" id="pmsg" role="status"></span>
-  </div>
-  <div class="rchips" id="rchips" role="group" aria-label="اختيار الأدوار (حتى ثمانية)"></div>
 </section><!--@/sec-->
 
 <!--@sec ht--><section class="card" aria-labelledby="ht">
-  <div class="cardhead"><h2 id="ht">الإجمالي: توكنات كل دور</h2><span class="sub" id="tsum"></span></div>
+  <div class="cardhead"><h2 id="ht">الإجمالي: توكنات الساعة</h2><span class="sub" id="tsum"></span></div>
   <div class="legend" id="tleg"></div>
   <div class="chart" id="tchart"></div>
 </section><!--@/sec-->
@@ -319,12 +309,7 @@ function renderTiles(){
     if(P.cut)cavg=ck.length?ck.reduce(function(a,k){return a+chk[k]},0)/ck.length:null}
   var nh=Math.floor(Date.now()/H1),mk_=TILE.maxk?TILE.maxk.split(":"):null,who=mk_?D.roles[Number(mk_[0])]+" · "+hourLabel(Number(mk_[1]))+" UTC"+(Number(mk_[1])===nh?" (ناقص)":""):"—";
   tilesInto($("#tiles"),[
-    ["إجمالي التوكنات",compact(TILE.tokens),(S.unnum?"كل الأدوار والفئات الظاهرة":"أدوار المشروع فقط")+" في الفترة",deltaText(ctok,ptok,P)],
-    ["الأدوار النشطة",num(TILE.roles),"من "+num(visibleRoles())+(S.unnum?" دورًا وفئة":" دورًا من أدوار المشروع")],
-    ["متوسط الضغط",TILE.avg==null?"—":pct(TILE.avg,1),"متوسط أعلى سياق ساعي في "+num(TILE.n)+" ساعة-دور نشطة",deltaPts(cavg,pavg,P)],
-    ["أعلى ضغط",TILE.n?pct(TILE.max,1):"—",who],
-    ["ساعات-أدوار فوق "+D.alert+"%",num(TILE.over),(TILE.n?pct(TILE.over/TILE.n,1)+" من الساعات النشطة":"—")+" · نسبة من النافذة الفعلية"],
-    ["هبوط السياق (تقدير)",num(ALL.drops),"ضغط أو مسح مُستدَل عليه · منها "+num(ALL.didle)+" بعد خمول"]]);
+    ["إجمالي التوكنات",compact(TILE.tokens),"كل الردود في الفترة",deltaText(ctok,ptok,P)]]);
 }
 function dq(ms){return new Date(ms+3*H1).toISOString().slice(0,16).replace("T"," ")}
 function renderQuota(){
