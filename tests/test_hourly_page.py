@@ -68,7 +68,7 @@ class TestHourlyPage(unittest.TestCase):
         self.assertEqual(html.count("fetch("), html.count('fetch("/refresh"') + html.count('fetch("/plan.json"'))
         links = re.findall(r"<link[^>]*>", html)  # كلها محلية: أيقونة data: وتحميل مسبق للخطوط الثلاثة والأسلوب المركزي من assets/
         self.assertEqual(len(links), 5, links)
-        self.assertTrue(all('href="data:image/svg+xml' in ln or 'href="assets/platform.css?v=' in ln for ln in links), links)
+        self.assertTrue(all('href="data:image/svg+xml' in ln or 'href="assets/platform.css?v=' in ln or 'href="assets/fonts/' in ln for ln in links), links)
         for bad in ("@import", "XMLHttpRequest", "<script src"):
             self.assertNotIn(bad, html)
         self.assertIn("themebtn", html)  # زر السمة المركزي
