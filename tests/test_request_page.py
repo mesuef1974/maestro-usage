@@ -128,3 +128,16 @@ def test_post_field_error_returns_arabic_message_and_field(server):
 def test_post_rate_limit_is_429(server):
     codes = [_post(server, OK)[0] for _ in range(request_page.RATE_PER_HOUR + 1)]
     assert codes[:-1] == [200] * request_page.RATE_PER_HOUR and codes[-1] == 429
+
+
+def test_approval_defaults_by_size_and_is_written(reqdir):
+    t = lambda p: (reqdir / request_page.submit(p)["file"]).read_text(encoding="utf-8")  # noqa: E731
+    assert "الاعتماد: مباشر" in t(OK)
+    assert "الاعتماد: معاينة" in t({**OK, "size": "تصميم"})
+    assert "الاعتماد: معاينة" in t({**OK, "approval": "معاينة"})
+
+
+def test_invalid_approval_is_rejected(reqdir):
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit({**OK, "approval": "فوري"})
+    assert e.value.field == "approval"

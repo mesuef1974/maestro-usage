@@ -16,6 +16,7 @@ import ui  # noqa: E402
 SIZES = ("صغير", "متوسط", "كبير", "تصميم")
 PRIORITIES = ("P1", "P2", "P3")
 TOUCHES = ("الصلاحيات", "الأدوار", "الأمن", "الهجرات")
+APPROVALS = ("مباشر", "معاينة")  # D-528م: نشر مباشر بعد البوّابة، أو معاينة على 8500 قبل الدمج
 MAX = {"title": 120, "ask": 1500, "accept": 1500}
 MAX_BODY = 20000  # سقف جسم JSON بالبايت؛ فوقه 413 قبل قراءة الجسم
 RATE_PER_HOUR = 20
@@ -45,7 +46,7 @@ class ValidationError(ValueError):
         self.field = field
 
 
-ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches"})
+ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval"})
 _PII = None
 
 
@@ -83,6 +84,9 @@ def validate(params):
     lines = [_clean(x, MAX["accept"]) for x in (raw.splitlines() if isinstance(raw, str) else raw)]
     lines = [x for x in lines if x]
     size, prio = str(params.get("size") or ""), str(params.get("priority") or "")
+    approval = str(params.get("approval") or ("معاينة" if size == "تصميم" else "مباشر"))
+    if approval not in APPROVALS:
+        raise ValidationError("قيمة «الاعتماد» غير صالحة", "approval")
     touches = params.get("touches") or []
     if not isinstance(touches, list) or any(t not in TOUCHES for t in touches):
         raise ValidationError("قيمة «يمسّ» غير صالحة", "touches")
@@ -97,7 +101,7 @@ def validate(params):
     for field, text in (("title", title), ("ask", ask), ("accept", " ".join(lines))):
         if pii.search(text):
             raise ValidationError("يبدو في الحقل رقم هوية أو بريد؛ تُمنع البيانات الشخصية", field)
-    return dict(title=title, ask=ask, accept=" ؛ ".join(lines), size=size, priority=prio, touches=touches)
+    return dict(title=title, ask=ask, accept=" ؛ ".join(lines), size=size, priority=prio, touches=touches, approval=approval)
 
 
 def submit(params, now=None):
@@ -114,6 +118,7 @@ def submit(params, now=None):
         path = d / ("web-%s-%d.md" % (stamp, n))
     body = "العنوان: %s\nالمطلوب: %s\nمعايير القبول: %s\nالوسم: %s\nالأولوية: %s\n" % (
         fields["title"], fields["ask"], fields["accept"], fields["size"], fields["priority"])
+    body += "الاعتماد: %s\n" % fields["approval"]
     if fields["touches"]:
         body += "يمسّ: %s\n" % "، ".join(fields["touches"])
     digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
@@ -125,7 +130,7 @@ def submit(params, now=None):
 
 
 def payload():
-    return dict(request=dict(api="request", sizes=list(SIZES), priorities=list(PRIORITIES), touches=list(TOUCHES)))
+    return dict(request=dict(api="request", sizes=list(SIZES), priorities=list(PRIORITIES), touches=list(TOUCHES), approvals=list(APPROVALS)))
 
 
 def render(data, stamp, page="request.html"):

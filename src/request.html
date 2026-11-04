@@ -30,6 +30,9 @@ __PAGEHEAD__
       <div class="rq-field"><label for="rqPrio">الأولوية</label>
         <select id="rqPrio" name="priority" required aria-describedby="rqPrioErr"></select>
         <p class="rq-err" id="rqPrioErr" role="alert" hidden></p></div>
+      <div class="rq-field"><label for="rqApproval">الاعتماد</label>
+        <select id="rqApproval" name="approval" aria-describedby="rqApprovalHint"></select>
+        <p class="sub" id="rqApprovalHint">مباشر: يُنشر بعد البوّابة. معاينة: تعاينه على 8500 قبل الدمج.</p></div>
     </div>
     <fieldset class="rq-touch"><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div></fieldset>
     <p><button type="submit" class="rq-send" id="rqSend">إرسال الطلب</button> <span id="rqMsg" role="status" aria-live="polite"></span></p>
@@ -47,7 +50,9 @@ var FIELDS={title:"rqTitle",ask:"rqAsk",accept:"rqAccept",size:"rqSize",priority
 var ERR={title:"rqTitleErr",ask:"rqAskErr",accept:"rqAcceptErr",size:"rqSizeErr",priority:"rqPrioErr"};
 function $(i){return document.getElementById(i);}
 function fill(id,items){$(id).innerHTML='<option value="">اختر…</option>'+items.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join("");}
-fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);
+fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);$("rqPrio").value="P2";fill("rqApproval",cfg.approvals);
+function defApproval(){$("rqApproval").value=$("rqSize").value==="تصميم"?"معاينة":"مباشر";}
+defApproval();$("rqSize").addEventListener("change",defApproval);
 $("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+t+'"> '+t+'</label>';}).join("");
 var ab=$("autobtn");if(ab)ab.hidden=true;  // لا تحديث دوريّ هنا: لا شيء يُحدَّث ولا يُفقد ما كُتب
 function clearErrors(){Object.keys(ERR).forEach(function(k){$(ERR[k]).hidden=true;$(ERR[k]).textContent="";$(FIELDS[k]).removeAttribute("aria-invalid");});}
@@ -66,7 +71,7 @@ function localCheck(b){
 }
 $("rqForm").addEventListener("submit",function(e){
   e.preventDefault();clearErrors();$("rqMsg").textContent="";
-  var body={title:$("rqTitle").value,ask:$("rqAsk").value,accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,
+  var body={title:$("rqTitle").value,ask:$("rqAsk").value,accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,approval:$("rqApproval").value,
     touches:[].slice.call(document.querySelectorAll("#rqTouches input:checked")).map(function(c){return c.value;})};
   var errs=localCheck(body);
   if(errs.length){errs.forEach(function(x){showError(x[0],x[1]);});$(FIELDS[errs[0][0]]).focus();return;}
@@ -80,7 +85,7 @@ $("rqForm").addEventListener("submit",function(e){
     .then(function(x){
       if(x.ok){
         $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+"). سيلتقطه المشغّل قريبًا.";
-        $("rqForm").reset();$("rqAskCount").textContent="0 / 1500";
+        $("rqForm").reset();$("rqPrio").value="P2";defApproval();$("rqAskCount").textContent="0 / 1500";
       }else if(x.j.field&&showError(x.j.field,x.j.error)){$(FIELDS[x.j.field]).focus();}
       else{$("rqMsg").textContent=x.j.error||"تعذّر الإرسال";}
     }).catch(function(){$("rqMsg").textContent="تعذّر الاتصال بالخادم";})
