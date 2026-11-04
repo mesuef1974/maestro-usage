@@ -17,6 +17,8 @@ import sessions_page  # noqa: E402
 import skills_page  # noqa: E402
 import storage_page  # noqa: E402
 import flow_page  # noqa: E402
+import request_page  # noqa: E402
+import runner_page  # noqa: E402
 import ui  # noqa: E402
 import usage_db  # noqa: E402
 
@@ -294,7 +296,7 @@ def build(con, out_dir=REPORTS_DIR):
     static = "".join(parts)
     payloads = {"dashboard.html": dashboard.payload(con, session_label, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY),
                 "sessions.html": sessions_page.payload(con), "hourly.html": hourly_page.payload(con), "skills.html": skills_page.payload(),
-                "storage.html": storage_page.payload(con), "flow.html": flow_page.payload()}
+                "storage.html": storage_page.payload(con), "flow.html": flow_page.payload(), "runner.html": runner_page.payload(), "request.html": request_page.payload()}
     for p in pages.PAGES:  # صفحة لكل سطر في السجلّ؛ القالب الواحد يخدم عدّة صفحات (الأقسام في pages.py)
         target, data = os.path.join(out_dir, p["file"]), payloads[p["template"]]
         if p["template"] == "dashboard.html":
@@ -307,6 +309,10 @@ def build(con, out_dir=REPORTS_DIR):
             storage_page.write(target, data, gen, p["file"])
         elif p["template"] == "flow.html":
             flow_page.write(target, data, gen, p["file"])
+        elif p["template"] == "runner.html":
+            runner_page.write(target, data, gen, p["file"])
+        elif p["template"] == "request.html":
+            request_page.write(target, data, gen, p["file"])
         else:
             skills_page.write(target, data, gen, p["file"])
     return os.path.join(out_dir, "index.html")

@@ -3,6 +3,7 @@
 
 # أيقونات الشريط الجانبي (مسارات داخل svg 24x24، خطّ لا تعبئة)
 ICON = {
+    "plus": '<path d="M12 5v14M5 12h14"/>',
     "home": '<path d="M3 11l9-8 9 8M5 10v10h14V10"/>',
     "gauge": '<path d="M4 16a8 8 0 1 1 16 0M12 16l4-5"/>',
     "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -18,6 +19,7 @@ ICON = {
     "grid": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     "db": '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
     "disk": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18M7 17h.01M7 8h.01"/>',
+    "pulse": '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
     "flow": '<rect x="15" y="3" width="6" height="5" rx="1"/><rect x="3" y="10" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M15 5.5h-3v7h3M15 18.5h-3v-6H9"/>',
 }
 
@@ -59,6 +61,11 @@ _ROWS = [
     ("flow.html", "flow.html", "رسم الأتمتة",
      "مسار البطاقة من الالتقاط إلى النشر: المسارات والمراحل والبوّابة البشرية وما تنقله المضخّة آليًّا.", "الحوكمة", "flow",
      ["flow", "stages", "source"]),
+    ("runner.html", "runner.html", "المشغّل الحيّ",
+     "رحلة البطاقة في المشغّل لحظةً بلحظة: من الطابور إلى الإنتاج بلا جلسات، والنموذج يكتب الشيفرة فقط (D-519م).", "الحوكمة", "pulse",
+     ["runner"]),
+    ("request.html", "request.html", "طلب جديد",
+     "نموذج يكتب طلباً في requests/ يلتقطه المشغّل بلا نموذج ولا محادثة (D-519م).", "الحوكمة", "plus", ["request"]),
 ]
 
 PAGES = [dict(file=f, template=t, title=ti, lede=le, group=g, icon=ic, sections=s) for f, t, ti, le, g, ic, s in _ROWS]

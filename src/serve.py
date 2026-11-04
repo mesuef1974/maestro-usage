@@ -17,7 +17,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
 import pages  # noqa: E402
 import reports  # noqa: E402
+import request_page  # noqa: E402
 import run_cycle  # noqa: E402
+import runner_page  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
 
@@ -50,11 +52,12 @@ def live_storage(op, params):
         con.close()
 
 
-def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_fn=None):
+def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_fn=None, runner_fn=None):
     reports_dir = reports_dir or reports.REPORTS_DIR
     storage_fn = storage_fn or live_storage
     refresh_fn = refresh_fn or run_cycle.force_or_wait  # زر التحديث يفرض البناء وينتظر دورة مجدولة إن كانت تعمل؛ يأخذ لحظة الطلب
     plan_fn = plan_fn or live_plan
+    runner_fn = runner_fn or runner_page.snapshot  # «المشغّل الحيّ»: لقطة الدفتر عند كلّ طلب (تقرأ فقط)
     lock = threading.Lock()  # دورة واحدة في وقت واحد
 
     class Handler(BaseHTTPRequestHandler):
@@ -87,6 +90,14 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
                 body = json.dumps(plan_fn(), ensure_ascii=False).encode("utf-8")
                 return self._send(200, body, "application/json")
+            if path == "/runner.json":
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                try:
+                    out, code = runner_fn(), 200
+                except Exception as exc:  # noqa: BLE001 — مصدر خارجيّ (دفتر مجلّد المدير): لا يُسقط الخادم
+                    out, code = {"ok": False, "error": str(exc)[:200]}, 503
+                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
             if path in PAGES:
                 name, ctype = PAGES[path], "text/html; charset=utf-8"
             elif path == "/assets/platform.css":
@@ -107,6 +118,18 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
 
         def do_POST(self):
             path = self.path.split("?", 1)[0]
+            if path == "/request":  # نموذج «طلب جديد»: يكتب ملفاً في requests/ فقط، بلا نموذج
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                try:
+                    n = int(self.headers.get("Content-Length") or 0)
+                    params = json.loads(self.rfile.read(min(n, 20000)).decode("utf-8") or "{}") if n else {}
+                    if not isinstance(params, dict):
+                        raise ValueError("جسم غير صالح")
+                    out, code = request_page.submit(params), 200
+                except (ValueError, OSError) as exc:
+                    out, code = {"ok": False, "error": str(exc)[:200]}, 400
+                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
             m = STORAGE_RE.match(path)
             if path != "/refresh" and not m:
                 return self._send(404, b"not found", "text/plain; charset=utf-8")

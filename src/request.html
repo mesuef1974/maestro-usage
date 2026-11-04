@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>طلب جديد</title>
+__ASSETS__
+</head>
+<body>
+__SHELL_OPEN__
+__PAGEHEAD__
+
+<!--@sec request--><section class="card" aria-labelledby="rqh">
+  <div class="cardhead"><h2 id="rqh">طلب جديد للمشغّل</h2><span class="sub">يُكتب ملفًّا في requests/ ويلتقطه المشغّل بصفر توكنز</span></div>
+  <form id="rqForm" novalidate>
+    <p><label>العنوان<br><input id="rqTitle" name="title" maxlength="120" required style="width:100%"></label></p>
+    <p><label>المطلوب<br><textarea id="rqAsk" name="ask" rows="3" maxlength="1500" required style="width:100%"></textarea></label></p>
+    <p><label>معايير القبول (سطر لكل معيار)<br><textarea id="rqAccept" name="accept" rows="4" maxlength="1500" required style="width:100%"></textarea></label></p>
+    <p>
+      <label>الوسم <select id="rqSize" name="size"></select></label>
+      <label>الأولوية <select id="rqPrio" name="priority"></select></label>
+    </p>
+    <fieldset><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div></fieldset>
+    <p><button type="submit" id="rqSend">إرسال الطلب</button> <span id="rqMsg" role="status"></span></p>
+  </form>
+  <p class="sub">بعد الإرسال يلتقطه المشغّل في دورته التالية (كل 5 دقائق) ثم تتابعه في <a href="runner.html">المشغّل الحيّ</a>.</p>
+</section><!--@/sec-->
+
+__SHELL_CLOSE__
+<script type="application/json" id="data">__DATA__</script>
+<script>
+__LIB__
+(function(){
+var cfg=JSON.parse(document.getElementById("data").textContent).request;
+function $(i){return document.getElementById(i);}
+function fill(id,items){$(id).innerHTML=items.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join("");}
+fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);$("rqPrio").value="P2";
+$("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+t+'"> '+t+'</label> ';}).join("");
+$("rqForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  var body={title:$("rqTitle").value,ask:$("rqAsk").value,accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,
+    touches:[].slice.call(document.querySelectorAll("#rqTouches input:checked")).map(function(c){return c.value;})};
+  $("rqSend").disabled=true;$("rqMsg").textContent="جارٍ الإرسال…";
+  fetch(cfg.api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+    .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+    .then(function(x){
+      $("rqMsg").textContent=x.ok?"أُرسل الطلب ("+x.j.file+"). سيلتقطه المشغّل قريبًا.":(x.j.error||"تعذّر الإرسال");
+      if(x.ok)$("rqForm").reset();
+    }).catch(function(){$("rqMsg").textContent="تعذّر الاتصال بالخادم";})
+    .then(function(){$("rqSend").disabled=false;});
+});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>المشغّل الحيّ</title>
+__ASSETS__
+</head>
+<body>
+__SHELL_OPEN__
+__PAGEHEAD__
+
+<!--@sec runner--><section class="rl" aria-label="المشغّل الحيّ">
+  <div class="rl-bar">
+    <span class="rl-live" id="rlLive"><i></i><span id="rlLiveTxt">حيّ</span></span>
+    <span class="rl-runner" id="rlRunner"><span class="dot"></span><span id="rlRunnerTxt">…</span></span>
+    <span class="sub">آخر تحديث <span class="rl-num" id="rlUpd">–</span></span>
+  </div>
+
+  <div class="tiles" aria-label="مؤشّرات اليوم">
+    <div class="tile"><div class="l">كلفة النموذج اليوم</div><div class="v rl-brand" id="kCost">–</div><div class="d">الأتمتة نفسها بصفر توكنز</div></div>
+    <div class="tile"><div class="l">بطاقات بدأت اليوم</div><div class="v" id="kStarted">–</div><div class="d" id="kRuns">–</div></div>
+    <div class="tile"><div class="l">منشورة اليوم</div><div class="v rl-good" id="kPub">–</div><div class="d" id="kAvg">–</div></div>
+    <div class="tile"><div class="l">أُغلقت بتقرير اليوم</div><div class="v rl-bad" id="kRef">–</div><div class="d">التقرير في طابور المالك</div></div>
+  </div>
+
+  <section class="card" aria-labelledby="rlh">
+    <div class="cardhead"><h2 id="rlh">البطاقة الآن</h2><span class="sub" id="cElapsedK">مدّة المحاولة</span></div>
+    <div class="rl-head">
+      <div class="rl-ttl">
+        <div class="rl-cid" id="cId">—</div>
+        <div class="rl-prob" id="cProb">لا بطاقة بعد</div>
+        <div class="rl-tags" id="cTags"></div>
+      </div>
+      <div class="rl-elapsed rl-num" id="cElapsed">–</div>
+    </div>
+    <div class="rl-status" id="cStatus" role="status">بانتظار الدفتر…</div>
+    <div class="rl-trackbox">
+      <div class="rl-track" id="track">
+        <div class="rl-chip idle" id="chip"><span class="in"><i></i><span id="chipTxt">—</span></span></div>
+        <div class="rl-rail"></div><div class="rl-fill" id="fill"></div>
+        <div class="rl-nodes" id="nodes"></div>
+        <div class="rl-spacer"></div>
+      </div>
+    </div>
+    <div class="rl-off" id="offramp"><b>أُغلقت بتقرير:</b> <span id="offTxt"></span></div>
+    <div class="rl-cols">
+      <div>
+        <h3 class="rl-h3">التشغيلات <span class="sub">هذه المحاولة</span></h3>
+        <table class="rl-runs"><thead><tr><th>#</th><th>الأدوار</th><th>الكلفة</th><th>الوقت</th></tr></thead>
+          <tbody id="runs"></tbody><tfoot><tr><td>المجموع</td><td class="rl-num" id="rTurns">–</td><td class="rl-num" id="rCost">–</td><td></td></tr></tfoot></table>
+        <ul class="rl-facts" id="facts"></ul>
+      </div>
+      <div>
+        <h3 class="rl-h3">سجلّ البطاقة <span class="sub">الأحدث أوّلا</span></h3>
+        <ul class="rl-log" id="log"></ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="rl-bottom">
+    <section class="card" aria-labelledby="rlr">
+      <div class="cardhead"><h2 id="rlr">آخر البطاقات</h2><span class="sub">عبر المشغّل</span></div>
+      <div class="rl-tblbox"><table class="rl-tbl"><thead><tr><th>البطاقة</th><th>العنوان</th><th>الحال</th><th>الكلفة</th><th>آخر حركة</th></tr></thead><tbody id="recent"></tbody></table></div>
+    </section>
+    <section class="card" aria-labelledby="rlq">
+      <div class="cardhead"><h2 id="rlq">إحالات المالك</h2><span class="sub">owner_queue.md</span></div>
+      <ul class="rl-oq" id="oq"></ul>
+    </section>
+  </div>
+  <p class="note" id="rlSrc">بصفر توكنز: تقرأ دفتر مجلّد المدير فقط كلّ ثانيتين ولا تكتب شيئا (D-519م).</p>
+</section><!--@/sec-->
+
+__SHELL_CLOSE__
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent);
+__LIB__
+var API=(D.runner&&D.runner.api)||"runner.json";
+var STAGES=[
+  {k:"ready",t:"في الطابور"},{k:"model",t:"النموذج يكتب"},{k:"verify",t:"الفحص في الحاوية"},
+  {k:"gate",t:"طلب الدمج والبوّابة"},{k:"deploy",t:"النشر وفحص الصحّة"},{k:"published",t:"منشورة"}];
+var SL={ready:"في الطابور",model:"النموذج يكتب",verify:"الفحص",gate:"البوّابة",deploy:"النشر والصحّة",published:"منشورة",referred:"أُغلقت بتقرير"};
+var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+var CROSS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function $i(id){return document.getElementById(id)}
+var skew=0,state=null,lastKey="";
+
+var nodes=$i("nodes");
+STAGES.forEach(function(s,i){
+  var d=document.createElement("div");d.className="rl-node"+(i===STAGES.length-1?" final":"");d.id="n-"+s.k;
+  d.innerHTML='<div class="c">'+(i+1)+'</div><div class="lb"><b>'+s.t+'</b><span id="t-'+s.k+'">—</span></div>';
+  nodes.appendChild(d);
+});
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function hm(ts){return ts?String(ts).slice(11,16):"—"}
+function money(v){if(v==null)return "–";v=+v;return (v<0.1?v.toFixed(4):v.toFixed(2))+"$"}
+function nowMs(){return Date.now()-skew}
+function dur(ms){if(ms<0)ms=0;var s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+  if(h)return h+" س "+(m%60)+" د";if(m)return m+" د "+(s%60)+" ث";return s+" ث";}
+function ago(ts){return ts?"منذ "+dur(nowMs()-Date.parse(ts)):"—"}
+
+function statusText(c){
+  var m=c.model?" ("+c.model+")":"";
+  switch(c.stage){
+    case "ready":return c.hold?"موقوفة بانتظارك.":"في الطابور؛ يلتقطها المشغّل في دورته القادمة (كلّ 5 دقائق).";
+    case "model":return "النموذج"+m+" يكتب الشيفرة في شجرة عمل نظيفة.";
+    case "verify":return "فحص ما قبل الدفع يعمل داخل الحاوية.";
+    case "gate":return c.waiting?c.waiting:"فُتح طلب الدمج"+(c.pr?" #"+c.pr:"")+"؛ البوّابة الآليّة ونافذة النشر.";
+    case "deploy":return "دُمجت؛ النشر ثمّ فحص الصحّة المستقلّ.";
+    case "published":return "منشورة وسليمة.";
+    case "referred":return "أُغلقت بتقرير بعد المرحلة: "+(STAGES[c.reached]?STAGES[c.reached].t:"");
+  }
+  return "";
+}
+
+function render(){
+  if(!state)return;
+  if(state.ok===false){$i("cStatus").textContent="مصدر الدفتر غير متاح: "+(state.error||"");$i("cStatus").className="rl-status bad";return;}
+  var k=state.kpis||{};
+  $i("kStarted").textContent=k.started_today;
+  $i("kRuns").textContent=(k.runs_today||0)+" تشغيلا للنموذج";
+  $i("kPub").textContent=k.published_today;
+  $i("kAvg").textContent=k.avg_published!=null?"متوسط المنشورة "+money(k.avg_published):"لا منشورة بعد";
+  $i("kRef").textContent=k.referred_today;
+  $i("kCost").textContent=money(k.cost_today);
+
+  var r=state.runner||{};
+  $i("rlRunner").className="rl-runner"+(r.lock?" run":"");
+  $i("rlRunnerTxt").textContent=r.lock?"المشغّل يعمل الآن · القفل منذ "+dur((r.lock_age_s||0)*1000):"المشغّل خامل · الدورة القادمة خلال 5 دقائق على الأكثر";
+
+  var c=state.current;
+  if(!c)return;
+  $i("cId").textContent=c.id;
+  $i("cProb").textContent=c.problem||"—";
+  $i("cTags").innerHTML=(c.size?'<span class="rl-tag m">'+esc(c.size)+(c.model?" · "+esc(c.model):"")+'</span>':"")+
+    (c.priority?'<span class="rl-tag">'+esc(c.priority)+'</span>':"")+
+    '<span class="rl-tag">المحاولة '+(c.attempts||1)+'</span>'+(c.pr?'<span class="rl-tag">طلب الدمج #'+esc(c.pr)+'</span>':"");
+  var st=$i("cStatus");st.textContent=statusText(c);
+  st.className="rl-status"+(c.stage==="referred"?" bad":c.stage==="published"?" good":"");
+
+  var idx=c.stage==="referred"?c.reached:Math.max(0,STAGES.findIndex(function(s){return s.k===c.stage}));
+  $i("track").style.setProperty("--p",idx);
+  $i("fill").className="rl-fill"+(c.stage==="referred"?" bad":"");
+  STAGES.forEach(function(s,i){
+    var n=$i("n-"+s.k),cl="rl-node"+(i===STAGES.length-1?" final":""),circle=n.querySelector(".c");
+    if(c.stage==="referred"&&i===idx){cl+=" fail";circle.innerHTML=CROSS;}
+    else if(i<idx||(c.stage==="published"&&i===idx)){cl+=" done";circle.innerHTML=CHECK;}
+    else if(i===idx){cl+=" active";circle.textContent=i+1;}
+    else circle.textContent=i+1;
+    n.className=cl;
+  });
+  $i("chipTxt").textContent=c.id.replace(/^W-/,"");
+  $i("chip").className="rl-chip"+(c.stage==="referred"?" bad":c.stage==="published"?" good":(c.stage==="ready"?" idle":""));
+  $i("offramp").className="rl-off"+(c.stage==="referred"?" on":"");$i("offTxt").textContent=c.referral||"";
+
+  var first={};(c.log||[]).slice().reverse().forEach(function(e){if(e.ts>=(c.cycle_start||"")&&!first[e.kind])first[e.kind]=e.ts;});
+  STAGES.forEach(function(s){var t=first[s.k];$i("t-"+s.k).textContent=t?hm(t):"—";});
+  if(c.cycle_start)$i("t-ready").textContent=hm(c.cycle_start);
+
+  var rb="";(c.runs||[]).forEach(function(x,i){rb+='<tr><td>'+(i+1)+'</td><td class="rl-num">'+x.turns+'</td><td class="rl-num">'+money(x.cost)+'</td><td class="rl-num">'+hm(x.ts)+'</td></tr>';});
+  $i("runs").innerHTML=rb||'<tr><td colspan="4" class="rl-empty">لا تشغيل بعد في هذه المحاولة</td></tr>';
+  $i("rTurns").textContent=c.turns_cycle||0;$i("rCost").textContent=money(c.cost_cycle);
+  $i("facts").innerHTML='<li><span>كلّ تشغيلات البطاقة ('+c.all_runs+')</span><span>'+money(c.cost_total)+'</span></li>'+
+    '<li><span>بدأت المحاولة</span><span>'+hm(c.cycle_start)+'</span></li>'+
+    '<li><span>في المرحلة الحاليّة</span><span id="stageAgo">'+ago(c.stage_ts)+'</span></li>';
+
+  var key=c.id+"|"+(c.log&&c.log[0]?c.log[0].ts+c.log[0].text:"");
+  if(key!==lastKey){
+    lastKey=key;
+    $i("log").innerHTML=(c.log||[]).map(function(e){return '<li class="k-'+esc(e.kind)+'"><span class="tm">'+hm(e.ts)+'</span><span class="d"></span><span>'+esc(e.text)+'</span></li>'}).join("")||'<li class="rl-empty">لا أحداث</li>';
+  }
+
+  $i("recent").innerHTML=(state.recent||[]).map(function(x){
+    return '<tr><td class="id">'+esc(x.id)+'</td><td>'+esc(x.problem)+'</td><td><span class="rl-st '+esc(x.stage)+'">'+(SL[x.stage]||esc(x.stage))+'</span></td><td class="rl-num">'+money(x.cost_total)+'</td><td class="rl-num">'+hm(x.last_ts)+'</td></tr>';
+  }).join("")||'<tr><td colspan="5" class="rl-empty">لا بطاقات عبر المشغّل بعد</td></tr>';
+
+  $i("oq").innerHTML=(state.owner_queue||[]).map(function(l){
+    var m=l.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\s+(.*)$/);
+    return m?'<li><span class="tm">'+esc(m[1].slice(11))+'</span>'+esc(m[2])+'</li>':'<li>'+esc(l)+'</li>';
+  }).join("")||'<li class="rl-empty">لا إحالات</li>';
+  tick();
+}
+
+function tick(){
+  if(!state||!state.current)return;
+  var c=state.current,done=(c.stage==="published"||c.stage==="referred")&&c.ended,end=done?Date.parse(c.ended):nowMs();
+  $i("cElapsed").textContent=c.cycle_start?dur(end-Date.parse(c.cycle_start)):"–";
+  $i("cElapsedK").textContent=done?"مدّة المحاولة (انتهت)":"مدّة المحاولة (جارية)";
+  var sa=$i("stageAgo");if(sa)sa.textContent=ago(c.stage_ts);
+}
+
+function setLive(ok){$i("rlLive").className="rl-live"+(ok?"":" off");$i("rlLiveTxt").textContent=ok?"حيّ":"انقطع";}
+
+function poll(){
+  fetch(API,{cache:"no-store"}).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j}})}).then(function(x){
+    state=x.j;if(state&&state.now)skew=Date.now()-Date.parse(state.now);setLive(x.ok);render();
+    $i("rlUpd").textContent=new Date(nowMs()).toLocaleTimeString("en-GB",{hour12:false});
+  }).catch(function(){setLive(false);});
+}
+poll();setInterval(poll,2000);setInterval(tick,1000);
+})();
+</script>
+</body>
+</html>
