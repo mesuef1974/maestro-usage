@@ -37,12 +37,6 @@ _ROWS = [
      "حصّة القراءة من الكاش لكل نموذج وأثرها في التوكنات.", "الاستهلاك", "layers", ["filters", "tiles", "h1", "defs"]),
     ("origins.html", "dashboard.html", "مصادر الاستهلاك",
      "من أين يأتي الاستهلاك: الأصل والنموذج.", "الاستهلاك", "pie", ["filters", "h2", "defs"]),
-    ("heavy.html", "dashboard.html", "أثقل الجلسات",
-     "الجلسات الأعلى سياقًا وكلفة في الفترة المختارة.", "الاستهلاك", "list", ["filters", "h4", "defs"]),
-    ("autocompact.html", "dashboard.html", "الضغط التلقائي",
-     "أثر الضغط التلقائي للسياق قبل التغيير وبعده.", "دراسات", "zap", ["filters", "h5", "defs"]),
-    ("startup.html", "dashboard.html", "كلفة البدء",
-     "كلفة بدء الجلسة بالتوكن عبر الأيام.", "دراسات", "power", ["h6", "defs"]),
     ("skills.html", "skills.html", "حصر المهارات",
      "كل مهارة وأمر: فائدتها واستعمالها الفعلي وتوصية الإبقاء أو الأرشفة.", "دراسات", "grid", ["tiles", "filters2", "tbl", "gone", "defs"]),
     ("data.html", "dashboard.html", "الجداول والملفات",
@@ -76,7 +70,7 @@ def for_template(template):
 DATA_NEEDS = {
     "dashboard.html": {
         "limits": {"plan", "plan_label", "plan_renew_day", "quota"}, "tiles": {"a"}, "month": {"a"}, "h1": {"a"}, "h2": {"a"}, "h3": {"plan"},
-        "h4": {"b", "sessions"}, "h5": {"a", "changes"}, "h6": {"startup"},
+        
     },
 }
 DATA_ALWAYS = {"models", "threshold", "min_turns", "first_day", "last_day"}  # صغيرة ويقرؤها الغلاف والمرشِّحات في كل صفحة
@@ -94,7 +88,7 @@ def prune_data(data, template, sections):
 
 
 # قوائم الكائنات الكبيرة المنتظمة التي تُضمَّن بصيغة أعمدة (المفاتيح مرة واحدة)؛ `unpack` في ui_common.js تعيدها.
-PACK_KEYS = {"dashboard.html": ("a", "b", "plan"), "sessions.html": ("c",), "hourly.html": ("h", "plan")}
+PACK_KEYS = {"dashboard.html": ("a", "plan"), "hourly.html": ("h", "plan")}
 
 
 def pack_data(data, template):

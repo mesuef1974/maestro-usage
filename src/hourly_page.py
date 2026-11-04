@@ -15,9 +15,6 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dashboard  # noqa: E402
-import regime  # noqa: E402
-import role_groups  # noqa: E402
-import sessions_page  # noqa: E402
 import ui  # noqa: E402
 
 WINDOW = 1_000_000
@@ -40,59 +37,24 @@ def window_of(x, group):
 
 def windows_meta(con, ch=None):
     """وصف النوافذ للصفحة: القيم الثلاث، وفترات نظام 250 ألفًا من config_changes، ونطاق نسبة الضغط التلقائي المذكور في ملاحظاتها."""
-    ch = regime.changes() if ch is None else ch
-    spans = [[ts, ch[i + 1][0] if i + 1 < len(ch) else None] for i, (ts, code) in enumerate(ch) if code == regime.W250]
+    spans = []
     pcts = sorted({int(m) for (note,) in con.execute("SELECT note FROM config_changes") for m in _AUTOCOMPACT_RE.findall(note or "")})
     return dict(default=WINDOW, w250=WINDOW_W250, old=WINDOW_OLD, w250_spans=spans,
                 autocompact_pct=[pcts[0], pcts[-1]] if pcts else None)
 
 
 def payload(con):
-    role = {k: role_groups.role_name(n, cwd) for k, n, cwd in con.execute("SELECT session_key, number, cwd FROM sessions")}
-    roles, role_of = [], {}
-    starts = {}  # session_key -> أزمنة بدء العمليات المعروفة (agent_starts)، مرتبة؛ كما في sessions_page
-    for sid, st in con.execute("SELECT session_id, started_at FROM agent_starts ORDER BY started_at"):
-        starts.setdefault(sid, []).append(st)
-    ch = regime.changes()
-    first_ts = {}
+    """توكنات كل ساعة × مجموعة نموذج (بعد الاعتماد على جلسة واحدة لا بُعد دور): r دائمًا 0 ليبقى شكل الصفوف كما يقرؤه القالب."""
     facts = {}
-    prev = {}  # session_key -> (epoch, ctx) لآخر ردّ رئيس
-    cur = con.execute(
-        "SELECT session_key, ts, model, input_tokens, cache_creation_tokens, cache_read_tokens, output_tokens, is_sidechain "
-        "FROM usage_turns ORDER BY session_key, ts, message_id")
-    for key, ts, model, i, cc, cr, u, side in cur:
-        n = role.get(key) or role_groups.OTHER
-        if n not in role_of:
-            role_of[n] = len(roles)
-            roles.append(n)
-        first_ts.setdefault(key, ts)
-        epoch = _epoch(ts)
-        ctx = i + cc + cr
-        group = dashboard._group(model)
-        dfrom = dto = idle = 0
-        if not side:
-            p = prev.get(key)
-            if p and p[1] >= sessions_page.DROP_MIN_PREV and ctx < sessions_page.DROP_RATIO * p[1]:
-                dfrom, dto = p[1], ctx
-                idle = int(epoch - p[0] > sessions_page.WAKE_GAP_SEC)
-            prev[key] = (epoch, ctx)
-        k = (role_of[n], int(epoch // 3600), group)
-        r = facts.setdefault(k, [0, 0, 0, 0, 0, 0, 0])  # k, x, w, d, di, df, dt
-        r[0] += ctx + u
-        if not side and ctx > r[1]:
-            r[1] = ctx
-            r[2] = window_of(regime.classify(ts, first_ts[key], starts.get(key, []), ch), group)
-        if dfrom:
-            r[3] += 1
-            r[4] += idle
-            if dfrom > r[5]:
-                r[5], r[6] = dfrom, dto
-    rows = [dict(r=k[0], h=k[1], m=k[2], k=v[0], x=v[1], w=v[2], d=v[3], di=v[4], df=v[5], dt=v[6]) for k, v in sorted(facts.items())]
-    plan = plan_rows(con)
+    for ts, model, i, cc, cr, u in con.execute(
+            "SELECT ts, model, input_tokens, cache_creation_tokens, cache_read_tokens, output_tokens FROM usage_turns ORDER BY ts"):
+        k = (int(_epoch(ts) // 3600), dashboard._group(model))
+        facts[k] = facts.get(k, 0) + i + cc + cr + u
+    rows = [dict(r=0, h=h, m=m, k=v, x=0, w=WINDOW, d=0, di=0, df=0, dt=0) for (h, m), v in sorted(facts.items())]
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
-    return dict(models=[n for _m, n in dashboard.MODEL_GROUPS] + [dashboard.OTHER_NAME], window=WINDOW, windows=windows_meta(con, ch),
-                alert=ALERT_PCT, drop_ratio=sessions_page.DROP_RATIO, drop_min=sessions_page.DROP_MIN_PREV, wake_gap=sessions_page.WAKE_GAP_SEC,
-                first_day=first, last_day=last, roles=roles, rp=[int(role_groups.is_project(n)) for n in roles], h=rows, plan=plan)
+    return dict(models=[n for _m, n in dashboard.MODEL_GROUPS] + [dashboard.OTHER_NAME], window=WINDOW, windows=windows_meta(con),
+                alert=ALERT_PCT, drop_ratio=0.5, drop_min=100000, wake_gap=3600,
+                first_day=first, last_day=last, roles=["الكل"], rp=[1], h=rows, plan=plan_rows(con))
 
 
 def plan_rows(con):

@@ -99,23 +99,22 @@ class UiShellTest(unittest.TestCase):
 
 class TestPayloadSlimming(unittest.TestCase):
     def test_prune_empties_unneeded_keys_by_section(self):
-        data = {"models": ["m"], "a": [{"x": 1}], "b": [{"y": 1}], "sessions": {"1": {}}, "plan": [{"t": 1}], "threshold": 3}
-        got = pages.prune_data(data, "dashboard.html", ["filters", "h4"])
-        self.assertEqual((got["a"], got["plan"]), ([], []))
-        self.assertEqual(got["b"], [{"y": 1}])
-        self.assertEqual(got["models"], ["m"])
+        data = {"models": ["m"], "a": [{"x": 1}], "plan": [{"t": 1}], "changes": [{"c": 1}], "threshold": 3}
         got = pages.prune_data(data, "dashboard.html", ["h1"])
-        self.assertEqual((got["b"], got["sessions"]), ([], {}))
+        self.assertEqual((got["plan"], got["changes"]), ([], []))
+        self.assertEqual((got["a"], got["models"]), ([{"x": 1}], ["m"]))
+        got = pages.prune_data(data, "dashboard.html", ["h3"])
+        self.assertEqual((got["a"], got["plan"]), ([], [{"t": 1}]))
         self.assertIs(pages.prune_data(data, "skills.html", ["tbl"]), data)  # قالب بلا خريطة حاجات يبقى كاملًا
 
     def test_pack_data_columnar_roundtrip_shape(self):
         rows = [{"s": i, "d": "2026-10-01", "t": i * 2} for i in range(30)]
-        got = pages.pack_data({"c": rows, "x": [1]}, "sessions.html")
-        self.assertEqual(got["c"]["$cols"], ["s", "d", "t"])
-        self.assertEqual(got["c"]["rows"][3], [3, "2026-10-01", 6])
+        got = pages.pack_data({"h": rows, "x": [1]}, "hourly.html")
+        self.assertEqual(got["h"]["$cols"], ["s", "d", "t"])
+        self.assertEqual(got["h"]["rows"][3], [3, "2026-10-01", 6])
         self.assertEqual(got["x"], [1])
         ragged = rows[:-1] + [{"s": 1}]
-        self.assertEqual(pages.pack_data({"c": ragged}, "sessions.html")["c"], ragged)  # صفوف غير منتظمة لا تُعبّأ
+        self.assertEqual(pages.pack_data({"h": ragged}, "hourly.html")["h"], ragged)  # صفوف غير منتظمة لا تُعبّأ
 
 if __name__ == "__main__":
     unittest.main()

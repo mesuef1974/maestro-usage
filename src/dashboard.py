@@ -10,7 +10,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import quota_model  # noqa: E402
-import startup_cost  # noqa: E402
 import ui  # noqa: E402
 
 THRESHOLD = 300_000  # يطابق reports.CTX_THRESHOLD
@@ -37,7 +36,7 @@ def _origin(o):
     return o if o in ORIGINS else "unknown"
 
 
-def payload(con, label_fn, not_applied_mark, min_turns):
+def payload(con, not_applied_mark, min_turns):
     ctx = "(input_tokens + cache_creation_tokens + cache_read_tokens)"
     over = "CASE WHEN %s > ? THEN 1 ELSE 0 END" % ctx  # الردّ فوق العتبة
     main = "CASE WHEN is_sidechain=0 THEN %s ELSE 0 END"  # الكمية للخيط الرئيس فقط
@@ -55,23 +54,6 @@ def payload(con, label_fn, not_applied_mark, min_turns):
     fact_a = [dict(d=k[0], m=k[1], g=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mt=r[6], mi=r[7], mcc=r[8], mcr=r[9], mv=r[10])
               for k, r in sorted(a.items())]
 
-    b = {}
-    for key, day, model, t, i, cc, cr, u, v, mt, mv, mx, cv in con.execute(
-            "SELECT session_key, substr(ts,1,10), model, %s, SUM(%s), SUM(%s), MAX(%s), SUM(CASE WHEN is_sidechain=0 AND %s > ? THEN %s ELSE 0 END) "
-            "FROM usage_turns GROUP BY 1, 2, 3" % (sums, main % "1", main % over, main % ctx, ctx, ctx), (THRESHOLD, THRESHOLD, THRESHOLD)):
-        k = (key, day, _group(model))
-        r = b.setdefault(k, [0] * 10)  # 0-5 مجاميع كل الردود، 6 ردود الخيط الرئيس، 7 فوق العتبة للرئيس، 8 أكبر سياق رئيس، 9 مجموع سياق الردود الرئيسة فوق العتبة
-        for j, x in enumerate((t, i, cc, cr, u, v, mt, mv)):
-            r[j] += x or 0
-        r[8] = max(r[8], mx or 0)
-        r[9] += cv or 0
-    keys = sorted({k[0] for k in b})
-    meta = {r[0]: r for r in con.execute("SELECT session_key, COALESCE(number,''), COALESCE(cwd,'') FROM sessions")}
-    index = {key: n for n, key in enumerate(keys)}
-    sessions = [dict(label=label_fn(meta.get(key, (key, "", ""))[1], key, meta.get(key, (key, "", ""))[2])) for key in keys]
-    fact_b = [dict(s=index[k[0]], d=k[1], m=k[2], t=r[0], i=r[1], cc=r[2], cr=r[3], u=r[4], v=r[5], mt=r[6], mv=r[7], mx=r[8], cv=r[9])
-              for k, r in sorted(b.items())]
-
     plan = [dict(ts=ts, f=f, fr=fr, w=w, wr=wr, fa=fa, far=far, pl=pl, src=src) for ts, f, fr, w, wr, fa, far, pl, src in con.execute(
         "SELECT ts, five_hour_pct, five_hour_resets_at, seven_day_pct, seven_day_resets_at, fable_pct, fable_resets_at, plan, source "
         "FROM plan_snapshots ORDER BY ts")]
@@ -80,8 +62,8 @@ def payload(con, label_fn, not_applied_mark, min_turns):
                    "SELECT ts, key, old_value, new_value, note FROM config_changes ORDER BY ts, id")]
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in MODEL_GROUPS] + [OTHER_NAME], threshold=THRESHOLD, min_turns=min_turns,
-                first_day=first, last_day=last, a=fact_a, b=fact_b, sessions=sessions, plan=plan, changes=changes,
-                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, startup=startup_cost.payload(con), quota=quota_model.payload(con))
+                first_day=first, last_day=last, a=fact_a, plan=plan, changes=changes,
+                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, quota=quota_model.payload(con))
 
 
 def render(data, static_html, stamp, page="index.html"):
