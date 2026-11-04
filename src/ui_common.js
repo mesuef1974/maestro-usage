@@ -23,6 +23,13 @@ function dm(day){return Number(day.slice(8,10))+"/"+Number(day.slice(5,7))}
 function eachDay(a,b){var out=[],t=Date.parse(a+"T00:00:00Z"),e=Date.parse(b+"T00:00:00Z");for(;t<=e;t+=864e5)out.push(ymd(t));return out}
 function addDays(day,n){return ymd(Date.parse(day+"T00:00:00Z")+n*864e5)}
 function mk(tag,attrs,text){var e=document.createElement(tag);if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e}
+/* جدول موحَّد للصفحات: رأس ثم صفوف؛ الأرقام تُنسَّق بـnum وتأخذ الصنف num، والنص يبقى كما هو */
+function dataTable(box,head,rows){
+  var t=mk("table"),hr=t.createTHead().insertRow(),b=t.createTBody();
+  head.forEach(function(x){hr.appendChild(mk("th",null,x))});
+  rows.forEach(function(r){var tr=b.insertRow();r.forEach(function(v,i){var c=mk("td",i?{"class":"num"}:null,typeof v==="number"?num(v):v);tr.appendChild(c)})});
+  box.textContent="";box.appendChild(t);return t;
+}
 function sv(tag,attrs,text){
   var e=document.createElementNS(NS,tag);if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]);
   /* الصفحة RTL فيُقلب معنى start/end في نصوص SVG؛ تُكتب المواضع هنا بمعناها الفيزيائي (end = حافة النص اليمنى) ويُبدَّل عند الإنشاء */

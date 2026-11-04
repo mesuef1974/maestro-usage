@@ -35,18 +35,10 @@ __SHELL_CLOSE__
 var D=JSON.parse(document.getElementById("data").textContent).summary;
 __LIB__
 function has(id){return !!document.getElementById(id)}
-function cell(t,cls){var c=document.createElement("td");c.textContent=t;if(cls)c.className=cls;return c}
-function table(box,head,rows){
-  var t=document.createElement("table"),h=t.createTHead().insertRow();
-  head.forEach(function(x){var th=document.createElement("th");th.textContent=x;h.appendChild(th)});
-  var b=t.createTBody();
-  rows.forEach(function(r){var tr=b.insertRow();r.forEach(function(v,i){tr.appendChild(cell(typeof v==="number"?num(v):v,i?"num":""))})});
-  box.textContent="";box.appendChild(t);
-}
 var HEAD=["الدورات","إدخال","كتابة كاش","قراءة كاش","إخراج"];
 function nums(x){return [x.turns,x.input,x.cache_creation,x.cache_read,x.output]}
-function modelsTable(id,list){if(has(id))table(document.getElementById(id),["النموذج"].concat(HEAD),list.map(function(m){return [m.model].concat(nums(m))}))}
-function periodsTable(id,list){if(has(id))table(document.getElementById(id),["الفترة","الجلسات"].concat(HEAD),list.map(function(p){return [p.period,p.sessions].concat(nums(p))}))}
+function modelsTable(id,list){if(has(id))dataTable(document.getElementById(id),["النموذج"].concat(HEAD),list.map(function(m){return [m.model].concat(nums(m))}))}
+function periodsTable(id,list){if(has(id))dataTable(document.getElementById(id),["الفترة","الجلسات"].concat(HEAD),list.map(function(p){return [p.period,p.sessions].concat(nums(p))}))}
 var S=D.session;
 if(has("sTiles")&&S){
   document.getElementById("sTiles").innerHTML=[["الدورات",S.turns],["إخراج",S.output],["قراءة كاش",S.cache_read],["كتابة كاش",S.cache_creation]]
