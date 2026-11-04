@@ -193,12 +193,21 @@ CREATE TABLE IF NOT EXISTS storage_actions (
     status TEXT NOT NULL                       -- quarantined | restored | purged | done
 );
 
--- الإصدار 6: تجميعات الاستهلاك (يوم/أسبوع/شهر × نموذج). تُعاد كتابتها كاملةً من usage_turns في معاملة واحدة (rollups.refresh)، فهي مشتقّة لا مصدر.
+-- الإصدار 7 (تطبيع): بُعد النماذج مرّة واحدة، والتجميعات تشير إليه بمفتاح أجنبي بدل تكرار الاسم نصًّا في كل صف.
+CREATE TABLE IF NOT EXISTS models (
+    model_id   INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL UNIQUE,         -- كما يرد في usage_turns.model
+    family     TEXT,                         -- sonnet | opus | haiku | fable | NULL (مشتقّ من الاسم)
+    first_seen TEXT,
+    last_seen  TEXT
+);
+
+-- تجميعات الاستهلاك (يوم/أسبوع/شهر × نموذج)؛ مشتقّة تُعاد كتابتها كاملةً من usage_turns في معاملة واحدة (rollups.refresh).
 -- الأسبوع يبدأ الاثنين بالتوقيت العالمي؛ period_start يوم البداية (YYYY-MM-DD). جدول عادي بلا ميزات SQLite فينتقل إلى Postgres كما هو.
 CREATE TABLE IF NOT EXISTS usage_rollups (
-    grain                 TEXT NOT NULL,          -- day | week | month
+    grain                 TEXT NOT NULL CHECK (grain IN ('day', 'week', 'month')),
     period_start          TEXT NOT NULL,
-    model                 TEXT NOT NULL,
+    model_id              INTEGER NOT NULL REFERENCES models(model_id),
     turns                 INTEGER NOT NULL,
     sessions              INTEGER NOT NULL,
     input_tokens          INTEGER NOT NULL,
@@ -207,10 +216,15 @@ CREATE TABLE IF NOT EXISTS usage_rollups (
     output_tokens         INTEGER NOT NULL,
     thinking_tokens       INTEGER NOT NULL DEFAULT 0,
     refreshed_at          TEXT NOT NULL,
-    PRIMARY KEY (grain, period_start, model)
+    PRIMARY KEY (grain, period_start, model_id)
 );
 CREATE INDEX IF NOT EXISTS ix_rollups_period ON usage_rollups(grain, period_start);
 CREATE INDEX IF NOT EXISTS ix_turns_model_ts ON usage_turns(model, ts);
+
+CREATE VIEW IF NOT EXISTS v_usage_rollups AS
+SELECT r.grain, r.period_start, m.name AS model, m.family, r.turns, r.sessions, r.input_tokens, r.cache_creation_tokens,
+       r.cache_read_tokens, r.output_tokens, r.thinking_tokens
+FROM usage_rollups r JOIN models m ON m.model_id = r.model_id;
 
 -- إجمالي كل جلسة: أول وآخر نشاط وعدد الأدوار والنماذج المستعملة.
 CREATE VIEW IF NOT EXISTS v_session_totals AS

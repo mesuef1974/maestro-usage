@@ -6,7 +6,7 @@ from pathlib import Path
 
 DB_PATH = Path(os.environ.get("MAESTRO_USAGE_DB", r"C:\Users\mesue\.maestro\flow_usage.sqlite3"))
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema" / "schema.sql"
-SCHEMA_VERSION = 6  # 5 سُجّل في القاعدة الحيّة قبل هذا الإصدار؛ 6: usage_rollups وv_session_totals وix_turns_model_ts
+SCHEMA_VERSION = 7  # 6: usage_rollups وv_session_totals؛ 7: تطبيع النماذج (models) وusage_rollups.model_id (5 سُجّل في القاعدة الحيّة قبلها)
 
 # بذور config_changes (قرارات المالك في 2026-10-29)؛ الوقت اليوم فقط لأن الساعة غير معروفة.
 CONFIG_SEEDS = [
@@ -45,7 +45,15 @@ def _migrate_v2(con):
             con.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, ctype))
 
 
+def _migrate_v7(con):
+    """الإصدار 7: usage_rollups كانت تحمل model نصًّا؛ هي مشتقّة تُعاد بناؤها، فتُسقط القديمة ويُنشئها المخطط بمفتاح أجنبي."""
+    cols = [r[1] for r in con.execute("PRAGMA table_info(usage_rollups)")]
+    if cols and "model" in cols:
+        con.execute("DROP TABLE usage_rollups")
+
+
 def init_schema(con):
+    _migrate_v7(con)
     _migrate_v2(con)  # قبل السكربت: لا شيء يحدث على قاعدة جديدة (الجداول غير موجودة بعد)
     con.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     _migrate_v2(con)
