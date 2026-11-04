@@ -1,0 +1,19 @@
+/* استمارة «طلب جديد»: حقول وزرّ بهويّة ميزان (الرموز لا القيم الخام) */
+.rq .rq-field{margin-block-end:var(--sp-4)}
+.rq label{display:block;margin-block-end:var(--sp-1);font-weight:600}
+.rq input:not([type="checkbox"]),.rq select,.rq textarea{
+  inline-size:100%;box-sizing:border-box;font:inherit;line-height:1.7;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3)}
+.rq textarea{resize:vertical}
+.rq [aria-invalid="true"]{border-color:var(--bad)}
+.rq .rq-err{color:var(--bad);margin:var(--sp-1) 0 0}
+.rq .rq-count{margin:var(--sp-1) 0 0}
+.rq .rq-row{display:flex;flex-wrap:wrap;gap:var(--sp-4)}
+.rq .rq-row .rq-field{flex:1 1 12rem}
+.rq fieldset.rq-touch{border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4);margin:0 0 var(--sp-4)}
+.rq .rq-touch #rqTouches{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4)}
+.rq .rq-touch label{display:inline-flex;align-items:center;gap:var(--sp-2);margin:0;font-weight:400}
+.rq .rq-send{min-block-size:44px;padding:0 var(--sp-5);font:inherit;font-weight:700;color:var(--on-brand);
+  background:var(--brand);border:0;border-radius:var(--r-sm);cursor:pointer}
+.rq .rq-send:hover{filter:brightness(1.08)}
+.rq .rq-send:disabled{opacity:.55;cursor:not-allowed}

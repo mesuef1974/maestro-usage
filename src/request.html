@@ -10,20 +10,31 @@ __ASSETS__
 __SHELL_OPEN__
 __PAGEHEAD__
 
-<!--@sec request--><section class="card" aria-labelledby="rqh">
-  <div class="cardhead"><h2 id="rqh">طلب جديد للمشغّل</h2><span class="sub">يُكتب ملفًّا في requests/ ويلتقطه المشغّل بصفر توكنز</span></div>
+<!--@sec request--><section class="card rq" aria-labelledby="rqh">
+  <div class="cardhead"><h2 id="rqh">طلب جديد للمشغّل</h2><span class="sub">يلتقطه المشغّل من <bdi dir="ltr">requests/</bdi> خلال 5 دقائق</span></div>
   <form id="rqForm" novalidate>
-    <p><label>العنوان<br><input id="rqTitle" name="title" maxlength="120" required style="width:100%"></label></p>
-    <p><label>المطلوب<br><textarea id="rqAsk" name="ask" rows="3" maxlength="1500" required style="width:100%"></textarea></label></p>
-    <p><label>معايير القبول (سطر لكل معيار)<br><textarea id="rqAccept" name="accept" rows="4" maxlength="1500" required style="width:100%"></textarea></label></p>
-    <p>
-      <label>الوسم <select id="rqSize" name="size"></select></label>
-      <label>الأولوية <select id="rqPrio" name="priority"></select></label>
-    </p>
-    <fieldset><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div></fieldset>
-    <p><button type="submit" id="rqSend">إرسال الطلب</button> <span id="rqMsg" role="status"></span></p>
+    <div class="rq-field"><label for="rqTitle">العنوان</label>
+      <input id="rqTitle" name="title" maxlength="120" required aria-describedby="rqTitleErr">
+      <p class="rq-err" id="rqTitleErr" role="alert" hidden></p></div>
+    <div class="rq-field"><label for="rqAsk">المطلوب</label>
+      <textarea id="rqAsk" name="ask" rows="6" maxlength="1500" required aria-describedby="rqAskErr rqAskCount"></textarea>
+      <p class="rq-count sub" id="rqAskCount" aria-live="polite">0 / 1500</p>
+      <p class="rq-err" id="rqAskErr" role="alert" hidden></p></div>
+    <div class="rq-field"><label for="rqAccept">معايير القبول (سطر لكل معيار)</label>
+      <textarea id="rqAccept" name="accept" rows="4" maxlength="1500" required aria-describedby="rqAcceptErr"></textarea>
+      <p class="rq-err" id="rqAcceptErr" role="alert" hidden></p></div>
+    <div class="rq-row">
+      <div class="rq-field"><label for="rqSize">الوسم</label>
+        <select id="rqSize" name="size" required aria-describedby="rqSizeErr"></select>
+        <p class="rq-err" id="rqSizeErr" role="alert" hidden></p></div>
+      <div class="rq-field"><label for="rqPrio">الأولوية</label>
+        <select id="rqPrio" name="priority" required aria-describedby="rqPrioErr"></select>
+        <p class="rq-err" id="rqPrioErr" role="alert" hidden></p></div>
+    </div>
+    <fieldset class="rq-touch"><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div></fieldset>
+    <p><button type="submit" class="rq-send" id="rqSend">إرسال الطلب</button> <span id="rqMsg" role="status" aria-live="polite"></span></p>
   </form>
-  <p class="sub">بعد الإرسال يلتقطه المشغّل في دورته التالية (كل 5 دقائق) ثم تتابعه في <a href="runner.html">المشغّل الحيّ</a>.</p>
+  <p class="sub">بعد الإرسال تتابعه في <a href="runner.html">المشغّل الحيّ</a>.</p>
 </section><!--@/sec-->
 
 __SHELL_CLOSE__
@@ -32,20 +43,46 @@ __SHELL_CLOSE__
 __LIB__
 (function(){
 var cfg=JSON.parse(document.getElementById("data").textContent).request;
+var FIELDS={title:"rqTitle",ask:"rqAsk",accept:"rqAccept",size:"rqSize",priority:"rqPrio"};
+var ERR={title:"rqTitleErr",ask:"rqAskErr",accept:"rqAcceptErr",size:"rqSizeErr",priority:"rqPrioErr"};
 function $(i){return document.getElementById(i);}
-function fill(id,items){$(id).innerHTML=items.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join("");}
-fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);$("rqPrio").value="P2";
-$("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+t+'"> '+t+'</label> ';}).join("");
+function fill(id,items){$(id).innerHTML='<option value="">اختر…</option>'+items.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join("");}
+fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);
+$("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+t+'"> '+t+'</label>';}).join("");
+var ab=$("autobtn");if(ab)ab.hidden=true;  // لا تحديث دوريّ هنا: لا شيء يُحدَّث ولا يُفقد ما كُتب
+function clearErrors(){Object.keys(ERR).forEach(function(k){$(ERR[k]).hidden=true;$(ERR[k]).textContent="";$(FIELDS[k]).removeAttribute("aria-invalid");});}
+function showError(field,msg){var id=ERR[field];if(!id)return false;$(id).textContent=msg;$(id).hidden=false;$(FIELDS[field]).setAttribute("aria-invalid","true");return true;}
+function dirty(){return ["rqTitle","rqAsk","rqAccept"].some(function(i){return $(i).value.trim();});}
+window.addEventListener("beforeunload",function(e){if(dirty()){e.preventDefault();e.returnValue="";}});
+$("rqAsk").addEventListener("input",function(){$("rqAskCount").textContent=$("rqAsk").value.length+" / 1500";});
+function localCheck(b){
+  var errs=[];
+  if(!b.title.trim())errs.push(["title","العنوان مطلوب"]);
+  if(!b.ask.trim())errs.push(["ask","المطلوب مطلوب"]);
+  if(!b.accept.trim())errs.push(["accept","أدخل معيار قبول واحدًا على الأقل"]);
+  if(!b.size)errs.push(["size","اختر الوسم"]);
+  if(!b.priority)errs.push(["priority","اختر الأولوية"]);
+  return errs;
+}
 $("rqForm").addEventListener("submit",function(e){
-  e.preventDefault();
+  e.preventDefault();clearErrors();$("rqMsg").textContent="";
   var body={title:$("rqTitle").value,ask:$("rqAsk").value,accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,
     touches:[].slice.call(document.querySelectorAll("#rqTouches input:checked")).map(function(c){return c.value;})};
+  var errs=localCheck(body);
+  if(errs.length){errs.forEach(function(x){showError(x[0],x[1]);});$(FIELDS[errs[0][0]]).focus();return;}
   $("rqSend").disabled=true;$("rqMsg").textContent="جارٍ الإرسال…";
   fetch(cfg.api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
-    .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+    .then(function(r){
+      var ct=r.headers.get("content-type")||"";
+      if(ct.indexOf("application/json")<0)return {ok:false,j:{error:"ردّ الخادم بخطأ (HTTP "+r.status+")"}};
+      return r.json().then(function(j){return {ok:r.ok,j:j};});
+    })
     .then(function(x){
-      $("rqMsg").textContent=x.ok?"أُرسل الطلب ("+x.j.file+"). سيلتقطه المشغّل قريبًا.":(x.j.error||"تعذّر الإرسال");
-      if(x.ok)$("rqForm").reset();
+      if(x.ok){
+        $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+"). سيلتقطه المشغّل قريبًا.";
+        $("rqForm").reset();$("rqAskCount").textContent="0 / 1500";
+      }else if(x.j.field&&showError(x.j.field,x.j.error)){$(FIELDS[x.j.field]).focus();}
+      else{$("rqMsg").textContent=x.j.error||"تعذّر الإرسال";}
     }).catch(function(){$("rqMsg").textContent="تعذّر الاتصال بالخادم";})
     .then(function(){$("rqSend").disabled=false;});
 });

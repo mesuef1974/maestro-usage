@@ -65,7 +65,7 @@ _ROWS = [
      "رحلة البطاقة في المشغّل لحظةً بلحظة: من الطابور إلى الإنتاج بلا جلسات، والنموذج يكتب الشيفرة فقط (D-519م).", "الحوكمة", "pulse",
      ["runner"]),
     ("request.html", "request.html", "طلب جديد",
-     "نموذج يكتب طلباً في requests/ يلتقطه المشغّل بلا نموذج ولا محادثة (D-519م).", "الحوكمة", "plus", ["request"]),
+     "استمارة تكتب طلبًا في requests/ يلتقطه المشغّل.", "الحوكمة", "plus", ["request"]),
 ]
 
 PAGES = [dict(file=f, template=t, title=ti, lede=le, group=g, icon=ic, sections=s) for f, t, ti, le, g, ic, s in _ROWS]

@@ -219,6 +219,7 @@ var AUTO={key:"mu_auto",steps:[0,5,15,30],save:null,timer:null,due:0};  // ال�
 function autoGet(){try{var v=Number(localStorage.getItem(AUTO.key));return AUTO.steps.indexOf(v)>0?v:0}catch(e){return 0}}
 function refreshNow(msg,b){
   // دورة تحميل كاملة في الخادم ثم إعادة تحميل الصفحة مع حفظ المرشِّحات (زر «تحديث فوري» والدوري كلاهما هنا)
+  if(!msg||!b)return;  // صفحةٌ بلا زرّ «تحديث فوري» (مثل «طلب جديد»): لا شيء يُحدَّث ولا خطأ عند العودة إلى التبويب
   if(AUTO.save)AUTO.save();
   if(location.protocol==="file:"){
     msg.textContent="التحديث الفوري يحتاج الخادم المحلي: شغّل python src\\serve.py ثم افتح العنوان 127.0.0.1:8790 في المتصفح — الآن يُعاد تحميل الملف فقط.";

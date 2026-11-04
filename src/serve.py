@@ -59,6 +59,7 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
     plan_fn = plan_fn or live_plan
     runner_fn = runner_fn or runner_page.snapshot  # «المشغّل الحيّ»: لقطة الدفتر عند كلّ طلب (تقرأ فقط)
     lock = threading.Lock()  # دورة واحدة في وقت واحد
+    request_rate = request_page.RateLimit(request_page.RATE_PER_HOUR)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "MaestroUsage"
@@ -116,20 +117,46 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._send(404, b"not found", "text/plain; charset=utf-8")
             self._send(200, body, ctype)
 
+        def _json(self, code, out):
+            self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
+
+        def _origin_strict_ok(self):
+            """كلّ POST: Host وOrigin معاً من القائمة البيضاء؛ غيابُ Origin يُرفض (المتصفّح يرسله دائماً مع POST)."""
+            origin = self.headers.get("Origin")
+            port = self.server.server_address[1]
+            own = {"127.0.0.1:%d" % port, "localhost:%d" % port}
+            return self._host_ok() and origin is not None and origin.split("://", 1)[-1].lower() in own
+
+        def _post_request(self):
+            if not self._origin_strict_ok():
+                return self._json(403, {"error": "مصدر الطلب غير مسموح", "field": ""})
+            if not (self.headers.get("Content-Type") or "").lower().startswith("application/json"):
+                return self._json(415, {"error": "نوع المحتوى يجب أن يكون application/json", "field": ""})
+            raw_len = self.headers.get("Content-Length")
+            if raw_len is None:
+                return self._json(411, {"error": "طول المحتوى مطلوب", "field": ""})
+            try:
+                n = int(raw_len)
+            except ValueError:
+                return self._json(400, {"error": "طول المحتوى غير صالح", "field": ""})
+            if n > request_page.MAX_BODY:
+                return self._json(413, {"error": "الطلب أكبر من الحد المسموح", "field": ""})
+            if not request_rate.allow():
+                return self._json(429, {"error": "عدد الطلبات تجاوز الحد في الساعة", "field": ""})
+            try:
+                params = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
+                if not isinstance(params, dict):
+                    raise request_page.ValidationError("جسم غير صالح", "")
+                return self._json(200, request_page.submit(params))
+            except request_page.ValidationError as exc:
+                return self._json(400, {"error": str(exc)[:200], "field": exc.field})
+            except (ValueError, OSError) as exc:
+                return self._json(400, {"error": str(exc)[:200], "field": ""})
+
         def do_POST(self):
             path = self.path.split("?", 1)[0]
-            if path == "/request":  # نموذج «طلب جديد»: يكتب ملفاً في requests/ فقط، بلا نموذج
-                if not self._host_ok():
-                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
-                try:
-                    n = int(self.headers.get("Content-Length") or 0)
-                    params = json.loads(self.rfile.read(min(n, 20000)).decode("utf-8") or "{}") if n else {}
-                    if not isinstance(params, dict):
-                        raise ValueError("جسم غير صالح")
-                    out, code = request_page.submit(params), 200
-                except (ValueError, OSError) as exc:
-                    out, code = {"ok": False, "error": str(exc)[:200]}, 400
-                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
+            if path == "/request":  # استمارة «طلب جديد»: تكتب ملفاً في requests/ فقط، بلا نموذج
+                return self._post_request()
             m = STORAGE_RE.match(path)
             if path != "/refresh" and not m:
                 return self._send(404, b"not found", "text/plain; charset=utf-8")
