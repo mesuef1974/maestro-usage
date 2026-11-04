@@ -121,3 +121,4 @@
 .kt.gate{border-color:var(--warn);background:var(--warn-soft)}
 .kt.end{border-color:var(--good);border-width:2px}
 @media (max-width:640px){.fdet dl{grid-template-columns:1fr}}
+#tbl .wrap{max-block-size:75vh}  /* جدول المهارات الطويل يتمرّر داخل البطاقة فلا يطيل الصفحة */

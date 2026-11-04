@@ -1,4 +1,4 @@
-/* طيّ البطاقات: زرّ في رأس كل بطاقة يخفي محتواها ويُبقي عنوانها؛ الحالة تُحفظ لكل بطاقة، وزرّا «طيّ الكل/فتح الكل» في أعلى الصفحة. */
+/* طيّ البطاقات: زرّ في رأس كل بطاقة يخفي محتواها ويُبقي عنوانها (data-fold = مطويّة افتراضيًّا)؛ الحالة تُحفظ لكل بطاقة، وزرّا «طيّ الكل/فتح الكل» في أعلى الصفحة. */
 (function(){
   var KEY="mu_fold",saved={};
   try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){}
@@ -16,7 +16,8 @@
     b.type="button";b.className="foldbtn";b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
     b.addEventListener("click",function(){set(card,!card.classList.contains("folded"))});
     head.appendChild(b);
-    set(card,saved[card.querySelector("h2").id]===1,true);
+    var id=card.querySelector("h2").id;
+    set(card,id in saved?saved[id]===1:card.hasAttribute("data-fold"),true);  /* الافتراضي: البطاقات الطويلة (جداول، أدوات) مطويّة حتى يفتحها القارئ */
   });
   var live=document.querySelector(".pagehead .live");
   if(live&&cards.length){

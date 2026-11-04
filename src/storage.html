@@ -18,14 +18,14 @@ __SHELL_OPEN__
   <details class="mt"><summary>المجلدات العليا (جدول)</summary><div class="wrap free" id="tops"></div></details>
 </section><!--@/sec-->
 
-<!--@sec proj--><section class="card" aria-labelledby="hp">
+<!--@sec proj--><section class="card" data-fold aria-labelledby="hp">
   <div class="cardhead"><h2 id="hp">سجلات الجلسات بحسب المشروع</h2><span class="sub" id="psum"></span></div>
   <p class="note">كل مجلد في projects مشروعٌ (أو worktree). «مجلد العمل موجود؟» من مسارات الجلسات في القاعدة: «لا» يعني أن المجلد الأصلي اختفى وسجلاته يتيمة. «محمَّل» نسبة ما قرأته هذه المنصة من سجلاته.</p>
   <div class="wrap free" id="projs"></div>
   <button type="button" class="more" id="stpmore" hidden></button>
 </section><!--@/sec-->
 
-<!--@sec age--><section class="card" aria-labelledby="ha">
+<!--@sec age--><section class="card" data-fold aria-labelledby="ha">
   <div class="cardhead"><h2 id="ha">عمر الملفات والامتدادات</h2><span class="sub" id="asum"></span></div>
   <p class="note">الحجم بحسب آخر تعديل: ما هو أقدم من 90 يومًا نادرًا ما يُحتاج إليه. ثم أكبر الامتدادات.</p>
   <div class="row2">
@@ -34,14 +34,14 @@ __SHELL_OPEN__
   </div>
 </section><!--@/sec-->
 
-<!--@sec growth--><section class="card" aria-labelledby="hg">
+<!--@sec growth--><section class="card" data-fold aria-labelledby="hg">
   <div class="cardhead"><h2 id="hg">نموّ الحجم</h2><span class="sub" id="gsum"></span></div>
   <p class="note">إجمالي المجلد عند كل مسح (كل ساعة). المنحنى يتكوّن مع الأيام.</p>
   <div class="chart" id="cg"></div>
   <p class="note" id="gnote"></p>
 </section><!--@/sec-->
 
-<!--@sec tools--><section class="card" aria-labelledby="ht">
+<!--@sec tools--><section class="card" data-fold aria-labelledby="ht">
   <div class="cardhead"><h2 id="ht">تحرير المساحة بأمان</h2><span class="sub" id="tsum"></span></div>
   <p class="note">لا حذف مباشر: «معاينة» تحسب المرشّحين بلا تغيير، و«نقل إلى الحجر» ينقلهم إلى <code id="qdir"></code> مع قائمة ملفات، فيمكن استرجاعهم كاملين بزر. لا يُنقل ملف لُمس خلال آخر <span id="minage"></span> ساعة، ولا سجل جلسة لم يُحمَّل كاملًا إلى القاعدة. الحذف النهائي من الحجر فقط وبتأكيد مزدوج.</p>
   <p class="callout warn" id="toff" hidden>الأدوات تعمل من الخادم المحلي فقط: افتح الصفحة من 127.0.0.1:8790.</p>
