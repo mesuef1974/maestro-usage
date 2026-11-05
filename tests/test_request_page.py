@@ -274,3 +274,12 @@ def test_preview_and_api_endpoints(server):
     r.read()
     assert r.status == 403
     c.close()
+
+
+def test_template_headings_alone_are_rejected(reqdir):
+    tpl = request_page.criteria_lib()["types"]["تحسين واجهة"]["template"]
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit({**FULL, "type": "تحسين واجهة", "ask": tpl})
+    assert e.value.field == "ask"
+    ok = tpl.replace("الوضع الحالي:", "الوضع الحالي: الزر رمادي باهت لا يُرى على الخلفية")
+    assert request_page.submit({**FULL, "type": "تحسين واجهة", "ask": ok})["ok"]

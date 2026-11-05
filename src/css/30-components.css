@@ -32,7 +32,7 @@
 .tile{padding:var(--sp-3) var(--sp-4);min-inline-size:0;border-inline-start:1px solid var(--line)}
 .tile:first-child{border-inline-start:0}
 .tile .l{color:var(--ink2);font-size:var(--t-sm)}
-.tile .v{font:700 var(--t-xl)/var(--lh-num) var(--font-num);color:var(--ink)}
+.tile .v{font:700 clamp(1.15rem,2.4vw,var(--t-xl))/var(--lh-num) var(--font-num);color:var(--ink);overflow-wrap:anywhere;min-inline-size:0}  /* أرقام بعشر خانات (6,650,179) كانت تلتحم بالخانة المجاورة */
 .tile .d{color:var(--ink3);font-size:var(--t-xs)}
 /* شريط الأرقام الثلاثة في رأس الصفحة: ما يحتاجه القارئ في ثلاث ثوانٍ */
 .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--sp-3);margin-block-start:var(--sp-4)}

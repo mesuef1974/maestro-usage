@@ -189,11 +189,19 @@ function showError(field,msg){var id=ERR[field];if(!id)return false;$(id).textCo
 function focusField(field){var f=$(FIELDS[field]);if(!f)return;if(f.tagName==="DIV"){var c=f.querySelector("input");if(c)c.focus();}else f.focus();}
 function dirty(){return ["rqTitle","rqAsk","rqAccept"].some(function(i){return $(i).value.trim();});}
 window.addEventListener("beforeunload",function(e){if(dirty()){e.preventDefault();e.returnValue="";}});
+function templateOnly(b){
+  var info=cfg.types[b.type];if(!info)return false;
+  var heads=info.template.split("\n").map(function(h){return h.trim().replace(/:$/,"").trim();}).filter(Boolean),ans=b.ask;
+  if(heads.filter(function(h){return ans.indexOf(h)>=0;}).length<2)return false;
+  heads.sort(function(x,y){return y.length-x.length;}).forEach(function(h){ans=ans.split(h).join("");});
+  return ans.replace(/[\s\/:؟?().\d]+/g,"").length<8;
+}
 function localCheck(b){
   var errs=[];
   if(!b.title.trim())errs.push(["title","العنوان مطلوب"]);
   if(!b.type)errs.push(["type","اختر نوع الطلب"]);
   if(!b.ask.trim())errs.push(["ask","المطلوب مطلوب"]);
+  else if(templateOnly(b))errs.push(["ask","املأ القالب بتفاصيل الطلب؛ العناوين وحدها لا تكفي"]);
   if(!b.criteria.length&&!b.accept.trim())errs.push(["criteria","اختر معيار قبول واحدًا على الأقل"]);
   if(!b.size)errs.push(["size","اختر الحجم"]);
   if(!b.priority)errs.push(["priority","اختر الأولوية"]);

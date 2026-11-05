@@ -170,6 +170,13 @@ def validate(params):
     for field, label, ok in (("title", "العنوان", title), ("ask", "المطلوب", ask), ("accept", "معايير القبول", chosen + extra)):
         if not ok:
             raise ValidationError("الحقل ناقص: " + label, "criteria" if field == "accept" else field)
+    heads = [h.strip().rstrip(":").strip() for h in lib["types"][rtype]["template"].splitlines() if h.strip()]
+    if sum(h in ask for h in heads) >= 2:  # المطلوب مأخوذ من القالب: لا يُقبل بعناوينه وحدها بلا إجابات
+        answered = ask
+        for h in sorted(heads, key=len, reverse=True):
+            answered = answered.replace(h, "")
+        if len(re.sub(r"[\s/:؟?().\d]+", "", answered)) < 8:
+            raise ValidationError("املأ القالب بتفاصيل الطلب؛ العناوين وحدها لا تكفي", "ask")
     if size not in SIZES + LEGACY_SIZES:
         raise ValidationError("اختر الحجم", "size")
     if prio not in PRIORITIES:
