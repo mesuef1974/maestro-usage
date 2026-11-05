@@ -107,15 +107,24 @@ def main(argv=None):
         return SKIPPED
     try:
         t = time.time()
+        times = {}  # زمن كل مرحلة بالثواني؛ يُكتب في السجل ليُعرف ما يطيل الدورة
+
+        def timed(name, fn):
+            t0 = time.time()
+            try:
+                return fn()
+            finally:
+                times[name] = round(time.time() - t0, 1)
+
         con = usage_db.connect()
-        st = usage_ingest.run(con)
-        ext = import_external.run_dir(con)  # جلسات سحابية مصدَّرة أرقامًا فقط إلى data/external
-        sp = statusline_loader.load_spool(con)
+        st = timed("ingest", lambda: usage_ingest.run(con))
+        ext = timed("external", lambda: import_external.run_dir(con))  # جلسات سحابية مصدَّرة أرقامًا فقط إلى data/external
+        sp = timed("spool", lambda: statusline_loader.load_spool(con))
         new_data = bool(ext or st["turns_new"] or st["turns_updated"] or st["turns_reassigned"] or sp.get("plans_new"))
         if new_data:
-            rollups.refresh(con)  # تجميعات الاستهلاك تتبع كل بيانات جديدة (تُعاد كتابتها كاملةً في معاملة)
+            timed("rollups", lambda: rollups.refresh(con))  # تجميعات الاستهلاك تتبع كل بيانات جديدة (تُعاد كتابتها كاملةً في معاملة)
         sc = {}
-        sg = storage_scan.run(con)  # حجم ~/.claude كل ساعة؛ صفر توكنات
+        sg = timed("storage", lambda: storage_scan.run(con))  # حجم ~/.claude كل ساعة؛ صفر توكنات
         state = load_state()
         rep = "skipped"
         fp = server_guard.fingerprint()  # تغيّر الكود (قوالب/أنماط) يعني إعادة بناء الصفحات فورًا لا بعد 15 دقيقة
@@ -124,6 +133,7 @@ def main(argv=None):
                 t2 = time.time()
                 reports.build(con)  # يُولّد reports\index.html وملفات CSV؛ فشله لا يوقف الدورة
                 rep = "ok sec %.1f" % (time.time() - t2)
+                times["build"] = dict(reports.TIMES)
                 state = {"last_build": time.time(), "pending": False, "fp": fp}
             except Exception as exc:  # noqa: BLE001
                 rep = "ERROR " + type(exc).__name__
@@ -135,7 +145,7 @@ def main(argv=None):
         if new_data or sc.get("config_changed") or sg.get("scanned") or st["files_error"] or rep != "skipped" or force:  # دورة بلا جديد ولا بناء لا تُسجَّل (كل دقيقة)
             log("ingest " + json.dumps({k: st[k] for k in ("files_ingested", "turns_new", "turns_updated", "turns_reassigned", "files_error", "turns_total")})
                 + " spool " + json.dumps(sp) + " startup " + json.dumps(sc) + " storage " + json.dumps(sg)
-                + " reports " + rep + " sec %.1f" % (time.time() - t))
+                + " reports " + rep + " sec %.1f" % (time.time() - t) + " times " + json.dumps(times))
         if backup_due():
             dest, res = backup_db.backup()
             log("backup integrity_check=" + res)

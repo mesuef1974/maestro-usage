@@ -81,10 +81,11 @@ def models(con, grain, start):
 
 def last_session(con):
     """أحدث جلسة نشاطًا: إجماليها ونماذجها."""
-    r = con.execute("SELECT session_key, first_ts, last_ts, turns, input_tokens, cache_creation_tokens, cache_read_tokens, output_tokens "
-                    "FROM v_session_totals ORDER BY last_ts DESC LIMIT 1").fetchone()
-    if not r:
+    key = con.execute("SELECT session_key FROM usage_turns ORDER BY ts DESC LIMIT 1").fetchone()  # عبر فهرس ts لا تجميعًا لكل الجلسات
+    if not key:
         return None
+    r = con.execute("SELECT session_key, first_ts, last_ts, turns, input_tokens, cache_creation_tokens, cache_read_tokens, output_tokens "
+                    "FROM v_session_totals WHERE session_key = ?", (key[0],)).fetchone()
     ms = [dict(model=m[0], turns=m[1], input=m[2], cache_creation=m[3], cache_read=m[4], output=m[5]) for m in con.execute(
         "SELECT model, COUNT(*), SUM(input_tokens), SUM(cache_creation_tokens), SUM(cache_read_tokens), SUM(output_tokens) "
         "FROM usage_turns WHERE session_key = ? GROUP BY model ORDER BY 2 DESC", (r[0],))]
@@ -92,7 +93,8 @@ def last_session(con):
 
 
 def payload(con):
-    refresh(con)
+    if not con.execute("SELECT 1 FROM usage_rollups LIMIT 1").fetchone():
+        refresh(con)  # الدورة تحدّث التجميعات عند كل بيانات جديدة؛ هنا فقط إن كانت فارغة (أول بناء أو قاعدة اختبار)
     start_w, start_m = (con.execute("SELECT MAX(period_start) FROM usage_rollups WHERE grain = ?", (g,)).fetchone()[0] for g in ("week", "month"))
     return dict(session=last_session(con), weekly=periods(con, "week", 8), monthly=periods(con, "month", 6),
                 week_models=models(con, "week", start_w) if start_w else [], month_models=models(con, "month", start_m) if start_m else [],

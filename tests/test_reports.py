@@ -68,3 +68,17 @@ class TestReports(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBuildTimes(unittest.TestCase):
+    def test_build_records_stage_times(self):
+        """بناء واحد يملأ reports.TIMES بزمن كل حمولة والصفحة، فيظهر في سجل الدورة ما يطيلها."""
+        con = usage_db.connect(":memory:")
+        tmp = tempfile.mkdtemp()
+        try:
+            reports.build(con, tmp)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        for k in ("static", "dashboard", "hourly", "skills", "storage", "flow", "runner", "request", "summary", "page"):
+            self.assertIn(k, reports.TIMES)
+            self.assertIsInstance(reports.TIMES[k], float)

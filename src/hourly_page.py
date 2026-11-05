@@ -11,11 +11,10 @@ def _epoch(ts):
 
 
 def payload(con):
-    hours = {}
-    for ts, i, cc, cr, u in con.execute("SELECT ts, input_tokens, cache_creation_tokens, cache_read_tokens, output_tokens FROM usage_turns ORDER BY ts"):
-        h = int(_epoch(ts) // 3600)
-        hours[h] = hours.get(h, 0) + i + cc + cr + u
-    return dict(h=[[h, v] for h, v in sorted(hours.items())])
+    # التجميع بالساعة في SQL (substr حتى الساعة؛ ts بصيغة ISO وبتوقيت UTC) بدل المرور على كل الردود في بايثون
+    rows = con.execute("SELECT substr(ts,1,13), SUM(input_tokens + cache_creation_tokens + cache_read_tokens + output_tokens) "
+                       "FROM usage_turns GROUP BY 1 ORDER BY 1").fetchall()
+    return dict(h=[[int(_epoch(k + ":00:00Z") // 3600), v] for k, v in rows])
 
 
 DENSE_HOURS = 48  # آخر يومين بكل لقطة (كل 5 دقائق)؛ الأقدم لقطة واحدة في الساعة، فلا تتضخم الصفحة مع الأيام

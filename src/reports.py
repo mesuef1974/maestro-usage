@@ -7,6 +7,7 @@ import html
 import os
 import statistics
 import sys
+import time
 from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -44,7 +45,7 @@ def _window(con, d0, d1):
                COALESCE(SUM(input_tokens + cache_creation_tokens + cache_read_tokens + output_tokens), 0),
                COALESCE(SUM(cache_read_tokens), 0), COALESCE(SUM(output_tokens), 0),
                COALESCE(AVG(input_tokens + cache_creation_tokens + cache_read_tokens), 0)
-        FROM usage_turns WHERE substr(ts,1,10) >= ? AND substr(ts,1,10) < ?""", (d0, d1)).fetchone()
+        FROM usage_turns WHERE ts >= ? AND ts < ?""", (d0, d1)).fetchone()  # مقارنة على ts نفسه ليعمل فهرس ix_turns_ts (التواريخ بادئة ISO)
     turns, active_days, sessions, total, cr, out, avg_ctx = r
     return dict(turns=turns, active_days=active_days, sessions=sessions, total=total, cache_read=cr, output=out,
                 avg_context=avg_ctx, read_per_output=(cr / out if out else None))
@@ -109,8 +110,12 @@ def source(text, stamp):
 
 
 
+TIMES = {}  # زمن مراحل آخر بناء بالثواني (يُكتب في سجل الدورة)
+
+
 def build(con, out_dir=REPORTS_DIR):
     os.makedirs(out_dir, exist_ok=True)
+    t_static = time.time()
     stamp = con.execute("SELECT MAX(updated_at) FROM ingest_state").fetchone()[0] or "—"
     parts = []
 
@@ -160,16 +165,27 @@ def build(con, out_dir=REPORTS_DIR):
     parts.append(source("جدول plan_snapshots", stamp))
 
     gen = datetime.now().strftime("%Y-%m-%d %H:%M")
+    static_sec = round(time.time() - t_static, 1)
     ui.write_assets(out_dir)
     static = "".join(parts)
-    payloads = {"dashboard.html": dashboard.payload(con, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY),
-                "hourly.html": hourly_page.payload(con), "skills.html": skills_page.payload(),
-                "storage.html": storage_page.payload(con), "flow.html": flow_page.payload(), "runner.html": runner_page.payload(), "request.html": request_page.payload(), "summary.html": summary_page.payload(con)}
+    makers = {"dashboard.html": lambda: dashboard.payload(con, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY),
+              "hourly.html": lambda: hourly_page.payload(con), "skills.html": skills_page.payload,
+              "storage.html": lambda: storage_page.payload(con), "flow.html": flow_page.payload, "runner.html": runner_page.payload,
+              "request.html": request_page.payload, "summary.html": lambda: summary_page.payload(con)}
+    payloads = {}
+    TIMES.clear()
+    TIMES["static"] = static_sec
+    for k, fn in makers.items():  # زمن كل حمولة يُسجَّل في TIMES ليظهر في سجل الدورة (أبطأ مرحلة تُعرف بالاسم)
+        t0 = time.time()
+        payloads[k] = fn()
+        TIMES[k.split(".")[0]] = round(time.time() - t0, 1)
     parts = []
     for p in pages.PAGES:  # جزء لكل سطر في السجلّ؛ تجمعها onepage في index.html
         tokens = {"__STAMP__": gen, "__STATIC__": static}
         parts.append((p["file"], ui.render(p["file"], payloads[p["template"]], tokens), p["file"] in pages.SCRIPTLESS))
+    t0 = time.time()
     ui.write(os.path.join(out_dir, "index.html"), onepage.build(parts, gen))
+    TIMES["page"] = round(time.time() - t0, 1)
     for name in os.listdir(out_dir):  # صفحات المنصة القديمة (قبل الصفحة الواحدة) تُزال كي لا تُقدَّم قديمة
         if name.endswith(".html") and name != "index.html":
             try:
