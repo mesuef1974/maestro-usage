@@ -172,6 +172,13 @@ def main(argv=None):
                 log("alerts sent %d" % n_alerts)
         except Exception as exc:  # noqa: BLE001
             log("alerts ERROR " + type(exc).__name__)
+        try:  # مرفقات «طلب جديد»: رفعٌ لم يُربط خلال يوم، ومرفقات أقدم من 30 يومًا
+            import request_files
+            n_clean = request_files.cleanup()
+            if n_clean:
+                log("attachments cleaned %d" % n_clean)
+        except Exception as exc:  # noqa: BLE001
+            log("attachments cleanup ERROR " + type(exc).__name__)
         if backup_due():
             dest, res = backup_db.backup()
             log("backup integrity_check=" + res)

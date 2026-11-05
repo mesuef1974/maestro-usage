@@ -48,3 +48,19 @@
 .rq .rq-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-3);font-size:var(--t-sm);margin:var(--sp-2) 0 0}
 .rq [hidden]{display:none!important}  /* display:flex على .rq-tpl كان يُظهر العنصر رغم hidden */
 .rq .rq-preview pre{font-family:inherit;line-height:1.8}
+/* المرحلة 1: المرفقات */
+.rq fieldset.rq-att{border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4);margin:0 0 var(--sp-4)}
+.rq .rq-drop{display:flex;align-items:center;justify-content:center;gap:var(--sp-3);min-block-size:6rem;padding:var(--sp-4);border:2px dashed var(--line-strong);border-radius:var(--r-sm);color:var(--ink2);cursor:pointer;text-align:center}
+.rq .rq-drop svg{inline-size:28px;block-size:28px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rq .rq-drop:hover,.rq .rq-drop.over{border-color:var(--brand);color:var(--ink);background:var(--hover)}
+.rq .rq-drop:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.rq .rq-link{color:var(--brand);text-decoration:underline;font-weight:700}
+.rq .rq-atts{list-style:none;margin:var(--sp-3) 0 0;padding:0;display:grid;gap:var(--sp-2)}
+.rq .rq-atts li{display:flex;align-items:center;gap:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3);min-inline-size:0}
+.rq .rq-atts li.bad{border-color:var(--bad)}
+.rq .rq-atts img{inline-size:48px;block-size:48px;object-fit:cover;border-radius:var(--r-sm);flex:none;background:var(--chip)}
+.rq .rq-ico{inline-size:48px;block-size:48px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);background:var(--chip);font:700 var(--t-xs) var(--font-num);color:var(--ink2)}
+.rq .rq-an{display:grid;min-inline-size:0;flex:1}
+.rq .rq-an bdi{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rq .rq-confirm{display:flex;align-items:baseline;gap:var(--sp-2);margin:var(--sp-3) 0 0;font-weight:600}
+.rq .rq-confirm input{flex:none;inline-size:auto}

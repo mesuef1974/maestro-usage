@@ -66,7 +66,7 @@ class ValidationError(ValueError):
         self.field = field
 
 
-ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval", "type", "criteria", "page", "files", "out_of_scope"})
+ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval", "type", "criteria", "page", "files", "out_of_scope", "attachments"})
 _PII = None
 PII_SOURCE = None  # "ledger" حين يُحمَّل من سجلّ المايسترو، أو "fallback" حين يغيب (نسخة مطابقة هنا)
 # نسخةٌ مطابقة لتعبير سجلّ المايسترو (tools/ledger.py: _PII) تُستعمل إن غاب السجلّ، فلا تتعطّل صفحة الطلب ولا اختباراتها خارج جهاز المالك
@@ -189,7 +189,10 @@ def validate(params):
     touches = sorted(set(touches) | set(auto), key=TOUCHES.index)
     checks = [lib["by_id"][i]["verify"]["check"] for i in ids if lib["by_id"][i]["verify"].get("auto") == "runner"]
     accept_list = chosen + extra
-    return dict(title=title, ask=ask, accept=" ؛ ".join(accept_list), accept_list=accept_list, size=size, priority=prio, touches=touches,
+    att = params.get("attachments") or ""
+    if att and not re.fullmatch(r"[0-9a-f]{16}", str(att)):
+        raise ValidationError("رمز المرفقات غير صالح", "attachments")
+    return dict(attachments=att, title=title, ask=ask, accept=" ؛ ".join(accept_list), accept_list=accept_list, size=size, priority=prio, touches=touches,
                 auto_touches=auto, approval=approval, type=rtype, criteria=ids, checks=checks, page=page, files=files, out_of_scope=out_of_scope)
 
 
@@ -211,6 +214,11 @@ def render_body(fields):
         body += "الملفات: %s\n" % "، ".join(fields["files"])
     if fields["out_of_scope"]:
         body += "خارج النطاق: %s\n" % fields["out_of_scope"]
+    if fields.get("attachments_dir"):
+        body += "المرفقات: %s\n" % fields["attachments_dir"]
+        body += "ملفات المرفقات: %s\n" % "، ".join("%s|%s" % (f["name"], f["sha256"]) for f in fields["attachments_files"])
+    elif fields.get("attachments"):
+        body += "المرفقات: (تُربط عند الإرسال)\n"
     return body
 
 
@@ -232,13 +240,20 @@ def submit(params, now=None):
     while path.exists():
         n += 1
         path = d / ("web-%s-%d.md" % (stamp, n))
+    if fields["attachments"]:  # الرفع المؤقت يُنقل إلى مجلد باسم الطلب قبل كتابة الطلب نفسه: لا طلب يشير إلى مرفقات غائبة
+        import request_files
+        try:
+            adir, afiles = request_files.bind(fields["attachments"], path.stem)
+        except request_files.UploadError as exc:
+            raise ValidationError(str(exc), "attachments") from None
+        fields.update(attachments_dir=str(adir), attachments_files=afiles)
     body = render_body(fields)
     digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
     body += "مقدَّم في: %s\nالمصدر: mizan-form\nsha256: %s\n" % (time.strftime("%Y-%m-%dT%H:%M:%S", t), digest)
     tmp = d / ".incoming" / (path.name + ".tmp")
     tmp.write_text(body, encoding="utf-8")
     os.replace(tmp, path)
-    return dict(ok=True, file=path.name, auto_touches=fields["auto_touches"])
+    return dict(ok=True, file=path.name, auto_touches=fields["auto_touches"], attachments=len(fields.get("attachments_files") or []))
 
 
 _FILES_CACHE = {"t": 0.0, "files": []}
@@ -328,6 +343,12 @@ def payload():
     lib = criteria_lib()
     return dict(request=dict(api="request", sizes=list(SIZES), priorities=list(PRIORITIES), touches=list(TOUCHES), approvals=list(APPROVALS),
                              types=lib["types"], criteria=lib["criteria"], touch_globs={k: list(v) for k, v in TOUCH_GLOBS.items()},
-                             max_files=MAX_FILES, vague=list(VAGUE)))
+                             max_files=MAX_FILES, vague=list(VAGUE), upload=_upload_cfg()))
+
+
+def _upload_cfg():
+    import request_files as rf
+    return dict(api="request/upload", max_files=rf.MAX_FILES, max_file=rf.MAX_FILE, max_total=rf.MAX_TOTAL, confirm=rf.CONFIRM_TEXT,
+                exts=sorted(rf.EXT_KIND), kinds={k: list(v[0]) for k, v in rf.KINDS.items()})
 
 

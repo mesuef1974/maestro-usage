@@ -283,3 +283,34 @@ def test_template_headings_alone_are_rejected(reqdir):
     assert e.value.field == "ask"
     ok = tpl.replace("الوضع الحالي:", "الوضع الحالي: الزر رمادي باهت لا يُرى على الخلفية")
     assert request_page.submit({**FULL, "type": "تحسين واجهة", "ask": ok})["ok"]
+
+
+def test_upload_endpoint_guards_and_stages(server, tmp_path, monkeypatch):
+    monkeypatch.setenv("RUNNER_ATTACHMENTS", str(tmp_path / "att"))
+    port = server
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+
+    def up(body, ctype="multipart/form-data; boundary=B", origin=True, length=True):
+        c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        c.putrequest("POST", "/request/upload", skip_host=True, skip_accept_encoding=True)
+        c.putheader("Host", "127.0.0.1:%d" % port)
+        if origin:
+            c.putheader("Origin", "http://127.0.0.1:%d" % port)
+        c.putheader("Content-Type", ctype)
+        if length:
+            c.putheader("Content-Length", str(len(body)))
+        c.endheaders()
+        c.send(body)
+        r = c.getresponse()
+        out = (r.status, json.loads(r.read() or b"{}"))
+        c.close()
+        return out
+
+    part = lambda confirm: ((b"--B\r\nContent-Disposition: form-data; name=\"confirm\"\r\n\r\n1\r\n" if confirm else b"")  # noqa: E731
+                            + b"--B\r\nContent-Disposition: form-data; name=\"files\"; filename=\"../../a.png\"\r\n\r\n" + png + b"\r\n--B--\r\n")
+    code, j = up(part(True))
+    assert code == 200 and j["files"][0]["name"] == "a.png" and len(j["token"]) == 16
+    assert up(part(False))[0] == 400  # بلا تأكيد
+    assert up(part(True), origin=False)[0] == 403
+    assert up(part(True), ctype="application/json")[0] == 415
+    assert up(part(True), length=False)[0] == 411

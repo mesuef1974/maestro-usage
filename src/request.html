@@ -45,6 +45,18 @@ __SHELL_OPEN__
         <input id="rqOut" name="out_of_scope" maxlength="500" placeholder="ما لا يجب أن يُمسّ" aria-describedby="rqOutErr">
         <p class="rq-err" id="rqOutErr" role="alert" hidden></p></div>
     </fieldset>
+    <fieldset class="rq-att" aria-describedby="rqAttHint rqAttErr"><legend>المرفقات (اختياري)</legend>
+      <div class="rq-drop" id="rqDrop" tabindex="0" role="button" aria-describedby="rqAttHint">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <span>اسحب الملفات هنا، أو <span class="rq-link">اختر ملفات</span>، أو الصق لقطة بـ Ctrl+V</span>
+        <input type="file" id="rqFilePick" multiple hidden>
+      </div>
+      <p class="sub" id="rqAttHint"></p>
+      <ul class="rq-atts" id="rqAtts" aria-label="المرفقات"></ul>
+      <label class="rq-confirm" id="rqConfirmRow" hidden><input type="checkbox" id="rqConfirm"> <span id="rqConfirmTxt"></span></label>
+      <p class="rq-err" id="rqAttErr" role="alert" hidden></p>
+      <p class="sub" id="rqAttLive" aria-live="polite"></p>
+    </fieldset>
     <div class="rq-row">
       <div class="rq-field"><label for="rqApproval">الاعتماد</label>
         <select id="rqApproval" name="approval" aria-describedby="rqApprovalHint"></select>
@@ -66,9 +78,9 @@ __SHELL_CLOSE__
 __LIB__
 (function(){
 var cfg=JSON.parse(document.getElementById("data").textContent).request;
-var FIELDS={title:"rqTitle",ask:"rqAsk",type:"rqType",criteria:"rqCrit",accept:"rqAccept",size:"rqSize",priority:"rqPrio",page:"rqPage",files:"rqFileIn",out_of_scope:"rqOut"};
-var ERR={title:"rqTitleErr",ask:"rqAskErr",type:"rqTypeErr",criteria:"rqCritErr",accept:"rqCritErr",size:"rqSizeErr",priority:"rqPrioErr",page:"rqPageErr",files:"rqFilesErr",out_of_scope:"rqOutErr"};
-var DRAFT="mu_rq_draft",files=[],critTouched=false,lastType="";
+var FIELDS={attachments:"rqDrop",title:"rqTitle",ask:"rqAsk",type:"rqType",criteria:"rqCrit",accept:"rqAccept",size:"rqSize",priority:"rqPrio",page:"rqPage",files:"rqFileIn",out_of_scope:"rqOut"};
+var ERR={attachments:"rqAttErr",title:"rqTitleErr",ask:"rqAskErr",type:"rqTypeErr",criteria:"rqCritErr",accept:"rqCritErr",size:"rqSizeErr",priority:"rqPrioErr",page:"rqPageErr",files:"rqFilesErr",out_of_scope:"rqOutErr"};
+var DRAFT="mu_rq_draft",files=[],critTouched=false,lastType="",atts=[],attToken="";
 function $(i){return document.getElementById(i);}
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function fill(id,items){$(id).innerHTML='<option value="">اختر…</option>'+items.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join("");}
@@ -132,12 +144,71 @@ $("rqTitle").addEventListener("blur",function(){
     box.innerHTML=s.length?"قد يشبه: "+s.map(function(x){return '<bdi>'+esc(x.id)+'</bdi> «'+esc(x.title)+'» ('+esc(x.state)+')';}).join(" · "):"";
   }).catch(function(){box.hidden=true;});
 });
+/* المرفقات: تُجمع في المتصفح ثم تُرفع دفعةً واحدة عند الإرسال (رفعٌ multipart منفصل يعيد رمزًا يُربط بالطلب) */
+var U=cfg.upload,ICON={pdf:"PDF",xlsx:"XLSX",csv:"CSV",md:"MD",txt:"TXT"};
+$("rqAttHint").textContent="صور (png وjpg وwebp)، وPDF، وExcel وCSV، وMarkdown ونص. حتى "+U.max_files+" ملفات، و10MB للملف، و25MB للطلب.";
+$("rqConfirmTxt").textContent=U.confirm;
+function fmtBytes(n){return n<1024?n+" بايت":n<1048576?Math.round(n/1024)+" كيلوبايت":(n/1048576).toFixed(1)+" ميجابايت";}
+function extOf(n){var m=/\.([^.]+)$/.exec(n||"");return m?m[1].toLowerCase():"";}
+function attLive(t){$("rqAttLive").textContent=t;}
+function addAtts(list){
+  var errs=[];
+  [].slice.call(list).forEach(function(f){
+    var e=extOf(f.name),tot=atts.reduce(function(a,x){return a+x.file.size;},0);
+    if(U.exts.indexOf(e)<0)errs.push(f.name+": نوع غير مسموح");
+    else if(f.size>U.max_file)errs.push(f.name+": أكبر من 10MB");
+    else if(atts.length>=U.max_files)errs.push(f.name+": "+U.max_files+" ملفات على الأكثر");
+    else if(tot+f.size>U.max_total)errs.push(f.name+": يتجاوز مجموع 25MB");
+    else atts.push({file:f,err:""});
+  });
+  attToken="";renderAtts();
+  if(errs.length){$("rqAttErr").textContent=errs.join(" · ");$("rqAttErr").hidden=false;}else{$("rqAttErr").hidden=true;}
+  attLive(atts.length?atts.length+" مرفق":"لا مرفقات");update();
+}
+function renderAtts(){
+  $("rqAtts").innerHTML=atts.map(function(a,i){
+    var e=extOf(a.file.name),img=/^(png|jpe?g|webp)$/.test(e);
+    return '<li'+(a.err?' class="bad"':'')+'>'+(img?'<img alt="" data-i="'+i+'">':'<span class="rq-ico" aria-hidden="true">'+(ICON[e]||e.toUpperCase())+'</span>')
+      +'<span class="rq-an"><bdi>'+esc(a.file.name)+'</bdi><span class="sub">'+fmtBytes(a.file.size)+(a.err?' · '+esc(a.err):'')+'</span></span>'
+      +'<button type="button" class="rq-x" data-i="'+i+'" aria-label="احذف '+esc(a.file.name)+'">×</button></li>';}).join("");
+  [].forEach.call($("rqAtts").querySelectorAll("img[data-i]"),function(im){var u=URL.createObjectURL(atts[Number(im.dataset.i)].file);im.src=u;im.onload=function(){URL.revokeObjectURL(u);};});
+  $("rqConfirmRow").hidden=!atts.length;if(!atts.length)$("rqConfirm").checked=false;
+}
+$("rqAtts").addEventListener("click",function(e){var b=e.target.closest(".rq-x");if(!b)return;var n=atts[Number(b.dataset.i)].file.name;atts.splice(Number(b.dataset.i),1);attToken="";renderAtts();attLive("حُذف "+n);update();$("rqDrop").focus();});
+$("rqDrop").addEventListener("click",function(){$("rqFilePick").click();});
+$("rqDrop").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();$("rqFilePick").click();}});
+$("rqFilePick").addEventListener("change",function(){addAtts(this.files);this.value="";});
+["dragenter","dragover"].forEach(function(t){$("rqDrop").addEventListener(t,function(e){e.preventDefault();$("rqDrop").classList.add("over");});});
+["dragleave","drop"].forEach(function(t){$("rqDrop").addEventListener(t,function(e){e.preventDefault();$("rqDrop").classList.remove("over");});});
+$("rqDrop").addEventListener("drop",function(e){if(e.dataTransfer&&e.dataTransfer.files)addAtts(e.dataTransfer.files);});
+/* لصق لقطة من الحافظة في أي مكان من الاستمارة: تُسمّى لقطة-<الوقت>.png */
+$("rqForm").addEventListener("paste",function(e){
+  var items=(e.clipboardData&&e.clipboardData.items)||[],got=[];
+  [].forEach.call(items,function(it){if(it.kind==="file"&&/^image\//.test(it.type)){var f=it.getAsFile();if(f){var t=new Date(),p=function(n){return (n<10?"0":"")+n;};
+    var ext=it.type==="image/jpeg"?"jpg":it.type==="image/webp"?"webp":"png";
+    got.push(new File([f],"لقطة-"+t.getFullYear()+p(t.getMonth()+1)+p(t.getDate())+"-"+p(t.getHours())+p(t.getMinutes())+p(t.getSeconds())+"."+ext,{type:f.type}));}}});
+  if(got.length){e.preventDefault();addAtts(got);}
+});
+function uploadAtts(){
+  if(!atts.length)return Promise.resolve("");
+  if(attToken)return Promise.resolve(attToken);
+  if(!$("rqConfirm").checked)return Promise.reject({field:"attachments",error:"أكّد أن المرفقات خالية من بيانات شخصية (PDPPL)",focus:"rqConfirm"});
+  var fd=new FormData();fd.append("confirm","1");atts.forEach(function(a){fd.append("files",a.file,a.file.name);});
+  $("rqMsg").textContent="جارٍ رفع المرفقات…";
+  return fetch(U.api,{method:"POST",body:fd}).then(function(r){
+    var ct=r.headers.get("content-type")||"";
+    if(ct.indexOf("application/json")<0)throw {field:"attachments",error:"ردّ الخادم بخطأ (HTTP "+r.status+")"};
+    return r.json().then(function(j){
+      if(!r.ok){atts.forEach(function(a){a.err=a.file.name===j.name||(j.name&&a.file.name.indexOf(j.name)>=0)?j.error:"";});renderAtts();throw {field:"attachments",error:(j.name?j.name+": ":"")+j.error};}
+      attToken=j.token;return j.token;});
+  });
+}
 function body(){
   return {title:$("rqTitle").value,ask:$("rqAsk").value,type:$("rqType").value,
     criteria:critBoxes().filter(function(b){return b.checked;}).map(function(b){return Number(b.value);}),
     accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,approval:$("rqApproval").value,
     touches:touchBoxes().filter(function(b){return b.checked;}).map(function(b){return b.value;}),
-    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value};
+    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value,attachments:attToken};
 }
 /* مقياس الجاهزية: القواعد نفسها في request_page.readiness؛ لا يمنع الإرسال */
 function readiness(b){
@@ -187,7 +258,7 @@ $("rqPreview").addEventListener("toggle",function(){if($("rqPreview").open)previ
 function clearErrors(){Object.keys(ERR).forEach(function(k){$(ERR[k]).hidden=true;$(ERR[k]).textContent="";var f=$(FIELDS[k]);if(f)f.removeAttribute("aria-invalid");});}
 function showError(field,msg){var id=ERR[field];if(!id)return false;$(id).textContent=msg;$(id).hidden=false;var f=$(FIELDS[field]);if(f)f.setAttribute("aria-invalid","true");return true;}
 function focusField(field){var f=$(FIELDS[field]);if(!f)return;if(f.tagName==="DIV"){var c=f.querySelector("input");if(c)c.focus();}else f.focus();}
-function dirty(){return ["rqTitle","rqAsk","rqAccept"].some(function(i){return $(i).value.trim();});}
+function dirty(){return atts.length>0||["rqTitle","rqAsk","rqAccept"].some(function(i){return $(i).value.trim();});}
 window.addEventListener("beforeunload",function(e){if(dirty()){e.preventDefault();e.returnValue="";}});
 function templateOnly(b){
   var info=cfg.types[b.type];if(!info)return false;
@@ -212,7 +283,8 @@ function send(){
   var b=body(),errs=localCheck(b);
   if(errs.length){errs.forEach(function(x){showError(x[0],x[1]);});focusField(errs[0][0]);return;}
   $("rqSend").disabled=true;$("rqMsg").textContent="جارٍ الإرسال…";
-  fetch(cfg.api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
+  uploadAtts().then(function(tok){b.attachments=tok;$("rqMsg").textContent="جارٍ الإرسال…";
+    return fetch(cfg.api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});})
     .then(function(r){
       var ct=r.headers.get("content-type")||"";
       if(ct.indexOf("application/json")<0)return {ok:false,j:{error:"ردّ الخادم بخطأ (HTTP "+r.status+")"}};
@@ -220,11 +292,13 @@ function send(){
     })
     .then(function(x){
       if(x.ok){
-        $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+")"+(x.j.auto_touches&&x.j.auto_touches.length?"، وأُضيف «يمسّ "+x.j.auto_touches.join("، ")+"» من الملفات":"")+". سيلتقطه المشغّل قريبًا.";
-        clearDraft();$("rqForm").reset();files=[];critTouched=false;lastType="";renderFiles();$("rqTpl").hidden=true;$("rqSimilar").hidden=true;update();clearDraft();
+        $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+")"+(x.j.attachments?" مع "+x.j.attachments+" مرفق":"")+(x.j.auto_touches&&x.j.auto_touches.length?"، وأُضيف «يمسّ "+x.j.auto_touches.join("، ")+"» من الملفات":"")+". سيلتقطه المشغّل قريبًا.";
+        clearDraft();$("rqForm").reset();files=[];atts=[];attToken="";renderAtts();critTouched=false;lastType="";renderFiles();$("rqTpl").hidden=true;$("rqSimilar").hidden=true;update();clearDraft();
       }else if(x.j.field&&showError(x.j.field,x.j.error)){focusField(x.j.field);}
       else{$("rqMsg").textContent=x.j.error||"تعذّر الإرسال";}
-    }).catch(function(){$("rqMsg").textContent="تعذّر الاتصال بالخادم";})
+    }).catch(function(err){
+      if(err&&err.field){$("rqMsg").textContent="";showError(err.field,err.error);var f=$(err.focus||FIELDS[err.field]);if(f)f.focus();}
+      else $("rqMsg").textContent="تعذّر الاتصال بالخادم";})
     .then(function(){$("rqSend").disabled=false;});
 }
 $("rqForm").addEventListener("submit",function(e){e.preventDefault();send();});

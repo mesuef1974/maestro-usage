@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
 import product_share  # noqa: E402
 import reports  # noqa: E402
+import request_files  # noqa: E402
 import request_page  # noqa: E402
 import run_cycle  # noqa: E402
 import server_guard  # noqa: E402
@@ -65,6 +66,7 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
     runner_fn = runner_fn or runner_page.snapshot  # «المشغّل الحيّ»: لقطة الدفتر عند كلّ طلب (تقرأ فقط)
     lock = threading.Lock()  # دورة واحدة في وقت واحد
     request_rate = request_page.RateLimit(request_page.RATE_PER_HOUR)
+    upload_rate = request_page.RateLimit(60)  # الرفع يتكرر أكثر من الإرسال (إضافة ملف ثم آخر)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "MaestroUsage"
@@ -189,12 +191,40 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             except (ValueError, OSError) as exc:
                 return self._json(400, {"error": str(exc)[:200], "field": ""})
 
+        def _post_upload(self):
+            """رفع المرفقات إلى مجلد مؤقت: المصدر نفسه، multipart فقط، الطول إلزامي وسقفه قبل القراءة، ثم فحص كل ملف."""
+            if not self._origin_strict_ok():
+                return self._json(403, {"error": "مصدر الطلب غير مسموح", "name": ""})
+            ctype = self.headers.get("Content-Type") or ""
+            if not ctype.lower().startswith("multipart/form-data"):
+                return self._json(415, {"error": "نوع المحتوى يجب أن يكون multipart/form-data", "name": ""})
+            raw_len = self.headers.get("Content-Length")
+            if raw_len is None:
+                return self._json(411, {"error": "طول المحتوى مطلوب", "name": ""})
+            try:
+                n = int(raw_len)
+            except ValueError:
+                return self._json(400, {"error": "طول المحتوى غير صالح", "name": ""})
+            if n > request_files.MAX_BODY:
+                return self._json(413, {"error": "المرفقات أكبر من 25MB", "name": ""})
+            if not upload_rate.allow():
+                return self._json(429, {"error": "عدد مرات الرفع تجاوز الحد في الساعة", "name": ""})
+            try:
+                fields, files = request_files.parse_multipart(ctype, self.rfile.read(n))
+                return self._json(200, request_files.stage(fields, files, request_page.pii_pattern()))
+            except request_files.UploadError as exc:
+                return self._json(exc.code, {"error": str(exc)[:200], "name": exc.name})
+            except OSError as exc:
+                return self._json(500, {"error": "تعذّر حفظ المرفقات: " + str(exc)[:120], "name": ""})
+
         def do_POST(self):
             path = self.path.split("?", 1)[0]
             if path == "/request":  # استمارة «طلب جديد»: تكتب ملفاً في requests/ فقط، بلا نموذج
                 return self._post_request()
             if path == "/request/preview":  # معاينة الطلب كما سيقرؤه المشغّل وملاحظات جاهزيته؛ لا كتابة
                 return self._post_request(request_page.preview, rate=False)
+            if path == "/request/upload":  # المرفقات: multipart منفصل لأن سقف 20000 بايت للنص يبقى كما هو
+                return self._post_upload()
             if path == "/share":  # نسب المنتجات اليدوية: JSON صغير يُحفظ في data/product_share.json
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
