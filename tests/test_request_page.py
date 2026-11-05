@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import request_page  # noqa: E402
 import serve  # noqa: E402
 
-OK = {"title": "عنوان الطلب", "ask": "م", "accept": "أ\nب", "size": "صغير", "priority": "P2", "touches": ["الأمن"], "type": "خلل"}
+OK = {"title": "عنوان الطلب", "ask": "م", "accept": "أ\nب", "size": "صغير", "priority": "P2", "touches": ["الأمن"], "type": "خلل", "criteria": [1], "page": "/x/"}
 
 
 @pytest.fixture()
@@ -23,13 +23,13 @@ def reqdir(tmp_path, monkeypatch):
 def test_valid_request_is_written_in_the_intake_template_with_provenance(reqdir):
     out = request_page.submit(OK)
     text = (reqdir / out["file"]).read_text(encoding="utf-8")
-    for key in ("العنوان: عنوان الطلب", "المطلوب: م", "معايير القبول: أ ؛ ب", "الوسم: صغير", "الأولوية: P2", "يمسّ: الأمن",
+    for key in ("العنوان: عنوان الطلب", "المطلوب: م", "معايير القبول: make prepush ينجح ؛ أ ؛ ب", "الوسم: صغير", "الأولوية: P2", "يمسّ: الأمن",
                 "المصدر: mizan-form", "sha256: ", "مقدَّم في: "):
         assert key in text
     assert not list((reqdir / ".incoming").iterdir())  # لا ملف مؤقت باقٍ: الكتابة ذرّية
 
 
-@pytest.mark.parametrize("bad,field", [({"title": ""}, "title"), ({"ask": ""}, "ask"), ({"accept": "  "}, "criteria"),
+@pytest.mark.parametrize("bad,field", [({"title": ""}, "title"), ({"ask": ""}, "ask"), ({"accept": "  ", "criteria": []}, "criteria"),
                                        ({"size": "ضخم"}, "size"), ({"priority": ""}, "priority"), ({"priority": "P0"}, "priority"),
                                        ({"touches": ["شيء"]}, "touches"), ({"extra": "x"}, "extra")])
 def test_invalid_fields_are_rejected_with_field_name_and_no_file(reqdir, bad, field):
@@ -221,9 +221,9 @@ def test_default_criteria_per_type_match_the_workorder():
 
 
 def test_readiness_notes_do_not_block():
-    f = request_page.validate({**FULL, "title": "زر", "ask": "قصير", "criteria": [1], "page": "", "files": []})
+    f = request_page.validate({**FULL, "type": "ميزة صغيرة", "title": "زر", "ask": "قصير", "criteria": [1], "page": "", "files": []})
     notes = request_page.readiness(f)
-    assert len(notes) == 4
+    assert len(notes) == 3  # العنوان والطول والمعيار الواحد؛ النطاق صار شرطًا صلبًا للخلل وتحسين الواجهة
     assert request_page.readiness(request_page.validate({**FULL, "ask": "و" * 130})) == []
 
 
@@ -314,3 +314,29 @@ def test_upload_endpoint_guards_and_stages(server, tmp_path, monkeypatch):
     assert up(part(True), origin=False)[0] == 403
     assert up(part(True), ctype="application/json")[0] == 415
     assert up(part(True), length=False)[0] == 411
+
+
+def test_bug_needs_a_checkbox_criterion_and_scope(reqdir):
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit({**FULL, "criteria": [], "accept": "سطر حرّ وحده"})
+    assert e.value.field == "criteria"
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit({**FULL, "page": "", "files": []})
+    assert e.value.field == "page"
+    assert request_page.submit({**FULL, "type": "ميزة صغيرة", "page": "", "files": []})["ok"]  # الميزة لا تشترط النطاق
+
+
+def test_recently_closed_with_report_counts_as_similar(tmp_path):
+    import json
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S+03:00")
+    rows = [{"id": "W-9", "ts": now, "kind": "created", "data": {"problem": "ملف البي دي اف في الزيارة الصفية"}},
+            {"id": "W-9", "ts": now, "kind": "note", "data": {"text": "[مشغّل] أُغلقت بتقرير: فشل النموذج بعد السلّم الكامل"}},
+            {"id": "W-9", "ts": now, "kind": "state", "data": {"state": "closed"}},
+            {"id": "W-8", "ts": "2020-01-01T00:00:00+03:00", "kind": "created", "data": {"problem": "ملف البي دي اف في الزيارة"}},
+            {"id": "W-8", "ts": "2020-01-01T00:00:00+03:00", "kind": "note", "data": {"text": "[مشغّل] أُغلقت بتقرير: قديم"}},
+            {"id": "W-8", "ts": "2020-01-01T00:00:00+03:00", "kind": "state", "data": {"state": "closed"}}]
+    p = tmp_path / "events.jsonl"
+    p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows), encoding="utf-8")
+    hits = request_page.similar("ملف PDF الزيارة الصفية", request_page.open_cards(p))
+    assert [h["id"] for h in hits] == ["W-9"] and hits[0]["report"].startswith("فشل النموذج")

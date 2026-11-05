@@ -30,7 +30,7 @@ __SHELL_OPEN__
       <label for="rqAccept" class="rq-sub">معيار إضافي (سطر لكل معيار، اختياري)</label>
       <textarea id="rqAccept" name="accept" rows="2" maxlength="1500"></textarea>
       <p class="rq-err" id="rqCritErr" role="alert" hidden></p></fieldset>
-    <fieldset class="rq-scope"><legend>النطاق (اختياري، ويقوّي الطلب)</legend>
+    <fieldset class="rq-scope"><legend>النطاق (إلزامي للخلل وتحسين الواجهة)</legend>
       <div class="rq-field"><label for="rqPage">الصفحة</label>
         <input id="rqPage" name="page" maxlength="200" dir="ltr" placeholder="/attendance/ أو رابط على 8500" aria-describedby="rqPageErr">
         <p class="rq-err" id="rqPageErr" role="alert" hidden></p></div>
@@ -141,7 +141,8 @@ $("rqTitle").addEventListener("blur",function(){
   var t=$("rqTitle").value.trim(),box=$("rqSimilar");if(t.split(/\s+/).length<2||location.protocol==="file:"){box.hidden=true;return;}
   fetch("/api/similar?title="+encodeURIComponent(t)).then(function(r){return r.ok?r.json():{similar:[]};}).then(function(j){
     var s=j.similar||[];box.hidden=!s.length;
-    box.innerHTML=s.length?"قد يشبه: "+s.map(function(x){return '<bdi>'+esc(x.id)+'</bdi> «'+esc(x.title)+'» ('+esc(x.state)+')';}).join(" · "):"";
+    box.innerHTML=s.length?"قد يشبه: "+s.map(function(x){return '<bdi>'+esc(x.id)+'</bdi> «'+esc(x.title)+'» ('+(x.report?"أُغلقت بتقرير: "+esc(x.report):esc(x.state))+')';}).join(" · ")
+      +(s.some(function(x){return x.report;})?"<br>طلبٌ مشابه فشل حديثًا: أضف ما ينقصه (الملفات، القيود) لا تُعده بالصياغة نفسها.":""):"";
   }).catch(function(){box.hidden=true;});
 });
 /* المرفقات: تُجمع في المتصفح ثم تُرفع دفعةً واحدة عند الإرسال (رفعٌ multipart منفصل يعيد رمزًا يُربط بالطلب) */
@@ -273,7 +274,8 @@ function localCheck(b){
   if(!b.type)errs.push(["type","اختر نوع الطلب"]);
   if(!b.ask.trim())errs.push(["ask","المطلوب مطلوب"]);
   else if(templateOnly(b))errs.push(["ask","املأ القالب بتفاصيل الطلب؛ العناوين وحدها لا تكفي"]);
-  if(!b.criteria.length&&!b.accept.trim())errs.push(["criteria","اختر معيار قبول واحدًا على الأقل"]);
+  if(!b.criteria.length)errs.push(["criteria","اختر معيار قبول واحدًا على الأقل من القائمة؛ السطر الحرّ إضافة لا بديل"]);
+  if((b.type==="خلل"||b.type==="تحسين واجهة")&&!b.page.trim()&&!b.files.length)errs.push(["page","حدّد الصفحة أو الملفات المتوقَّعة لهذا النوع"]);
   if(!b.size)errs.push(["size","اختر الحجم"]);
   if(!b.priority)errs.push(["priority","اختر الأولوية"]);
   return errs;

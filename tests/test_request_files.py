@@ -99,7 +99,7 @@ def test_multipart_parse():
 def test_submit_binds_attachments_and_writes_lines(adir):
     out = rf.stage(OK, [("a.png", PNG)])
     full = {"title": "زر الحفظ لا يعمل في صفحة الحضور", "type": "خلل", "ask": "ماذا يحدث؟ لا يحفظ الزر شيئًا عند الضغط", "criteria": [1, 3],
-            "size": "صغير", "priority": "P2", "attachments": out["token"]}
+            "size": "صغير", "priority": "P2", "page": "/quality/", "attachments": out["token"]}
     res = request_page.submit(full)
     assert res["attachments"] == 1
     text = (adir.parent / "req" / res["file"]).read_text(encoding="utf-8")

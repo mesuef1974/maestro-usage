@@ -28,6 +28,8 @@ DEFAULT_DIR = Path.home() / "delivery_manager_work" / "requests"
 CRITERIA_PATH = Path(__file__).resolve().parent / "request_criteria.json"
 REPO = Path(os.environ.get("MIZAN_REPO") or "D:/shschool_mvp")  # مستودع المنصّة: مصدر إكمال «الملفات المتوقَّعة»
 LEDGER_EVENTS = Path(os.environ.get("MAESTRO_EVENTS") or Path.home() / "delivery_manager_work" / "ledger" / "events.jsonl")
+SCOPE_REQUIRED = ("خلل", "تحسين واجهة")  # نوعان لا يُرسلان بلا نطاق: النموذج يبحث في المستودع كله فيحرق المحاولات
+RECENT_CLOSED_DAYS = 3
 VAGUE = ("حسّن", "حسن", "رتّب", "رتب", "طوّر", "طور", "عدّل", "عدل", "اصلح", "أصلح")
 SAFE_PATH = re.compile(r"^[\w.\-/]+$")
 
@@ -181,6 +183,10 @@ def validate(params):
         raise ValidationError("اختر الحجم", "size")
     if prio not in PRIORITIES:
         raise ValidationError("اختر الأولوية", "priority")
+    if not chosen:  # سطرٌ حرّ وحده لا يعطي المشغّلَ فحصًا آليًّا (W-20261105-007 أُرسل كذلك ففشل بلا دليل)
+        raise ValidationError("اختر معيار قبول واحدًا على الأقل من القائمة؛ السطر الحرّ إضافة لا بديل", "criteria")
+    if rtype in SCOPE_REQUIRED and not (page or files):
+        raise ValidationError("حدّد الصفحة أو الملفات المتوقَّعة لنوع «%s»" % rtype, "page")
     pii = pii_pattern()
     for field, text in (("title", title), ("ask", ask), ("accept", " ".join(extra)), ("page", page), ("out_of_scope", out_of_scope)):
         if pii.search(text):
@@ -312,14 +318,19 @@ def open_cards(path=None):
                 cid, data = e.get("id"), e.get("data") or {}
                 if not cid:
                     continue
-                c = cards.setdefault(cid, {"id": cid, "title": "", "state": ""})
+                c = cards.setdefault(cid, {"id": cid, "title": "", "state": "", "ts": ""})
                 if data.get("problem"):
                     c["title"] = data["problem"]
                 if data.get("state"):
-                    c["state"] = data["state"]
+                    c["state"], c["ts"] = data["state"], str(e.get("ts") or "")
+                if e.get("kind") == "note" and str(data.get("text") or "").startswith("[مشغّل] أُغلقت بتقرير"):
+                    c["report"] = str(data["text"])[len("[مشغّل] أُغلقت بتقرير: "):][:160]
     except OSError:
         return []
-    return [c for c in cards.values() if c["title"] and c["state"] not in CLOSED_STATES]
+    from datetime import datetime, timedelta
+    cut = (datetime.now() - timedelta(days=RECENT_CLOSED_DAYS)).strftime("%Y-%m-%d")
+    # المفتوحة، ومعها ما أُغلق بتقرير حديثًا: إعادة الطلب نفسه بالصياغة نفسها تفشل غالبًا للسبب نفسه
+    return [c for c in cards.values() if c["title"] and (c["state"] not in CLOSED_STATES or (c["state"] == "closed" and c.get("report") and c["ts"][:10] >= cut))]
 
 
 def similar(title, cards=None, limit=3):
@@ -335,7 +346,7 @@ def similar(title, cards=None, limit=3):
             continue
         score = len(a & b) / min(len(a), len(b))
         if score >= 0.5:
-            out.append(dict(id=c["id"], title=c["title"], state=c["state"], score=round(score, 2)))
+            out.append(dict(id=c["id"], title=c["title"], state=c["state"], score=round(score, 2), report=c.get("report", "")))
     return sorted(out, key=lambda x: -x["score"])[:limit]
 
 
