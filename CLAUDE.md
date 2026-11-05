@@ -19,7 +19,7 @@ python -m pytest tests -q && ruff check src tests
 - رأس الصفحة: شريط الأرقام الثلاثة (`ui.HERO`) يملؤه جزء main (`heroQuota`) وجزء runner؛ كل البطاقات مطويّة افتراضيًّا إلا `data-open`.
 - الدورة تكتب زمن مراحلها في `data/cycle.log` (`times {...}`) وصحتها في `data/health.json` (الصفحة تعرضها من `/health.json`)، وترسل تنبيه ويندوز (`alerts.py`) حين يُتوقَّع بلوغ 100% قبل التصفير.
 - نسب المنتجات (Claude Code/Cowork/المحادثات) إدخال يدوي من بطاقة الحصة (`product_share.py`, `POST /share`) يصحّح «كلفة 1%».
-- `docs/metrics.md` مولَّد من `src/metrics.py` بـ`python scripts/gen_metrics_doc.py` (اختبار يتحقق من المطابقة). CI في `.github/workflows/ci.yml` (ruff + pytest).
+- `docs/metrics.md` مولَّد من `src/metrics.py` بـ`python scripts/gen_metrics_doc.py` (اختبار يتحقق من المطابقة). خطاف `scripts/hooks/pre-commit` (ruff + pytest + مطابقة وثيقة المقاييس) يعمل قبل كل commit؛ يُفعَّل مرة في كل نسخة: `git config core.hooksPath scripts/hooks` (يحتاج `python -m pip install ruff pytest`).
 - `data/` و`reports/` خارج git عمدًا.
 
 ## القواعد الصلبة

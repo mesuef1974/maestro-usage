@@ -1,0 +1,17 @@
+#!/bin/sh
+# خطاف ميزان قبل كل commit: فحص ruff ثم الاختبارات؛ فشل أيّهما يوقف الـcommit. التخطّي الاستثنائي: git commit --no-verify
+# يعمل في Git for Windows (sh) وفي لينكس. يُفعَّل مرة واحدة: git config core.hooksPath scripts/hooks
+cd "$(git rev-parse --show-toplevel)" || exit 1
+PY="${MIZAN_PYTHON:-}"
+if [ -z "$PY" ]; then
+  for c in "/c/Users/mesue/AppData/Local/Programs/Python/Python312/python.exe" python3 python; do
+    if command -v "$c" >/dev/null 2>&1 || [ -x "$c" ]; then PY="$c"; break; fi
+  done
+fi
+[ -n "$PY" ] || { echo "pre-commit: لم أجد بايثون؛ عيّن MIZAN_PYTHON"; exit 1; }
+"$PY" -m ruff --version >/dev/null 2>&1 || { echo "pre-commit: ruff غير مثبّت. ثبّته مرة: \"$PY\" -m pip install ruff"; exit 1; }
+echo "pre-commit: ruff…"
+"$PY" -m ruff check . || exit 1
+echo "pre-commit: الاختبارات…"
+"$PY" -m pytest -q -x tests || exit 1
+"$PY" scripts/gen_metrics_doc.py --check || { echo "pre-commit: docs/metrics.md قديمة؛ شغّل: \"$PY\" scripts/gen_metrics_doc.py"; exit 1; }
