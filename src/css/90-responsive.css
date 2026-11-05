@@ -8,8 +8,14 @@
   .nav li{flex:none}
   .nav a{white-space:nowrap}
   .gh{margin-block-start:var(--sp-6);scroll-margin-block-start:4.5rem}
-  .sidefoot{padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0}
+  .sidefoot{display:flex;flex-wrap:wrap;gap:var(--sp-2);padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0}  /* زرّا السمة والتحديث في صف واحد كي يبقى الرأس والأرقام الثلاثة في أول شاشة */
   .themebtn{inline-size:fit-content}
+  .pagehead{padding-block-end:var(--sp-3);margin-block-end:var(--sp-3)}
+  .pagehead .lede{display:none}  /* الشرح يكرّر ما يقوله الشريط العلوي؛ يُخفى في الشاشات الضيّقة */
+  .hero{grid-template-columns:repeat(3,1fr);gap:var(--sp-2)}
+  .htile{padding:var(--sp-3)}
+  .htile .v{font-size:clamp(1.15rem,5.5vw,1.6rem)}
+  .htile .l,.htile .d{font-size:var(--t-xs)}
   main [id]{scroll-margin-block-start:4.5rem}
 }
 @media (max-width:640px){
