@@ -95,16 +95,12 @@ function has(id){return !!document.getElementById(id)}
 function renderTiles(){
   if(!has("tiles"))return;
   var rows=selA(true),turns=sum(rows,"t"),cr=sum(rows,"cr"),inp=sum(rows,"i"),cc=sum(rows,"cc"),out=sum(rows,"u");
-  /* الردود وقراءة الذاكرة ومجموع التوكنات من كل الردود؛ متوسط السياق وفوق العتبة من الخيط الرئيس فقط (الحقول m…) كتعريف «سياق الردّ» */
-  var mctx=function(rs){var n=sum(rs,"mt");return n?(sum(rs,"mi")+sum(rs,"mcc")+sum(rs,"mcr"))/n:null},mshare=function(rs){var n=sum(rs,"mt");return n?sum(rs,"mv")/n:null};
-  var mt=sum(rows,"mt"),over=sum(rows,"mv"),ctx=mctx(rows),tot=inp+cc+cr+out;
+  var tot=inp+cc+cr+out;
   /* دلتا الفترة: الفترة السابقة المساوية بالنماذج المحدّدة؛ الطرف الحالي بأيام كاملة (اليوم الجاري مستبعد عند P.cut) والقيم المعروضة تبقى للفترة كاملة */
   var P=prevRange(),pr=P?D.a.filter(function(r){return S.models.has(r.m)&&inPrev(r.d,P)}):[],cu=P&&P.cut?rows.filter(function(r){return inCur(r.d,P)}):rows;
   var box=$("#tiles");clear(box);
   [["الردود",num(turns),"في الفترة المحدّدة",deltaText(sum(cu,"t"),sum(pr,"t"),P)],
-   ["قراءة الذاكرة",compact(cr),tot?pct(cr/tot)+" من كل التوكنز":"—",deltaText(sum(cu,"cr"),sum(pr,"cr"),P)],
-   ["متوسط السياق للردّ (الخيط الرئيس)",compact(ctx),"توكن · "+num(mt)+" ردًّا رئيسًا",deltaText(mctx(cu),mctx(pr),P)],
-   ["ردود سياقها فوق "+compact(D.threshold,0)+" (الخيط الرئيس)",pct(mt?over/mt:null),num(over)+" من "+num(mt)+" ردًّا",deltaPts(mshare(cu),mshare(pr),P)]
+   ["قراءة الذاكرة",compact(cr),tot?pct(cr/tot)+" من كل التوكنز":"—",deltaText(sum(cu,"cr"),sum(pr,"cr"),P)]
   ].forEach(function(t){
     var d=mk("div",{class:"tile"});d.appendChild(mk("div",{class:"l"},t[0]));d.appendChild(mk("div",{class:"v"},t[1]));d.appendChild(mk("div",{class:"d"},t[2]));if(t[3])d.appendChild(mk("div",{class:"dl"},t[3]));box.appendChild(d);
   });

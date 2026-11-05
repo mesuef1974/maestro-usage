@@ -94,7 +94,7 @@ class TestDashboard(unittest.TestCase):
     def test_template_uses_main_thread_and_live_forecast(self):
         """القالب يقرأ الحقول الرئيسة في المؤشرات والجلسات والضغط، ويُعيد حساب المتوقَّع من النسبة الحيّة، ويعرض زمن آخر عيّنة بدء."""
         page = _render(self.data, "", "الآن", "plan.html")
-        for s in ('sum(rows,"mt")', "(الخيط الرئيس)", "function quotaForecast", 'quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now)',
+        for s in ("function quotaForecast", 'quotaLine("lr7q",D.quota&&D.quota.week,last.w,last.wr,now)',
                   'id="lalert"', "function quotaAlert", "تحذير: بمعدل الحرق الحالي",
                   "RATE_SRC[f.rate_src]", "(جزئي من ", "، ناقص)", "حدّ أدنى 10%"):
             self.assertIn(s, page)
