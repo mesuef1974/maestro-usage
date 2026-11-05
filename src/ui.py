@@ -8,7 +8,6 @@ import re
 import shutil
 from pathlib import Path
 
-import metrics
 import pages
 
 SRC = Path(__file__).resolve().parent

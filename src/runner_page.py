@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ui  # noqa: E402
 
 DEFAULT_SOURCE = Path.home() / "delivery_manager_work" / "tools" / "runner_live.py"
 _MOD = None

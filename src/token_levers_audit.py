@@ -110,7 +110,7 @@ def main():
     skill_sets = [("مهارة (مستخدم)", os.path.join(CLAUDE, "skills"))]
     skill_sets += [("مهارة (%s)" % os.path.basename(d), os.path.join(d, ".claude", "skills")) for d in project_dirs()]
     for cat, root in skill_sets:
-        for nm, dtok, ntok, full in skills_in(root):
+        for nm, dtok, ntok, _full in skills_in(root):
             mode = ov.get(nm, "on")
             add(cat, "%s [%s]" % (nm, mode), 0 if mode == "off" else ntok if mode == "name-only" else ntok + dtok)
     cmds = os.path.join(CLAUDE, "commands")

@@ -1,5 +1,8 @@
 """تحقق المرحلة 1 على القاعدة الحقيقية. أرقام فقط."""
-import json, os, sqlite3, sys, collections
+import json
+import os
+import sys
+import collections
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import usage_db
 ROOT = os.path.join(os.path.expanduser("~"), ".claude", "projects")

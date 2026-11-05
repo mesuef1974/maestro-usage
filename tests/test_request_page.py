@@ -141,3 +141,18 @@ def test_invalid_approval_is_rejected(reqdir):
     with pytest.raises(request_page.ValidationError) as e:
         request_page.submit({**OK, "approval": "فوري"})
     assert e.value.field == "approval"
+
+
+def test_pii_fallback_matches_ledger_when_present(monkeypatch):
+    """النسخة الاحتياطية مطابقة لتعبير السجلّ؛ وبغياب السجلّ تعمل الصفحة بها لا بالخطأ."""
+    request_page._PII = None
+    monkeypatch.setenv("MAESTRO_LEDGER", "/nonexistent/ledger.py")
+    assert request_page.pii_pattern().pattern == request_page._PII_FALLBACK.pattern
+    assert request_page.PII_SOURCE == "fallback"
+    request_page._PII = None
+    monkeypatch.delenv("MAESTRO_LEDGER")
+    src = request_page.ledger_source()
+    if not src.is_file():
+        pytest.skip("سجلّ المايسترو غير موجود هنا")
+    assert request_page.pii_pattern().pattern == request_page._PII_FALLBACK.pattern
+    assert request_page.PII_SOURCE == "ledger"

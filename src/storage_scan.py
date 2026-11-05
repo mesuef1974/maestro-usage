@@ -91,7 +91,7 @@ def scan(root=ROOT, now=None):
     now = now or time.time()
     t0 = time.time()
     top, proj, ext, total = {}, {}, {}, _agg()
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, _dirnames, filenames in os.walk(root):
         parts = _rel_parts(root, dirpath)
         t = parts[0] if parts else ROOT_KEY
         for f in filenames:
@@ -185,7 +185,7 @@ def _inside(path, base):
 
 
 def _walk_files(base):
-    for dirpath, dirnames, filenames in os.walk(base):
+    for dirpath, _dirnames, filenames in os.walk(base):
         for f in filenames:
             p = os.path.join(dirpath, f)
             try:

@@ -7,7 +7,6 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ui  # noqa: E402
 
 SOURCE = dict(doc="مواصفة المشغّل docs/runner_spec_2026-11-04.md وقرارات D-519م وD-521م وD-528م", date="2026-11-04",
               basis="ترتيب مراحل tools/runner.py (intake_requests ثم pick_card ثم process وfinish وmerge_and_publish)")

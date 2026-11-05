@@ -1,5 +1,8 @@
 """استقصاء المرحلة 0: بنية سجلات jsonl. يُخرج أعدادًا وأسماء حقول فقط، بلا أي قيمة نصية."""
-import json, os, sys, glob, collections, datetime
+import json
+import os
+import sys
+import collections
 
 ROOT = r"C:\Users\mesue\.claude\projects"
 

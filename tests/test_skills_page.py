@@ -18,7 +18,7 @@ class SkillsPageTest(unittest.TestCase):
             self.assertIn(rec, skills_page.RECS, key)
             self.assertTrue(benefit and note, key)
             self.assertIsInstance(dups, list, key)
-        for key, _src, _chars, benefit, rec, dups, note in skills_page.VIRTUAL:
+        for key, _src, _chars, benefit, rec, _dups, note in skills_page.VIRTUAL:
             self.assertIn(rec, skills_page.RECS, key)
             self.assertTrue(benefit and note, key)
 

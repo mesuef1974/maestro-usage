@@ -1,5 +1,8 @@
 """تحليل الأسناد عند تعادل first_ts: هل sessionId داخل السطر يحسم؟ أرقام فقط."""
-import json, os, sys, collections
+import json
+import os
+import sys
+import collections
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import usage_ingest as ui
 ROOT = ui.PROJECTS
@@ -26,7 +29,7 @@ for mid, d in cand.items():
     c["has_main_and_sub" if mains and len(mains) < len(d) else ("all_main" if mains else "all_sub")] += 1
 print(dict(c))
 
-import sqlite3, usage_db
+import usage_db
 con = usage_db.connect()
 own = dict(con.execute("SELECT message_id, session_key FROM usage_turns"))
 v = collections.Counter(); ex = []

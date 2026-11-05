@@ -94,7 +94,7 @@ def ensure(port=PORT):
         pids = server_pids(port, out)
         pid = pids[0] if pids else None
         if pid is None:
-            note("none: no listener on %d; lines with port: %r; total lines %d" % (port, [l.strip() for l in out.splitlines() if ":%d " % port in l and "TIME_WAIT" not in l and "ESTAB" not in l][:6], len(out.splitlines())))
+            note("none: no listener on %d; lines with port: %r; total lines %d" % (port, [ln.strip() for ln in out.splitlines() if ":%d " % port in ln and "TIME_WAIT" not in ln and "ESTAB" not in ln][:6], len(out.splitlines())))
             return "none"
         if not is_stale(read_state(), fingerprint()) and read_state().get("pid") in pids:
             return "fresh"

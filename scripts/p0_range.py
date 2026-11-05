@@ -1,5 +1,9 @@
 """استقصاء المدى: يمرّ على كل السجلات ويجمع أرقامًا فقط (بلا نصوص). مخرجه JSON ملخّص."""
-import json, os, re, sys, collections
+import json
+import os
+import re
+import sys
+import collections
 sys.path.insert(0, os.path.dirname(__file__))
 import p0_survey as s
 

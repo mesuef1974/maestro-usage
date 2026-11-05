@@ -5,7 +5,6 @@
 import csv
 import html
 import os
-import statistics
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone

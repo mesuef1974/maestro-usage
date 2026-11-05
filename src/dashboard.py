@@ -12,7 +12,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
 import product_share  # noqa: E402
 import quota_model  # noqa: E402
-import ui  # noqa: E402
 
 THRESHOLD = 300_000  # يطابق reports.CTX_THRESHOLD
 PLAN_LABEL = "Ultra"  # اسم الخطة (كانت «Max 20x» حتى 2026-10-30؛ القاعدة تحفظ «Max» فقط)

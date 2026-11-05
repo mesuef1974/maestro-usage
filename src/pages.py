@@ -62,7 +62,7 @@ def for_template(template):
 DATA_NEEDS = {
     "dashboard.html": {
         "limits": {"plan", "plan_label", "plan_renew_day", "quota", "product"}, "tiles": {"a"}, "month": {"a"}, "h1": {"a"}, "h2": {"a"}, "h3": {"plan"},
-        
+
     },
 }
 DATA_ALWAYS = {"models", "threshold", "min_turns", "first_day", "last_day"}  # صغيرة ويقرؤها الغلاف والمرشِّحات في كل صفحة

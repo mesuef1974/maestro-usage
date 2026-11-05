@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ui  # noqa: E402
 
 SIZES = ("صغير", "متوسط", "كبير", "تصميم")
 PRIORITIES = ("P1", "P2", "P3")
@@ -48,21 +47,29 @@ class ValidationError(ValueError):
 
 ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval"})
 _PII = None
+PII_SOURCE = None  # "ledger" حين يُحمَّل من سجلّ المايسترو، أو "fallback" حين يغيب (نسخة مطابقة هنا)
+# نسخةٌ مطابقة لتعبير سجلّ المايسترو (tools/ledger.py: _PII) تُستعمل إن غاب السجلّ، فلا تتعطّل صفحة الطلب ولا اختباراتها خارج جهاز المالك
+_PII_FALLBACK = re.compile(r"\b\d{9,}\b|[\w.+-]+@[\w-]+\.[\w.]+")
+
+
+def ledger_source():
+    return Path(os.environ.get("MAESTRO_LEDGER") or Path.home() / "delivery_manager_work" / "tools" / "ledger.py")
 
 
 def pii_pattern():
-    """تعبيرُ البيانات الشخصيّة نفسُه في سجلّ المايسترو (مصدرٌ واحد)؛ يغيب فيُتخطّى بتسجيلٍ صريح لا بصمت."""
-    global _PII
+    """تعبيرُ البيانات الشخصيّة من سجلّ المايسترو إن وُجد (المصدرُ الأصل)، وإلا النسخةُ المطابقة هنا مع تسجيل المصدر في PII_SOURCE."""
+    global _PII, PII_SOURCE
     if _PII is None:
-        import importlib.util
-        src = Path(os.environ.get("MAESTRO_LEDGER") or Path.home() / "delivery_manager_work" / "tools" / "ledger.py")
-        if not src.is_file():
-            raise OSError("تعذّر تحميل فاحص البيانات الشخصية: " + str(src))
-        spec = importlib.util.spec_from_file_location("maestro_ledger_pii", src)
-        mod = importlib.util.module_from_spec(spec)
-        sys.path.insert(0, str(src.parent))
-        spec.loader.exec_module(mod)
-        _PII = mod._PII
+        src = ledger_source()
+        if src.is_file():
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("maestro_ledger_pii", src)
+            mod = importlib.util.module_from_spec(spec)
+            sys.path.insert(0, str(src.parent))
+            spec.loader.exec_module(mod)
+            _PII, PII_SOURCE = mod._PII, "ledger"
+        else:
+            _PII, PII_SOURCE = _PII_FALLBACK, "fallback"
     return _PII
 
 

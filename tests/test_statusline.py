@@ -17,7 +17,7 @@ COLLECTOR = os.path.join(os.path.dirname(__file__), "..", "src", "statusline_col
 
 FULL = {
     "session_id": "abc-123", "transcript_path": "/x/y.jsonl", "model": {"display_name": "نص لا يُحفظ"},
-    "cwd": "D:\secret", "cost": {"total_cost_usd": 0.01234},
+    "cwd": r"D:\secret", "cost": {"total_cost_usd": 0.01234},
     "context_window": {"context_window_size": 1000000, "used_percentage": 8,
                        "current_usage": {"input_tokens": 8500, "output_tokens": 1200,
                                          "cache_creation_input_tokens": 5000, "cache_read_input_tokens": 2000}},
