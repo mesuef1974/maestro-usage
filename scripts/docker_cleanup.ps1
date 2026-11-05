@@ -1,10 +1,11 @@
 ﻿# تنظيف دوكر بعد اعتماد جلسة واحدة: افتراضيًّا يعرض فقط ولا يحذف شيئًا، ويكتب تقريرًا في data\docker_cleanup_report.txt.
 # الاستعمال:  .\docker_cleanup.ps1            (عرض فقط)
 #             .\docker_cleanup.ps1 -Apply     (ينفّذ)
+#             .\docker_cleanup.ps1 -Apply -Images   (ويحذف أيضًا كل صورة لا تستعملها حاوية الآن)
 # مع -Apply يُحذف: حاويات الجلسات القديمة (اسمها يبدأ بـ schoolos- عدا schoolos-main-preview)، والحاويات المتوقفة،
 #   والصور التي صارت بلا حاوية، ووحدات التخزين المجهولة (اسمها 64 خانة سداسية عشرية) غير المستعملة، وذاكرة البناء المعلَّقة.
 # لا يمسّ أبدًا: shschool-dev-* (قاعدة التطوير وردس)، ومعاينة schoolos-main-preview*، ولا أي وحدة تخزين مسمّاة (مثل shschool_mvp_shschool_pgdata18).
-param([switch]$Apply)
+param([switch]$Apply, [switch]$Images)
 $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent $PSScriptRoot
 $Report = Join-Path $Root "data\docker_cleanup_report.txt"
@@ -30,6 +31,7 @@ if ($Apply) {
     Add-Section "حذف الصور بلا حاوية" (docker image prune -f)
     $anon2 = @(docker volume ls -q --filter dangling=true | Where-Object { $_ -match "^[0-9a-f]{64}$" })
     if ($anon2.Count) { Add-Section "حذف وحدات التخزين المجهولة" (docker volume rm $anon2) }
+    if ($Images) { Add-Section "حذف كل الصور غير المستعملة" (docker image prune -a -f) }
     Add-Section "حذف ذاكرة البناء المعلَّقة" (docker builder prune -f)
     Add-Section "المساحة بعد" (docker system df)
     Add-Section "الحاويات الباقية" (docker ps -a --format $fmt)
