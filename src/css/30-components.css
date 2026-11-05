@@ -69,6 +69,13 @@
 .callout.bad{border-color:var(--bad)}
 .callout.warn{border-color:var(--warn)}
 .lrow .lq{color:var(--ink3);font-size:var(--t-sm);margin-block-start:var(--sp-1)}
+/* نسب المنتجات اليدوية: صف واحد من حقول صغيرة تحت أشرطة الحصة */
+.share{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);align-items:center;margin-block-start:var(--sp-4);padding-block-start:var(--sp-3);border-block-start:1px solid var(--line)}
+.share .ln{flex-basis:100%;font-size:var(--t-sm);color:var(--ink2)}
+.share label{font-size:var(--t-sm);color:var(--ink2);display:inline-flex;align-items:center;gap:var(--sp-1)}
+.share input{inline-size:4.5rem;font:inherit;font-family:var(--font-num);padding:.2rem .4rem;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);direction:ltr}
+.share .more{margin-block-start:0}
+.share #sharemsg{flex-basis:100%;color:var(--ink3)}
 /* دليل الصفحات في «نظرة عامة» */
 .hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--sp-5) var(--sp-4);margin-block:var(--sp-5)}
 .hubgroup h2{font-size:var(--t-base);margin-block-end:var(--sp-2);color:var(--ink2);font-weight:500}

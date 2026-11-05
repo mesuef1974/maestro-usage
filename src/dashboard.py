@@ -10,6 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
+import product_share  # noqa: E402
 import quota_model  # noqa: E402
 import ui  # noqa: E402
 
@@ -62,6 +63,7 @@ def payload(con, not_applied_mark, min_turns):
     first, last = con.execute("SELECT MIN(substr(ts,1,10)), MAX(substr(ts,1,10)) FROM usage_turns").fetchone()
     return dict(models=[n for _m, n in MODEL_GROUPS] + [OTHER_NAME], threshold=THRESHOLD, min_turns=min_turns,
                 first_day=first, last_day=last, a=fact_a, plan=plan, changes=changes,
-                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, quota=quota_model.payload(con))
+                plan_label=PLAN_LABEL, plan_renew_day=PLAN_RENEW_DAY, quota=quota_model.payload(con),
+                product=product_share.payload())
 
 

@@ -15,6 +15,15 @@ __SHELL_OPEN__
   <div class="lrow" id="lrf" hidden><div class="lt"><span class="ln">الأسبوعي · Fable</span><span><span class="lr" id="lrfr"></span><span class="lp" id="lrfp"></span></span></div><div class="lb" role="progressbar" aria-label="الحدّ الأسبوعي لنموذج Fable" aria-valuemin="0" aria-valuemax="100"><span class="lf" id="lrff"></span></div><div class="lq" id="lrfq"></div></div>
   <div class="lrow" id="lrn" hidden><div class="lt"><span class="ln">تجديد الاشتراك الشهري</span><span><span class="lr" id="lrnr"></span><span class="lp" id="lrnp"></span></span></div></div>
   <p class="note" id="lnote"></p>
+  <form class="share" id="share" aria-labelledby="sharelbl">
+    <span id="sharelbl" class="ln">حصة المنتجات هذا الأسبوع (من صفحة الاستخدام في حسابك)</span>
+    <label>Claude Code <input type="number" name="claude_code" min="0" max="100" step="1" inputmode="numeric"></label>
+    <label>Cowork <input type="number" name="cowork" min="0" max="100" step="1" inputmode="numeric"></label>
+    <label>المحادثات <input type="number" name="chats" min="0" max="100" step="1" inputmode="numeric"></label>
+    <label>أخرى <input type="number" name="other" min="0" max="100" step="1" inputmode="numeric"></label>
+    <button type="submit" class="more">حفظ النسب</button>
+    <span class="sub" id="sharemsg" role="status"></span>
+  </form>
   <p class="note" id="lscope">نسبة الحصة تشمل كل منتجات الحساب (Claude Code وCowork والمحادثات). أما التوكنات وجداول الاستهلاك أدناه فمصدرها سجلات Claude Code على هذا الجهاز فقط، فلا تشمل استهلاك Cowork والمحادثات؛ ولذا تقدير «كلفة 1%» والتوقّع تقريبيان.</p>
 </section>
 <!--@/sec-->
@@ -196,7 +205,8 @@ function quotaLine(id,q,pct,resets,now){
   var el=$("#"+id);if(!q){el.textContent="";return}
   var c=q.cost||{},f=q.fc||{};
   if(c.per_pct==null){el.textContent="كلفة 1% غير مقدَّرة بعد ("+(c.n||0)+" من "+QUOTA_MIN+" أزواج انتقال دقيقة).";return}
-  var parts=["≈ "+compact(c.per_pct)+" توكن لكل 1% (وسيط "+compact(c.med)+"، "+c.n+" أزواج)"];
+  var parts=["≈ "+compact(c.per_pct)+" توكن Claude Code لكل 1% (وسيط "+compact(c.med)+"، "+c.n+" أزواج)"];
+  var pr=D.product||{};if(pr.factor)parts.push("الكلفة الحقيقية التقريبية ≈ "+compact(c.per_pct*pr.factor)+" توكن لكل 1% (حصة Claude Code "+num(pr.share.claude_code)+"%"+(pr.stale?"، النسبة قديمة":"")+")");
   if(f.rate_day!=null)parts.push("الحرق "+num(f.rate_day,1)+"%/يوم"+(RATE_SRC[f.rate_src]?" ("+RATE_SRC[f.rate_src]+")":""));
   var fc=quotaForecast(f,pct,resets,now||Date.now());
   if(fc.full_at)parts.push("يبلغ 100% نحو "+clock(Date.parse(fc.full_at),true));
@@ -214,6 +224,23 @@ function quotaAlert(items){
   el.hidden=!msgs.length;el.textContent=msgs.join(" ");
 }
 var QUOTA_MIN=3;
+/* نسب المنتجات اليدوية: تُملأ من D.product وتُحفظ عبر /share ثم يُعاد رسم سطر الحصة فورًا */
+function initShare(){
+  var f=document.getElementById("share");if(!f||f.__bound)return;f.__bound=1;
+  var pr=D.product||{},msg=$("#sharemsg");
+  if(pr.share)["claude_code","cowork","chats","other"].forEach(function(k){f.elements[k].value=pr.share[k]});
+  msg.textContent=pr.share?("آخر إدخال "+(pr.saved_at||"").slice(0,10)+(pr.stale?" · قديم، حدِّثه":"")):"لم تُدخل بعد: تبقى الكلفة بتوكنات Claude Code وحدها";
+  f.addEventListener("submit",function(e){
+    e.preventDefault();var body={};["claude_code","cowork","chats","other"].forEach(function(k){body[k]=Number(f.elements[k].value||0)});
+    if(location.protocol==="file:"){msg.textContent="الحفظ يحتاج الخادم المحلي";return}
+    msg.textContent="جارٍ الحفظ…";
+    fetch("/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json()}).then(function(j){
+      if(!j.ok){msg.textContent=j.error||"رُفض";return}
+      D.product={share:{claude_code:j.claude_code,cowork:j.cowork,chats:j.chats,other:j.other},factor:j.claude_code>0?100/j.claude_code:null,stale:false,saved_at:j.saved_at,age_days:0};
+      msg.textContent="حُفظت "+j.saved_at.slice(0,10);renderLimits();
+    }).catch(function(){msg.textContent="تعذّر الوصول إلى الخادم المحلي"});
+  });
+}
 function renderLimits(){
   if(!has("limits"))return;
   var box=$("#limits"),last=null;
@@ -302,7 +329,7 @@ function init(){
   bindFilters();
   $("#reset").addEventListener("click",function(){S.models=new Set(D.models.map(function(_,i){return i}));S.sk="ratio";S.sd=-1;S.lim=25;setPreset("30");buildChips();render()});
   var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){render()},120)});
-  render();renderLimits();
+  render();renderLimits();initShare();
   /* رسم الحصة حيّ: عند التقديم من الخادم المحلي تُسحب اللقطات كل دقيقة بدل انتظار إعادة بناء الصفحة؛ من ملف مباشر تبقى لقطة آخر بناء */
   if(location.protocol!=="file:"){
     if(has("c3")||has("limits")){var pullPlan=function(){fetch("/plan.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p&&p.length){D.plan=p;render3();renderLimits()}}).catch(function(){})};

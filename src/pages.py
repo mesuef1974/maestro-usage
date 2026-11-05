@@ -61,7 +61,7 @@ def for_template(template):
 # القوالب غير المذكورة هنا (sessions وhourly وskills) تبقى حمولتها كاملة لأن كل أقسامها تقرأ المصفوفة الكبيرة نفسها.
 DATA_NEEDS = {
     "dashboard.html": {
-        "limits": {"plan", "plan_label", "plan_renew_day", "quota"}, "tiles": {"a"}, "month": {"a"}, "h1": {"a"}, "h2": {"a"}, "h3": {"plan"},
+        "limits": {"plan", "plan_label", "plan_renew_day", "quota", "product"}, "tiles": {"a"}, "month": {"a"}, "h1": {"a"}, "h2": {"a"}, "h3": {"plan"},
         
     },
 }

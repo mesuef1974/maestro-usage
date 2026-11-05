@@ -149,3 +149,37 @@ class TestGzip(unittest.TestCase):
         r = c.getresponse()
         self.assertIsNone(r.getheader("Content-Encoding"))
         self.assertIn("لوحة".encode(), r.read())
+
+
+class TestShareEndpoint(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        with open(os.path.join(self.tmp, "index.html"), "w", encoding="utf-8") as f:
+            f.write("<p>x</p>")
+        self.share_path = os.path.join(self.tmp, "product_share.json")
+        self._orig = serve.product_share.PATH
+        serve.product_share.PATH = self.share_path
+        self.srv = serve.make_server(0, self.tmp, lambda t0: 0, lambda: [], lambda op, p: {})
+        self.port = self.srv.server_address[1]
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+
+    def tearDown(self):
+        serve.product_share.PATH = self._orig
+        self.srv.shutdown()
+        self.srv.server_close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def post(self, body, host=None):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        c.request("POST", "/share", body=body, headers={"Host": host or "127.0.0.1:%d" % self.port, "Content-Type": "application/json"})
+        r = c.getresponse()
+        out = (r.status, r.read())
+        c.close()
+        return out
+
+    def test_share_saves_valid_json_and_rejects_bad_or_foreign(self):
+        code, body = self.post(b'{"claude_code": 13, "cowork": 86, "chats": 1}')
+        self.assertEqual(code, 200)
+        self.assertTrue(os.path.exists(self.share_path))
+        self.assertEqual(self.post(b'{"claude_code": 50, "cowork": 10}')[0], 400)
+        self.assertEqual(self.post(b'{"claude_code": 13, "cowork": 87}', host="evil:1")[0], 403)

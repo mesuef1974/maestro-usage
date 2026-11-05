@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
+import product_share  # noqa: E402
 import reports  # noqa: E402
 import request_page  # noqa: E402
 import run_cycle  # noqa: E402
@@ -170,6 +171,16 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             path = self.path.split("?", 1)[0]
             if path == "/request":  # استمارة «طلب جديد»: تكتب ملفاً في requests/ فقط، بلا نموذج
                 return self._post_request()
+            if path == "/share":  # نسب المنتجات اليدوية: JSON صغير يُحفظ في data/product_share.json
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                try:
+                    n = int(self.headers.get("Content-Length") or 0)
+                    params = json.loads(self.rfile.read(n).decode("utf-8") or "{}") if n else {}
+                    out, code = dict(ok=True, **product_share.save(params)), 200
+                except (ValueError, OSError) as exc:
+                    out, code = {"ok": False, "error": str(exc)[:200]}, 400
+                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
             m = STORAGE_RE.match(path)
             if path != "/refresh" and not m:
                 return self._send(404, b"not found", "text/plain; charset=utf-8")

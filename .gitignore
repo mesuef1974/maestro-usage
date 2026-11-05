@@ -6,3 +6,4 @@ __pycache__/
 # ملفات شاردة تنتج من مسار ويندوز حرفيًّا
 data/_stray/
 src/C*
+data/product_share.json
