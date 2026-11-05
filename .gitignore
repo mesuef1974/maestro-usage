@@ -2,3 +2,7 @@ data/
 reports/
 __pycache__/
 *.pyc
+
+# ملفات شاردة تنتج من مسار ويندوز حرفيًّا
+data/_stray/
+src/C*
