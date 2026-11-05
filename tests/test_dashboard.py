@@ -98,6 +98,9 @@ class TestDashboard(unittest.TestCase):
                   'id="lalert"', "function quotaAlert", "تحذير: بمعدل الحرق الحالي",
                   "RATE_SRC[f.rate_src]", "(جزئي من ", "، ناقص)", "حدّ أدنى 10%"):
             self.assertIn(s, page)
+        self.assertIn('id="lscope"', page)  # نطاق الأرقام: الحصة لكل المنتجات والتوكنات لـClaude Code فقط
+        for gone in ("متوسط السياق للردّ (الخيط الرئيس)", "ردود سياقها فوق"):  # أُزيلتا بقرار المالك 2026-11-05
+            self.assertNotIn(gone, page)
 
 
     def test_plan_snapshot_table_is_capped(self):
