@@ -7,3 +7,4 @@ __pycache__/
 data/_stray/
 src/C*
 data/product_share.json
+data/alerts_state.json
