@@ -85,3 +85,23 @@ class TestForceOrWait(unittest.TestCase):
         with mock.patch.object(run_cycle, "main", return_value=run_cycle.SKIPPED), \
                 mock.patch.object(run_cycle, "load_state", return_value=state(age=100)):
             self.assertEqual(run_cycle.force_or_wait(t0=T0, timeout=0, poll=0), run_cycle.SKIPPED)
+
+
+class TestHealth(unittest.TestCase):
+    def test_write_health_records_ok_and_error(self):
+        import json
+        import tempfile
+        tmp = tempfile.mkdtemp()
+        orig = run_cycle.HEALTH
+        run_cycle.HEALTH = os.path.join(tmp, "health.json")
+        try:
+            h = run_cycle.write_health(True, None, 0, 10, "ok sec 1.0")
+            self.assertTrue(h["ok"] and h["ts"].endswith("Z"))
+            on_disk = json.load(open(run_cycle.HEALTH, encoding="utf-8"))
+            self.assertEqual(on_disk["turns_total"], 10)
+            h = run_cycle.write_health(False, "KeyError", 2)
+            self.assertFalse(h["ok"])
+            self.assertEqual((h["error"], h["files_error"]), ("KeyError", 2))
+        finally:
+            run_cycle.HEALTH = orig
+            shutil.rmtree(tmp, ignore_errors=True)

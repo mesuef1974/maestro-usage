@@ -99,6 +99,16 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
                 body = json.dumps(plan_fn(), ensure_ascii=False).encode("utf-8")
                 return self._send(200, body, "application/json")
+            if path == "/health.json":  # صحة الدورة: ما كتبته آخر دورة + بصمة الخادم ووقته
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                try:
+                    with open(run_cycle.HEALTH, encoding="utf-8") as f:
+                        h = json.load(f)
+                except (OSError, ValueError):
+                    h = {"ts": None, "ok": None, "error": "لا سجل صحة بعد"}
+                h["now"] = usage_db.now_iso()
+                return self._send(200, json.dumps(h, ensure_ascii=False).encode("utf-8"), "application/json")
             if path == "/runner.json":
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")

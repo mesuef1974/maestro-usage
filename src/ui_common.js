@@ -222,6 +222,18 @@ function age(){
   a.textContent="عمر البيانات: "+(m<1?"أقل من دقيقة":Math.round(m)+" دقيقة")+(m>30?" — قديمة، اضغط تحديث فوري":"");
   a.className=m>30?"warn":"sub";
 }
+/* صحة الدورة: /health.json كل 30 ثانية؛ تحذير ظاهر إن فشلت آخر دورة أو لم تعمل منذ أكثر من 3 دقائق أو تعثّر إدخال ملفات */
+function health(){
+  var el=document.getElementById("health");if(!el||location.protocol==="file:")return;
+  fetch("/health.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(h){
+    if(!h){el.textContent="";return}
+    var msgs=[],now=h.now?Date.parse(h.now):Date.now(),m=h.ts?(now-Date.parse(h.ts))/6e4:null;
+    if(h.ok===false)msgs.push("آخر دورة فشلت"+(h.error?": "+h.error:""));
+    if(m==null)msgs.push("لا دورة مسجّلة بعد");else if(m>3)msgs.push("الدورة لم تعمل منذ "+Math.round(m)+" دقيقة");
+    if(h.files_error)msgs.push(h.files_error+" ملف إدخال متعثّر");
+    el.textContent=msgs.length?"تحذير: "+msgs.join(" · "):"الدورة سليمة";el.className=msgs.length?"warn":"sub";
+  }).catch(function(){el.textContent="تعذّر فحص الصحة";el.className="warn"});
+}
 var AUTO={key:"mu_auto",steps:[0,5,15,30],save:null,timer:null,due:0};  // التحديث الدوري: دقائق، 0 = إيقاف؛ يُحفظ في localStorage ويشترك فيه كل الصفحات
 function autoGet(){try{var v=Number(localStorage.getItem(AUTO.key));return AUTO.steps.indexOf(v)>0?v:0}catch(e){return 0}}
 function refreshNow(msg,b){
@@ -254,7 +266,7 @@ function initRefresh(saveView){
   AUTO.save=saveView;
   if(window.__refreshBound)return;window.__refreshBound=1;  // الصفحة الواحدة تضمّ عدّة نسخ من هذا الملف: زرّ التحديث يُربط مرة واحدة
   b.addEventListener("click",function(){refreshNow(msg,b)});
-  age();setInterval(age,30000);autoArm();
+  age();health();setInterval(function(){age();health()},30000);autoArm();
 }
 
 /* ---------- السمة (نهاري/ليلي/تلقائي): مشتركة بين كل الصفحات، تُحفظ في localStorage وتُطبَّق مبكرًا من ui_theme_head.js ---------- */

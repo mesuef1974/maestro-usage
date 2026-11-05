@@ -97,7 +97,8 @@ HERO = ('<section class="hero" id="hero" aria-label="الأرقام الثلاث
 def pagehead(title, lede, stamp="", hero=False):
     """رأس الصفحة؛ hero يضيف شريط الأرقام الثلاثة (تملؤه أجزاء الصفحة: الحصة من جزء main والمشغّل من جزء runner)."""
     live = ('<div class="live"><button type="button" id="refresh" class="refresh">تحديث فوري</button>'
-            '<span id="age" class="sub"></span><span id="rmsg" class="sub" role="status"></span><span id="gen" hidden>%s</span></div>' % html.escape(stamp))
+            '<span id="age" class="sub"></span><span id="health" class="sub" role="status"></span><span id="rmsg" class="sub" role="status"></span>'
+            '<span id="gen" hidden>%s</span></div>' % html.escape(stamp))
     return '<header class="pagehead" id="top"><h1>%s</h1><p class="lede">%s</p>%s%s</header>' % (html.escape(title), html.escape(lede), live, HERO if hero else "")
 
 

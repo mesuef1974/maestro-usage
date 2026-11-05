@@ -86,6 +86,21 @@ def load_state():
         return {"last_build": 0.0, "pending": False, "fp": ""}
 
 
+HEALTH = os.path.join(DATA, "health.json")  # صحة الدورة للصفحة (/health.json): آخر دورة ونتيجتها وأخطاء الإدخال
+
+
+def write_health(ok, error=None, files_error=0, turns_total=None, rep=None):
+    h = dict(ts=usage_db.now_iso(), ok=bool(ok), error=error, files_error=int(files_error or 0), turns_total=turns_total, reports=rep)
+    try:
+        tmp = HEALTH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(h, f, ensure_ascii=False)
+        os.replace(tmp, HEALTH)
+    except OSError:
+        pass
+    return h
+
+
 def save_state(state):
     tmp = STATE + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -144,6 +159,7 @@ def main(argv=None):
             state["pending"] = state["pending"] or new_data
         save_state(state)
         con.close()
+        write_health(not rep.startswith("ERROR"), rep if rep.startswith("ERROR") else None, st["files_error"], st.get("turns_total"), rep)
         if new_data or sc.get("config_changed") or sg.get("scanned") or st["files_error"] or rep != "skipped" or force:  # دورة بلا جديد ولا بناء لا تُسجَّل (كل دقيقة)
             log("ingest " + json.dumps({k: st[k] for k in ("files_ingested", "turns_new", "turns_updated", "turns_reassigned", "files_error", "turns_total")})
                 + " spool " + json.dumps(sp) + " startup " + json.dumps(sc) + " storage " + json.dumps(sg)
@@ -161,6 +177,7 @@ def main(argv=None):
             log("backup integrity_check=" + res)
     except Exception as exc:  # noqa: BLE001 — المجدول لا يجب أن يفشل بصمت
         log("ERROR " + type(exc).__name__)
+        write_health(False, type(exc).__name__)
         return 1
     finally:
         try:

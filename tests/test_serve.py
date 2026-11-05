@@ -183,3 +183,40 @@ class TestShareEndpoint(unittest.TestCase):
         self.assertTrue(os.path.exists(self.share_path))
         self.assertEqual(self.post(b'{"claude_code": 50, "cowork": 10}')[0], 400)
         self.assertEqual(self.post(b'{"claude_code": 13, "cowork": 87}', host="evil:1")[0], 403)
+
+
+class TestHealthEndpoint(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        with open(os.path.join(self.tmp, "index.html"), "w", encoding="utf-8") as f:
+            f.write("<p>x</p>")
+        self._orig = serve.run_cycle.HEALTH
+        serve.run_cycle.HEALTH = os.path.join(self.tmp, "health.json")
+        self.srv = serve.make_server(0, self.tmp, lambda t0: 0, lambda: [], lambda op, p: {})
+        self.port = self.srv.server_address[1]
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+
+    def tearDown(self):
+        serve.run_cycle.HEALTH = self._orig
+        self.srv.shutdown()
+        self.srv.server_close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def get(self, host=None):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        c.request("GET", "/health.json", headers={"Host": host or "127.0.0.1:%d" % self.port})
+        r = c.getresponse()
+        body = r.read()
+        out = (r.status, json.loads(body) if r.status == 200 else {})
+        c.close()
+        return out
+
+    def test_health_missing_then_present_and_local_only(self):
+        code, h = self.get()
+        self.assertEqual(code, 200)
+        self.assertIsNone(h["ok"])
+        with open(serve.run_cycle.HEALTH, "w", encoding="utf-8") as f:
+            json.dump({"ts": "2026-11-05T08:00:00Z", "ok": True, "error": None, "files_error": 0}, f)
+        code, h = self.get()
+        self.assertTrue(h["ok"] and h["now"])
+        self.assertEqual(self.get(host="evil:1")[0], 403)
