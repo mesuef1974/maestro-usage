@@ -5,6 +5,7 @@
 POST /storage/{scan|plan|apply|restore|purge} (أدوات حجم البيانات؛ التغييرات تتطلّب confirm=true).
 """
 import argparse
+import gzip
 import json
 import os
 import re
@@ -73,6 +74,9 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
         def _send(self, code, body, ctype):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
+            if len(body) > 1024 and "gzip" in (self.headers.get("Accept-Encoding") or "") and not ctype.startswith("font/"):
+                body = gzip.compress(body, 6)  # الصفحة نصّ متكرّر: الضغط يقلّصها إلى نحو الخُمس
+                self.send_header("Content-Encoding", "gzip")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")

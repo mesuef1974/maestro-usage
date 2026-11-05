@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pages  # noqa: E402
 import reports  # noqa: E402
 import usage_db  # noqa: E402
+import onepage  # noqa: E402
+import ui  # noqa: E402
 
 
 class TestOnePage(unittest.TestCase):
@@ -70,3 +72,19 @@ class TestOnePage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSharedLibOnce(unittest.TestCase):
+    def test_shared_lib_embedded_once_and_state_per_part(self):
+        """المكتبة المشتركة مرة واحدة في الصفحة؛ ودوال حالة الجزء (setPreset) داخل كل جزء له مرشِّحات."""
+        import flow_page
+        import skills_page
+        parts = [("skills", ui.render("skills", skills_page.payload(dict(files=0, scanned_at=None, usage={})), {"__STAMP__": "x"}), False),
+                 ("flow", ui.render("flow", flow_page.payload(), {"__STAMP__": "x"}), False)]
+        page = onepage.build(parts, "x")
+        self.assertEqual(page.count("function drawLines("), 1)
+        self.assertEqual(page.count("function showTip("), 1)
+        self.assertNotIn(ui.LIB_MARK, page.split("(function(){", 1)[0])  # المشترك قبل أول جزء بلا علامة الحالة
+        shared, state = ui.lib_split()
+        self.assertIn("function setPreset(", state)
+        self.assertNotIn("function setPreset(", shared)

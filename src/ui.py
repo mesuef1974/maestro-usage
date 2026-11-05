@@ -53,8 +53,18 @@ def write_assets(out_dir):
     return path
 
 
+LIB_MARK = "/*@@PAGE_STATE@@*/"
+
+
 def lib_js():
     return (SRC / "ui_common.js").read_text(encoding="utf-8")
+
+
+def lib_split():
+    """(المشترك، الخاص بالجزء): المشترك يسبق العلامة ويُضمَّن مرة واحدة في الصفحة؛ ما بعدها يعتمد على حالة الجزء فيبقى داخله."""
+    s = lib_js()
+    i = s.index(LIB_MARK)
+    return s[:i], s[i:]
 
 
 def embed_json(data):

@@ -257,6 +257,49 @@ function initRefresh(saveView){
   age();setInterval(age,30000);autoArm();
 }
 
+/* ---------- السمة (نهاري/ليلي/تلقائي): مشتركة بين كل الصفحات، تُحفظ في localStorage وتُطبَّق مبكرًا من ui_theme_head.js ---------- */
+(function(){
+  var KEY="mu_theme",ORDER=["auto","light","dark"],LBL={auto:"السمة: تلقائية",light:"السمة: نهارية",dark:"السمة: ليلية"},nav=document.getElementById("themeslot")||document.querySelector(".nav");
+  if(!nav||nav.querySelector(".themebtn"))return;
+  function get(){try{var t=localStorage.getItem(KEY);return t==="light"||t==="dark"?t:"auto"}catch(e){return "auto"}}
+  function apply(t){
+    if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
+    b.textContent=LBL[t];b.setAttribute("aria-label",LBL[t]+"؛ اضغط للتبديل");
+  }
+  var b=document.createElement("button");b.type="button";b.className="themebtn";
+  b.addEventListener("click",function(){var t=ORDER[(ORDER.indexOf(get())+1)%3];try{if(t==="auto")localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}apply(t)});
+  nav.appendChild(b);apply(get());
+})();
+
+/* ---------- التحديث الدوري: زر تحت زر السمة يدور بين إيقاف و5 و15 و30 دقيقة (مؤقّته في autoArm بعد تهيئة الصفحة) ---------- */
+(function(){
+  var nav=document.getElementById("themeslot");
+  if(!nav||nav.querySelector("#autobtn"))return;
+  function lbl(m){return m?"التحديث الدوري: كل "+m+(m<=10?" دقائق":" دقيقة"):"التحديث الدوري: إيقاف"}
+  var b=document.createElement("button");b.type="button";b.className="themebtn autobtn";b.id="autobtn";
+  function apply(m){b.textContent=lbl(m);b.setAttribute("aria-label",lbl(m)+"؛ اضغط للتبديل")}
+  b.addEventListener("click",function(){
+    var m=AUTO.steps[(AUTO.steps.indexOf(autoGet())+1)%AUTO.steps.length];
+    try{if(m)localStorage.setItem(AUTO.key,String(m));else localStorage.removeItem(AUTO.key)}catch(e){}
+    apply(m);autoArm();
+  });
+  nav.appendChild(b);apply(autoGet());
+})();
+
+/* ---------- المرشِّحات: مطويّة افتراضيًّا في الشاشات الضيّقة، وملخّصها يعرض الفترة الحالية ---------- */
+(function(){
+  var box=document.getElementById("fbox"),sum=document.getElementById("fsum");
+  if(!box)return;
+  if(window.matchMedia&&matchMedia("(max-width:640px)").matches)box.removeAttribute("open");
+  function upd(){
+    var p=box.querySelector("#presets [aria-pressed=true]"),f=box.querySelector("#from"),t=box.querySelector("#to");
+    sum.textContent=p?"· "+p.textContent.trim():(f&&f.value?"· "+f.value+" → "+t.value:"");
+  }
+  box.addEventListener("click",function(){setTimeout(upd,0)});box.addEventListener("change",function(){setTimeout(upd,0)});
+  setTimeout(upd,300);
+})();
+
+/*@@PAGE_STATE@@*/ /* ما بعد هذا السطر يعتمد على حالة الجزء (S وD وFIRST وLAST وrender) ويُضمَّن داخل كل جزء؛ ما قبله مشترك يُضمَّن مرة واحدة في الصفحة */
 /* ---------- مرشِّحات الفترة والنماذج (مشتركة: تفترض S وD وLAST وFIRST وrender في نطاق الصفحة) ---------- */
 function setPreset(p){
   S.preset=p;S.to=LAST;
@@ -301,45 +344,3 @@ function bindFilters(){
   $("#from").addEventListener("change",custom);$("#to").addEventListener("change",custom);
   $("#from").min=FIRST;$("#from").max=LAST;$("#to").min=FIRST;$("#to").max=LAST;
 }
-
-/* ---------- السمة (نهاري/ليلي/تلقائي): مشتركة بين كل الصفحات، تُحفظ في localStorage وتُطبَّق مبكرًا من ui_theme_head.js ---------- */
-(function(){
-  var KEY="mu_theme",ORDER=["auto","light","dark"],LBL={auto:"السمة: تلقائية",light:"السمة: نهارية",dark:"السمة: ليلية"},nav=document.getElementById("themeslot")||document.querySelector(".nav");
-  if(!nav||nav.querySelector(".themebtn"))return;
-  function get(){try{var t=localStorage.getItem(KEY);return t==="light"||t==="dark"?t:"auto"}catch(e){return "auto"}}
-  function apply(t){
-    if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);
-    b.textContent=LBL[t];b.setAttribute("aria-label",LBL[t]+"؛ اضغط للتبديل");
-  }
-  var b=document.createElement("button");b.type="button";b.className="themebtn";
-  b.addEventListener("click",function(){var t=ORDER[(ORDER.indexOf(get())+1)%3];try{if(t==="auto")localStorage.removeItem(KEY);else localStorage.setItem(KEY,t)}catch(e){}apply(t)});
-  nav.appendChild(b);apply(get());
-})();
-
-/* ---------- التحديث الدوري: زر تحت زر السمة يدور بين إيقاف و5 و15 و30 دقيقة (مؤقّته في autoArm بعد تهيئة الصفحة) ---------- */
-(function(){
-  var nav=document.getElementById("themeslot");
-  if(!nav||nav.querySelector("#autobtn"))return;
-  function lbl(m){return m?"التحديث الدوري: كل "+m+(m<=10?" دقائق":" دقيقة"):"التحديث الدوري: إيقاف"}
-  var b=document.createElement("button");b.type="button";b.className="themebtn autobtn";b.id="autobtn";
-  function apply(m){b.textContent=lbl(m);b.setAttribute("aria-label",lbl(m)+"؛ اضغط للتبديل")}
-  b.addEventListener("click",function(){
-    var m=AUTO.steps[(AUTO.steps.indexOf(autoGet())+1)%AUTO.steps.length];
-    try{if(m)localStorage.setItem(AUTO.key,String(m));else localStorage.removeItem(AUTO.key)}catch(e){}
-    apply(m);autoArm();
-  });
-  nav.appendChild(b);apply(autoGet());
-})();
-
-/* ---------- المرشِّحات: مطويّة افتراضيًّا في الشاشات الضيّقة، وملخّصها يعرض الفترة الحالية ---------- */
-(function(){
-  var box=document.getElementById("fbox"),sum=document.getElementById("fsum");
-  if(!box)return;
-  if(window.matchMedia&&matchMedia("(max-width:640px)").matches)box.removeAttribute("open");
-  function upd(){
-    var p=box.querySelector("#presets [aria-pressed=true]"),f=box.querySelector("#from"),t=box.querySelector("#to");
-    sum.textContent=p?"· "+p.textContent.trim():(f&&f.value?"· "+f.value+" → "+t.value:"");
-  }
-  box.addEventListener("click",function(){setTimeout(upd,0)});box.addEventListener("change",function(){setTimeout(upd,0)});
-  setTimeout(upd,300);
-})();

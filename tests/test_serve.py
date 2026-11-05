@@ -120,3 +120,32 @@ class TestServe(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestGzip(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        with open(os.path.join(self.tmp, "index.html"), "w", encoding="utf-8") as f:
+            f.write("<p>لوحة</p>" * 500)
+        self.srv = serve.make_server(0, self.tmp, lambda t0: 0, lambda: [], lambda op, p: {})
+        self.port = self.srv.server_address[1]
+        threading.Thread(target=self.srv.serve_forever, daemon=True).start()
+
+    def tearDown(self):
+        self.srv.shutdown()
+        self.srv.server_close()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_gzip_when_accepted_only(self):
+        import gzip
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        c.request("GET", "/", headers={"Host": "127.0.0.1:%d" % self.port, "Accept-Encoding": "gzip"})
+        r = c.getresponse()
+        body = r.read()
+        self.assertEqual(r.getheader("Content-Encoding"), "gzip")
+        self.assertIn("لوحة".encode(), gzip.decompress(body))
+        self.assertLess(len(body), 2000)
+        c.request("GET", "/", headers={"Host": "127.0.0.1:%d" % self.port})
+        r = c.getresponse()
+        self.assertIsNone(r.getheader("Content-Encoding"))
+        self.assertIn("لوحة".encode(), r.read())

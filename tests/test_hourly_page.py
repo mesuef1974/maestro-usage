@@ -59,3 +59,20 @@ class TestHourlyPage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestThinPlan(unittest.TestCase):
+    def test_old_snapshots_keep_one_per_hour_and_latest_fable(self):
+        rows = []
+        for d in (1, 2, 3, 4):
+            for h in range(24):
+                for m in (0, 5, 10):
+                    rows.append(dict(ts="2026-11-%02dT%02d:%02d:00Z" % (d, h, m), f=None, fr=None, w=1.0, wr=None, fa=None, far=None, pl=None, src="s"))
+        rows[10]["fa"] = 2.0  # لقطة Fable قديمة واحدة يجب أن تبقى
+        out = hourly_page.thin_plan(rows, rows[-1]["ts"], dense_hours=48)
+        cut = "2026-11-02T23:10:00"  # آخر لقطة 04T23:10 ناقص 48 ساعة
+        self.assertEqual([r for r in out if r["ts"] >= cut], [r for r in rows if r["ts"] >= cut])  # الحديث كله
+        old = [r for r in out if r["ts"] < cut]
+        self.assertEqual(len(old), 48 + 1)  # 48 ساعة قبل الحدّ، لقطة لكل ساعة + لقطة Fable
+        self.assertIn(rows[10], out)
+        self.assertIs(out[-1], rows[-1])
