@@ -52,5 +52,5 @@ def build(parts, stamp):
     return ("<!doctype html>\n<html lang=\"ar\" dir=\"rtl\">\n<head><script>%s</script>\n<meta charset=\"utf-8\">\n"
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>%s</title>\n%s\n</head>\n<body>\n%s\n%s\n%s\n%s\n"
             "<div id=\"tip\" role=\"status\" aria-live=\"off\"></div>\n%s\n<script>\n%s\n</script>\n<script>\n%s\n</script>\n<script>\n%s\n</script>\n</body>\n</html>\n"
-            % (head, html.escape(TITLE), assets, top, ui.pagehead(TITLE, LEDE, stamp), "\n".join(mains) + defs, bottom, "\n".join(tags),
+            % (head, html.escape(TITLE), assets, top, ui.pagehead(TITLE, LEDE, stamp, hero=True), "\n".join(mains) + defs, bottom, "\n".join(tags),
                shared, "\n".join(codes), rail))

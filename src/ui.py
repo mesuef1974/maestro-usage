@@ -88,10 +88,18 @@ def shell(cur=None):
     return top, "</main></div>"
 
 
-def pagehead(title, lede, stamp=""):
+HERO = ('<section class="hero" id="hero" aria-label="الأرقام الثلاثة">'
+        '<div class="htile"><div class="l">الحصة الأسبوعية الآن</div><div class="v" id="hero-pct">—</div><div class="d" id="hero-pct-d">بانتظار لقطة</div></div>'
+        '<div class="htile"><div class="l">متى تنفد؟</div><div class="v" id="hero-full">—</div><div class="d" id="hero-full-d">بانتظار التقدير</div></div>'
+        '<div class="htile"><div class="l">المشغّل</div><div class="v" id="hero-run">—</div><div class="d" id="hero-run-d">بانتظار الدفتر</div></div>'
+        '</section>')
+
+
+def pagehead(title, lede, stamp="", hero=False):
+    """رأس الصفحة؛ hero يضيف شريط الأرقام الثلاثة (تملؤه أجزاء الصفحة: الحصة من جزء main والمشغّل من جزء runner)."""
     live = ('<div class="live"><button type="button" id="refresh" class="refresh">تحديث فوري</button>'
             '<span id="age" class="sub"></span><span id="rmsg" class="sub" role="status"></span><span id="gen" hidden>%s</span></div>' % html.escape(stamp))
-    return '<header class="pagehead" id="top"><h1>%s</h1><p class="lede">%s</p>%s</header>' % (html.escape(title), html.escape(lede), live)
+    return '<header class="pagehead" id="top"><h1>%s</h1><p class="lede">%s</p>%s%s</header>' % (html.escape(title), html.escape(lede), live, HERO if hero else "")
 
 
 def section_head(sid):

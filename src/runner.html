@@ -116,7 +116,9 @@ function statusText(c){
 
 function render(){
   if(!state)return;
-  if(state.ok===false){$i("cStatus").textContent="مصدر الدفتر غير متاح: "+(state.error||"");$i("cStatus").className="rl-status bad";return;}
+  if(state.ok===false){$i("cStatus").textContent="مصدر الدفتر غير متاح: "+(state.error||"");$i("cStatus").className="rl-status bad";
+    var hv0=document.getElementById("hero-run");if(hv0){hv0.textContent="بلا دفتر";hv0.className="v warn";document.getElementById("hero-run-d").textContent="مصدر الدفتر غير متاح"}
+    return;}
   var k=state.kpis||{};
   $i("kStarted").textContent=k.started_today;
   $i("kRuns").textContent=(k.runs_today||0)+" تشغيلا للنموذج";
@@ -126,6 +128,9 @@ function render(){
   $i("kCost").textContent=money(k.cost_today);
 
   var r=state.runner||{};
+  var hv=document.getElementById("hero-run");
+  if(hv){var cur=state.current;hv.textContent=r.lock?"يعمل":"خامل";hv.className="v"+(r.lock?" ok":"");
+    document.getElementById("hero-run-d").textContent=r.lock&&cur?"على "+cur.id+(cur.problem?" · "+String(cur.problem).slice(0,40):""):(k.started_today||0)+" بدأت اليوم · "+(k.published_today||0)+" نُشرت"}
   $i("rlRunner").className="rl-runner"+(r.lock?" run":"");
   $i("rlRunnerTxt").textContent=r.lock?"المشغّل يعمل الآن · القفل منذ "+dur((r.lock_age_s||0)*1000):"المشغّل خامل · الدورة القادمة خلال 5 دقائق على الأكثر";
 

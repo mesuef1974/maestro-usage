@@ -17,11 +17,11 @@
     b.addEventListener("click",function(){set(card,!card.classList.contains("folded"))});
     head.appendChild(b);
     var id=card.querySelector("h2").id;
-    set(card,id in saved?saved[id]===1:card.hasAttribute("data-fold"),true);  /* الافتراضي: البطاقات الطويلة (جداول، أدوات) مطويّة حتى يفتحها القارئ */
+    set(card,id in saved?saved[id]===1:!card.hasAttribute("data-open"),true);  /* الافتراضي: كل البطاقات مطويّة إلا ما يحمل data-open؛ الشاشة الأولى = الأرقام الثلاثة وأشرطة الحصة */
   });
   var live=document.querySelector(".pagehead .live");
   if(live&&cards.length){
-    var all=document.createElement("button");all.type="button";all.className="refresh";all.textContent="طيّ الكل";
+    var all=document.createElement("button");all.type="button";all.className="refresh";all.textContent=cards.some(function(c){return !c.classList.contains("folded")})?"طيّ الكل":"فتح الكل";
     all.addEventListener("click",function(){var fold=cards.some(function(c){return !c.classList.contains("folded")});cards.forEach(function(c){set(c,fold)});all.textContent=fold?"فتح الكل":"طيّ الكل"});
     live.appendChild(all);
   }

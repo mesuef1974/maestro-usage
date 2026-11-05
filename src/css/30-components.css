@@ -34,6 +34,15 @@
 .tile .l{color:var(--ink2);font-size:var(--t-sm)}
 .tile .v{font:700 var(--t-xl)/var(--lh-num) var(--font-num);color:var(--ink)}
 .tile .d{color:var(--ink3);font-size:var(--t-xs)}
+/* شريط الأرقام الثلاثة في رأس الصفحة: ما يحتاجه القارئ في ثلاث ثوانٍ */
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--sp-3);margin-block-start:var(--sp-4)}
+.htile{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);min-inline-size:0}
+.htile .l{color:var(--ink2);font-size:var(--t-sm)}
+.htile .v{font:700 clamp(1.6rem,4vw,2.4rem)/1.15 var(--font-num);color:var(--ink);margin-block:var(--sp-1);overflow-wrap:anywhere}
+.htile .v.hot{color:var(--bad)}
+.htile .v.ok{color:var(--good)}
+.htile .v.warn{color:var(--warn)}
+.htile .d{color:var(--ink3);font-size:var(--t-xs)}
 .tiles .tile:first-child .v{font-size:var(--t-2xl)}  /* الرقم البطل: أول مؤشر في الصفحة أكبر من إخوته */
 .mt{margin-block-start:var(--sp-4)}
 .tiles.dense .v{font-size:var(--t-lg)}

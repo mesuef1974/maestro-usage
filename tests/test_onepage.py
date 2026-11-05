@@ -88,3 +88,16 @@ class TestSharedLibOnce(unittest.TestCase):
         shared, state = ui.lib_split()
         self.assertIn("function setPreset(", state)
         self.assertNotIn("function setPreset(", shared)
+
+
+class TestHero(unittest.TestCase):
+    def test_hero_strip_only_on_one_page_and_filled_by_parts(self):
+        import flow_page
+        page = onepage.build([("flow", ui.render("flow", flow_page.payload(), {"__STAMP__": "x"}), False)], "x")
+        self.assertEqual(page.count('id="hero"'), 1)
+        for i in ("hero-pct", "hero-full", "hero-run"):
+            self.assertIn('id="%s"' % i, page)
+        self.assertNotIn('id="hero"', ui.pagehead("t", "l", "x"))  # الأجزاء المنفردة بلا شريط
+        self.assertIn("function heroQuota", (ui.SRC / "dashboard.html").read_text(encoding="utf-8"))
+        self.assertIn('getElementById("hero-run")', (ui.SRC / "runner.html").read_text(encoding="utf-8"))
+        self.assertIn('!card.hasAttribute("data-open")', (ui.SRC / "fold.js").read_text(encoding="utf-8"))  # الافتراضي مطويّ
