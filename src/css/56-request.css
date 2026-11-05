@@ -17,3 +17,32 @@
   background:var(--brand);border:0;border-radius:var(--r-sm);cursor:pointer}
 .rq .rq-send:hover{filter:brightness(1.08)}
 .rq .rq-send:disabled{opacity:.55;cursor:not-allowed}
+/* المرحلة 2: النوع والقالب، وقائمة المعايير، والنطاق، والجاهزية، والمعاينة */
+.rq fieldset.rq-crit,.rq fieldset.rq-scope{border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4);margin:0 0 var(--sp-4)}
+.rq legend{font-weight:700;padding-inline:var(--sp-1)}
+.rq #rqCrit{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:var(--sp-2) var(--sp-5);margin-block:var(--sp-2) var(--sp-3)}
+.rq .rq-cgh{margin:0 0 var(--sp-1);color:var(--ink2);font-size:var(--t-sm);font-weight:700}
+.rq .rq-cgroup label{display:flex;align-items:baseline;gap:var(--sp-2);margin:0 0 var(--sp-1);font-weight:400;line-height:1.5}
+.rq .rq-cgroup input{flex:none;margin:0;inline-size:auto}
+.rq .rq-badge{flex:none;font-size:var(--t-xs);border:1px solid var(--line-strong);border-radius:var(--r-pill);padding:0 var(--sp-2);color:var(--ink2)}
+.rq .rq-badge.auto{border-color:var(--good);color:var(--good)}
+.rq .rq-sub{font-weight:600;font-size:var(--t-sm)}
+.rq .rq-tpl{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2);margin:0 0 var(--sp-2);font-size:var(--t-sm)}
+.rq .rq-mini{font:inherit;font-size:var(--t-sm);min-block-size:var(--tap);padding:0 var(--sp-3);border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);cursor:pointer}
+.rq .rq-mini:hover{background:var(--hover)}
+.rq .rq-filein{display:flex;gap:var(--sp-2)}
+.rq .rq-filein input{flex:1}
+.rq .rq-files{list-style:none;margin:var(--sp-2) 0 0;padding:0;display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.rq .rq-files li{display:inline-flex;align-items:center;gap:var(--sp-1);border:1px solid var(--line-strong);border-radius:var(--r-pill);padding:0 0 0 var(--sp-3);font-family:var(--font-num);font-size:var(--t-sm)}
+.rq .rq-x{font:inherit;min-inline-size:var(--tap);min-block-size:var(--tap);border:0;background:none;color:var(--ink2);cursor:pointer}
+.rq .rq-x:hover{color:var(--bad)}
+.rq .rq-similar{margin:var(--sp-1) 0 0;border-inline-start:3px solid var(--warn);padding-inline-start:var(--sp-2)}
+.rq .rq-warn{margin:var(--sp-2) 0 0;border-inline-start:3px solid var(--bad);padding-inline-start:var(--sp-2);font-size:var(--t-sm)}
+.rq .rq-touch{flex:1 1 18rem}
+.rq .rq-ready{border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-4);margin:0 0 var(--sp-4);background:var(--bg)}
+.rq .rq-ready h3{margin:0 0 var(--sp-1);font-size:var(--t-base)}
+.rq .rq-ready #rqReadyScore{font-family:var(--font-num);color:var(--ink2);margin-inline-start:var(--sp-2)}
+.rq .rq-ready ul{margin:0;padding-inline-start:var(--sp-5);color:var(--ink2);font-size:var(--t-sm)}
+.rq .rq-ready li.ok{list-style:none;margin-inline-start:calc(-1 * var(--sp-5));color:var(--good)}
+.rq .rq-preview{margin:0 0 var(--sp-4)}
+.rq .rq-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-3);font-size:var(--t-sm);margin:var(--sp-2) 0 0}

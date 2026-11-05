@@ -99,6 +99,16 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
                 body = json.dumps(plan_fn(), ensure_ascii=False).encode("utf-8")
                 return self._send(200, body, "application/json")
+            if path in ("/api/files", "/api/similar"):  # إكمال «الملفات المتوقَّعة» وكشف التكرار: قراءة فقط، مضيف محلي فقط
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                from urllib.parse import parse_qs, urlsplit
+                q = parse_qs(urlsplit(self.path).query)
+                if path == "/api/files":
+                    out = {"files": request_page.match_files((q.get("q") or [""])[0][:100])}
+                else:
+                    out = {"similar": request_page.similar((q.get("title") or [""])[0][:200])}
+                return self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
             if path == "/health.json":  # صحة الدورة: ما كتبته آخر دورة + بصمة الخادم ووقته
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
@@ -151,7 +161,9 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             own = {"127.0.0.1:%d" % port, "localhost:%d" % port}
             return self._host_ok() and origin is not None and origin.split("://", 1)[-1].lower() in own
 
-        def _post_request(self):
+        def _post_request(self, fn=None, rate=True):
+            """POST /request (يكتب) و/request/preview (لا يكتب ولا يُحسب على حدّ الساعة): الشروط نفسها من المصدر والنوع والطول."""
+            fn = fn or request_page.submit
             if not self._origin_strict_ok():
                 return self._json(403, {"error": "مصدر الطلب غير مسموح", "field": ""})
             if not (self.headers.get("Content-Type") or "").lower().startswith("application/json"):
@@ -165,13 +177,13 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._json(400, {"error": "طول المحتوى غير صالح", "field": ""})
             if n > request_page.MAX_BODY:
                 return self._json(413, {"error": "الطلب أكبر من الحد المسموح", "field": ""})
-            if not request_rate.allow():
+            if rate and not request_rate.allow():
                 return self._json(429, {"error": "عدد الطلبات تجاوز الحد في الساعة", "field": ""})
             try:
                 params = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
                 if not isinstance(params, dict):
                     raise request_page.ValidationError("جسم غير صالح", "")
-                return self._json(200, request_page.submit(params))
+                return self._json(200, fn(params))
             except request_page.ValidationError as exc:
                 return self._json(400, {"error": str(exc)[:200], "field": exc.field})
             except (ValueError, OSError) as exc:
@@ -181,6 +193,8 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             path = self.path.split("?", 1)[0]
             if path == "/request":  # استمارة «طلب جديد»: تكتب ملفاً في requests/ فقط، بلا نموذج
                 return self._post_request()
+            if path == "/request/preview":  # معاينة الطلب كما سيقرؤه المشغّل وملاحظات جاهزيته؛ لا كتابة
+                return self._post_request(request_page.preview, rate=False)
             if path == "/share":  # نسب المنتجات اليدوية: JSON صغير يُحفظ في data/product_share.json
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")

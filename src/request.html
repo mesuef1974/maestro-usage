@@ -1,33 +1,63 @@
 <!-- جزء من صفحة ميزان الواحدة: يُبنى بـ ui.render ويجمعه onepage.build؛ الرأس والغلاف من onepage لا من هنا -->
 __SHELL_OPEN__
 <!--@sec request--><section class="card rq" aria-labelledby="rqh">
-  <div class="cardhead"><h2 id="rqh">طلب جديد للمشغّل</h2><span class="sub">يلتقطه المشغّل من <bdi dir="ltr">requests/</bdi> خلال 5 دقائق</span></div>
+  <div class="cardhead"><h2 id="rqh">طلب جديد للمشغّل</h2><span class="sub">استمارة تكتب طلبًا في <bdi dir="ltr">requests/</bdi> يلتقطه المشغّل خلال 5 دقائق</span></div>
   <form id="rqForm" novalidate>
     <div class="rq-field"><label for="rqTitle">العنوان</label>
-      <input id="rqTitle" name="title" maxlength="120" required aria-describedby="rqTitleErr">
-      <p class="rq-err" id="rqTitleErr" role="alert" hidden></p></div>
-    <div class="rq-field"><label for="rqAsk">المطلوب</label>
-      <textarea id="rqAsk" name="ask" rows="6" maxlength="1500" required aria-describedby="rqAskErr rqAskCount"></textarea>
-      <p class="rq-count sub" id="rqAskCount" aria-live="polite">0 / 1500</p>
-      <p class="rq-err" id="rqAskErr" role="alert" hidden></p></div>
-    <div class="rq-field"><label for="rqAccept">معايير القبول (سطر لكل معيار)</label>
-      <textarea id="rqAccept" name="accept" rows="4" maxlength="1500" required aria-describedby="rqAcceptErr"></textarea>
-      <p class="rq-err" id="rqAcceptErr" role="alert" hidden></p></div>
+      <input id="rqTitle" name="title" maxlength="120" required aria-describedby="rqTitleErr rqSimilar" autocomplete="off">
+      <p class="rq-err" id="rqTitleErr" role="alert" hidden></p>
+      <p class="rq-similar sub" id="rqSimilar" aria-live="polite" hidden></p></div>
     <div class="rq-row">
-      <div class="rq-field"><label for="rqSize">الوسم</label>
-        <select id="rqSize" name="size" required aria-describedby="rqSizeErr"></select>
+      <div class="rq-field"><label for="rqType">نوع الطلب</label>
+        <select id="rqType" name="type" required aria-describedby="rqTypeErr"></select>
+        <p class="rq-err" id="rqTypeErr" role="alert" hidden></p></div>
+      <div class="rq-field"><label for="rqSize">الحجم</label>
+        <select id="rqSize" name="size" required aria-describedby="rqSizeErr rqSizeHint"></select>
+        <p class="sub" id="rqSizeHint">يحدّد النموذج: صغير هايكو، متوسط وكبير سونيت.</p>
         <p class="rq-err" id="rqSizeErr" role="alert" hidden></p></div>
       <div class="rq-field"><label for="rqPrio">الأولوية</label>
         <select id="rqPrio" name="priority" required aria-describedby="rqPrioErr"></select>
         <p class="rq-err" id="rqPrioErr" role="alert" hidden></p></div>
+    </div>
+    <div class="rq-field"><label for="rqAsk">المطلوب</label>
+      <p class="rq-tpl" id="rqTpl" hidden><span id="rqTplTxt"></span> <button type="button" class="rq-mini" id="rqTplYes">استبدل بالقالب</button> <button type="button" class="rq-mini" id="rqTplNo">أبقِ ما كتبت</button></p>
+      <textarea id="rqAsk" name="ask" rows="7" maxlength="1500" required aria-describedby="rqAskErr rqAskCount"></textarea>
+      <p class="rq-count sub" id="rqAskCount" aria-live="polite">0 / 1500</p>
+      <p class="rq-err" id="rqAskErr" role="alert" hidden></p></div>
+    <fieldset class="rq-crit" aria-describedby="rqCritErr rqCritHint"><legend>معايير القبول</legend>
+      <p class="sub" id="rqCritHint">يُختار الافتراضي حسب النوع. «آلي» يفحصه المشغّل أو CI، و«بعينك» تتحقق منه أنت.</p>
+      <div id="rqCrit"></div>
+      <label for="rqAccept" class="rq-sub">معيار إضافي (سطر لكل معيار، اختياري)</label>
+      <textarea id="rqAccept" name="accept" rows="2" maxlength="1500"></textarea>
+      <p class="rq-err" id="rqCritErr" role="alert" hidden></p></fieldset>
+    <fieldset class="rq-scope"><legend>النطاق (اختياري، ويقوّي الطلب)</legend>
+      <div class="rq-field"><label for="rqPage">الصفحة</label>
+        <input id="rqPage" name="page" maxlength="200" dir="ltr" placeholder="/attendance/ أو رابط على 8500" aria-describedby="rqPageErr">
+        <p class="rq-err" id="rqPageErr" role="alert" hidden></p></div>
+      <div class="rq-field"><label for="rqFileIn">الملفات المتوقَّعة</label>
+        <div class="rq-filein"><input id="rqFileIn" list="rqFileList" dir="ltr" autocomplete="off" placeholder="اكتب جزءًا من المسار" aria-describedby="rqFilesErr rqFilesHint">
+          <button type="button" class="rq-mini" id="rqFileAdd">أضف</button></div>
+        <datalist id="rqFileList"></datalist>
+        <p class="sub" id="rqFilesHint">من ملفات مستودع المنصّة. Enter يضيف الملف.</p>
+        <ul class="rq-files" id="rqFiles" aria-label="الملفات المضافة"></ul>
+        <p class="rq-err" id="rqFilesErr" role="alert" hidden></p></div>
+      <div class="rq-field"><label for="rqOut">خارج النطاق</label>
+        <input id="rqOut" name="out_of_scope" maxlength="500" placeholder="ما لا يجب أن يُمسّ" aria-describedby="rqOutErr">
+        <p class="rq-err" id="rqOutErr" role="alert" hidden></p></div>
+    </fieldset>
+    <div class="rq-row">
       <div class="rq-field"><label for="rqApproval">الاعتماد</label>
         <select id="rqApproval" name="approval" aria-describedby="rqApprovalHint"></select>
         <p class="sub" id="rqApprovalHint">مباشر: يُنشر بعد البوّابة. معاينة: تعاينه على 8500 قبل الدمج.</p></div>
+      <fieldset class="rq-touch"><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div>
+        <p class="rq-warn" id="rqTouchWarn" role="status" hidden></p></fieldset>
     </div>
-    <fieldset class="rq-touch"><legend>يمسّ (اختياري)</legend><div id="rqTouches"></div></fieldset>
-    <p><button type="submit" class="rq-send" id="rqSend">إرسال الطلب</button> <span id="rqMsg" role="status" aria-live="polite"></span></p>
+    <section class="rq-ready" aria-labelledby="rqReadyH"><h3 id="rqReadyH">الجاهزية <span id="rqReadyScore"></span></h3>
+      <ul id="rqReady" aria-live="polite"></ul></section>
+    <details class="rq-preview" id="rqPreview"><summary>معاينة الطلب كما يقرؤه المشغّل</summary><pre id="rqPreviewBody" dir="rtl"></pre></details>
+    <p><button type="submit" class="rq-send" id="rqSend">إرسال الطلب</button> <span class="sub">أو Ctrl+Enter</span> <span id="rqMsg" role="status" aria-live="polite"></span></p>
   </form>
-  <p class="sub">بعد الإرسال تتابعه في «المشغّل الحيّ» أعلاه.</p>
+  <p class="sub">بعد الإرسال تتابعه في «المشغّل الحيّ» أعلاه. المسوّدة تُحفظ في هذا المتصفح حتى ترسل.</p>
 </section><!--@/sec-->
 
 __SHELL_CLOSE__
@@ -36,36 +66,145 @@ __SHELL_CLOSE__
 __LIB__
 (function(){
 var cfg=JSON.parse(document.getElementById("data").textContent).request;
-var FIELDS={title:"rqTitle",ask:"rqAsk",accept:"rqAccept",size:"rqSize",priority:"rqPrio"};
-var ERR={title:"rqTitleErr",ask:"rqAskErr",accept:"rqAcceptErr",size:"rqSizeErr",priority:"rqPrioErr"};
+var FIELDS={title:"rqTitle",ask:"rqAsk",type:"rqType",criteria:"rqCrit",accept:"rqAccept",size:"rqSize",priority:"rqPrio",page:"rqPage",files:"rqFileIn",out_of_scope:"rqOut"};
+var ERR={title:"rqTitleErr",ask:"rqAskErr",type:"rqTypeErr",criteria:"rqCritErr",accept:"rqCritErr",size:"rqSizeErr",priority:"rqPrioErr",page:"rqPageErr",files:"rqFilesErr",out_of_scope:"rqOutErr"};
+var DRAFT="mu_rq_draft",files=[],critTouched=false,lastType="";
 function $(i){return document.getElementById(i);}
-function fill(id,items){$(id).innerHTML='<option value="">اختر…</option>'+items.map(function(x){return '<option value="'+x+'">'+x+'</option>';}).join("");}
-fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);$("rqPrio").value="P2";fill("rqApproval",cfg.approvals);
-function defApproval(){$("rqApproval").value=$("rqSize").value==="تصميم"?"معاينة":"مباشر";}
-defApproval();$("rqSize").addEventListener("change",defApproval);
-$("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+t+'"> '+t+'</label>';}).join("");
-function clearErrors(){Object.keys(ERR).forEach(function(k){$(ERR[k]).hidden=true;$(ERR[k]).textContent="";$(FIELDS[k]).removeAttribute("aria-invalid");});}
-function showError(field,msg){var id=ERR[field];if(!id)return false;$(id).textContent=msg;$(id).hidden=false;$(FIELDS[field]).setAttribute("aria-invalid","true");return true;}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function fill(id,items){$(id).innerHTML='<option value="">اختر…</option>'+items.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join("");}
+fill("rqType",Object.keys(cfg.types));fill("rqSize",cfg.sizes);fill("rqPrio",cfg.priorities);fill("rqApproval",cfg.approvals);
+/* المعايير: مجموعات بخانات اختيار، ولكل معيار شارة طريقة التحقق */
+var groups={};cfg.criteria.forEach(function(c){(groups[c.group]=groups[c.group]||[]).push(c);});
+$("rqCrit").innerHTML=Object.keys(groups).map(function(g){
+  return '<div class="rq-cgroup"><p class="rq-cgh">'+esc(g)+'</p>'+groups[g].map(function(c){
+    var v=c.verify.owner?'<span class="rq-badge own">بعينك</span>':'<span class="rq-badge auto" title="'+esc(c.verify.check||"")+'">آلي</span>';
+    return '<label><input type="checkbox" name="crit" value="'+c.id+'"> '+esc(c.text)+' '+v+'</label>';}).join("")+'</div>';}).join("");
+$("rqTouches").innerHTML=cfg.touches.map(function(t){return '<label><input type="checkbox" value="'+esc(t)+'"> '+esc(t)+'</label>';}).join("");
+function critBoxes(){return [].slice.call(document.querySelectorAll('#rqCrit input[name=crit]'));}
+function touchBoxes(){return [].slice.call(document.querySelectorAll('#rqTouches input'));}
+/* fnmatch مثل بوّابة الدمج: * يطابق أي شيء بما فيه / */
+function globRe(g){return new RegExp("^"+g.replace(/[.+^${}()|[\]\\]/g,"\\$&").replace(/\*/g,".*").replace(/\?/g,".")+"$");}
+function touchesFor(list){var out={};Object.keys(cfg.touch_globs).forEach(function(t){cfg.touch_globs[t].forEach(function(g){var re=globRe(g);list.forEach(function(f){if(re.test(f))out[t]=1;});});});return Object.keys(out);}
+function applyType(){
+  var t=$("rqType").value,info=cfg.types[t];if(!info||t===lastType)return;lastType=t;
+  if(!critTouched)critBoxes().forEach(function(b){var c=cfg.criteria.filter(function(x){return String(x.id)===b.value;})[0];b.checked=c.types.indexOf(t)>=0;});
+  $("rqApproval").value=info.approval;
+  var ask=$("rqAsk").value.trim();
+  if(!ask){$("rqAsk").value=info.template;$("rqTpl").hidden=true;}
+  else if(ask!==info.template){$("rqTplTxt").textContent="لنوع «"+t+"» قالب جاهز.";$("rqTpl").hidden=false;}
+  update();
+}
+$("rqType").addEventListener("change",applyType);
+$("rqTplYes").addEventListener("click",function(){var info=cfg.types[$("rqType").value];if(info)$("rqAsk").value=info.template;$("rqTpl").hidden=true;update();$("rqAsk").focus();});
+$("rqTplNo").addEventListener("click",function(){$("rqTpl").hidden=true;$("rqAsk").focus();});
+$("rqCrit").addEventListener("change",function(){critTouched=true;update();});
+/* الملفات المتوقَّعة: إكمال من /api/files ثم شرائح بزر حذف؛ ملف يطابق المحظور يعلّم «يمسّ» تلقائيًّا */
+var ft=null;
+$("rqFileIn").addEventListener("input",function(){
+  clearTimeout(ft);var q=$("rqFileIn").value.trim();if(q.length<2||location.protocol==="file:")return;
+  ft=setTimeout(function(){fetch("/api/files?q="+encodeURIComponent(q)).then(function(r){return r.ok?r.json():{files:[]};}).then(function(j){
+    $("rqFileList").innerHTML=(j.files||[]).map(function(f){return '<option value="'+esc(f)+'">';}).join("");}).catch(function(){});},220);
+});
+function addFile(){
+  var v=$("rqFileIn").value.trim().replace(/\\/g,"/").replace(/^\/+/,"");if(!v)return;
+  if(files.indexOf(v)<0&&files.length<cfg.max_files)files.push(v);$("rqFileIn").value="";renderFiles();update();
+}
+$("rqFileAdd").addEventListener("click",addFile);
+$("rqFileIn").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addFile();}});
+function renderFiles(){
+  $("rqFiles").innerHTML=files.map(function(f,i){return '<li><bdi dir="ltr">'+esc(f)+'</bdi> <button type="button" class="rq-x" data-i="'+i+'" aria-label="احذف '+esc(f)+'">×</button></li>';}).join("");
+  var auto=touchesFor(files);
+  touchBoxes().forEach(function(b){if(auto.indexOf(b.value)>=0)b.checked=true;});
+  updateTouchWarn();
+}
+$("rqFiles").addEventListener("click",function(e){var b=e.target.closest(".rq-x");if(!b)return;files.splice(Number(b.dataset.i),1);renderFiles();update();$("rqFileIn").focus();});
+function updateTouchWarn(){
+  var on=touchBoxes().filter(function(b){return b.checked;}).map(function(b){return b.value;});
+  $("rqTouchWarn").hidden=!on.length;
+  $("rqTouchWarn").textContent=on.length?"لن يُدمج آليًّا: يمسّ "+on.join("، ")+"، فيُحال إلى طابور قرارك قبل أي تشغيل للنموذج"+(on.indexOf("الأمن")>=0?"، والأمن يحتاج «أقرّ أمنيًّا»":"")+".":"";
+}
+$("rqTouches").addEventListener("change",function(){updateTouchWarn();update();});
+/* كشف التكرار عند مغادرة العنوان */
+$("rqTitle").addEventListener("blur",function(){
+  var t=$("rqTitle").value.trim(),box=$("rqSimilar");if(t.split(/\s+/).length<2||location.protocol==="file:"){box.hidden=true;return;}
+  fetch("/api/similar?title="+encodeURIComponent(t)).then(function(r){return r.ok?r.json():{similar:[]};}).then(function(j){
+    var s=j.similar||[];box.hidden=!s.length;
+    box.innerHTML=s.length?"قد يشبه: "+s.map(function(x){return '<bdi>'+esc(x.id)+'</bdi> «'+esc(x.title)+'» ('+esc(x.state)+')';}).join(" · "):"";
+  }).catch(function(){box.hidden=true;});
+});
+function body(){
+  return {title:$("rqTitle").value,ask:$("rqAsk").value,type:$("rqType").value,
+    criteria:critBoxes().filter(function(b){return b.checked;}).map(function(b){return Number(b.value);}),
+    accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,approval:$("rqApproval").value,
+    touches:touchBoxes().filter(function(b){return b.checked;}).map(function(b){return b.value;}),
+    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value};
+}
+/* مقياس الجاهزية: القواعد نفسها في request_page.readiness؛ لا يمنع الإرسال */
+function readiness(b){
+  var n=[],extra=b.accept.split(/\n/).filter(function(x){return x.trim();}).length,words=(b.title+" "+b.ask).match(/[\w؀-ۿ]+/g)||[];
+  if(b.title.trim().split(/\s+/).filter(Boolean).length<3)n.push("العنوان أقل من ثلاث كلمات");
+  if(b.ask.trim().length<120)n.push("المطلوب أقصر من 120 حرفًا");
+  if(b.criteria.length+extra<2)n.push("معيار قبول واحد فقط أو لا شيء");
+  if((b.type==="خلل"||b.type==="تحسين واجهة")&&!b.page.trim()&&!b.files.length)n.push("حدّد الصفحة أو الملفات لهذا النوع");
+  if(words.length&&words.length<=4&&words.slice(0,2).every(function(w){return cfg.vague.indexOf(w)>=0;}))n.push("فعل مبهم وحده (حسّن، رتّب، طوّر، عدّل)");
+  return n;
+}
+var TOTAL=5;
+function update(){
+  var b=body(),n=readiness(b);
+  $("rqReadyScore").textContent=(TOTAL-n.length)+" / "+TOTAL;
+  $("rqReady").innerHTML=n.length?n.map(function(x){return "<li>"+esc(x)+"</li>";}).join(""):"<li class=\"ok\">جاهز: يلتقطه المشغّل بلا نقص</li>";
+  $("rqAskCount").textContent=$("rqAsk").value.length+" / 1500";
+  saveDraft(b);
+  if($("rqPreview").open)preview();
+}
+["rqTitle","rqAsk","rqAccept","rqPage","rqOut"].forEach(function(i){$(i).addEventListener("input",update);});
+["rqSize","rqPrio","rqApproval"].forEach(function(i){$(i).addEventListener("change",update);});
+/* المسوّدة: localStorage داخل try/catch؛ تُستعاد عند الفتح وتُمسح بعد الإرسال */
+var st=null;
+function saveDraft(b){clearTimeout(st);st=setTimeout(function(){try{localStorage.setItem(DRAFT,JSON.stringify(b));}catch(e){}},400);}
+function loadDraft(){
+  var d=null;try{d=JSON.parse(localStorage.getItem(DRAFT)||"null");}catch(e){}
+  if(!d)return;
+  $("rqTitle").value=d.title||"";$("rqAsk").value=d.ask||"";$("rqType").value=d.type||"";lastType=d.type||"";
+  $("rqAccept").value=d.accept||"";$("rqSize").value=d.size||"";$("rqPrio").value=d.priority||"";$("rqApproval").value=d.approval||"";
+  $("rqPage").value=d.page||"";$("rqOut").value=d.out_of_scope||"";files=(d.files||[]).slice(0,cfg.max_files);
+  if(d.criteria){critTouched=true;critBoxes().forEach(function(b){b.checked=d.criteria.indexOf(Number(b.value))>=0;});}
+  touchBoxes().forEach(function(b){b.checked=(d.touches||[]).indexOf(b.value)>=0;});
+  renderFiles();
+}
+function clearDraft(){try{localStorage.removeItem(DRAFT);}catch(e){}}
+/* المعاينة: الخادم يبني نصّ الملف نفسه الذي سيكتبه، فلا تنحرف المعاينة عن الحقيقة */
+var pt=null;
+function preview(){
+  clearTimeout(pt);pt=setTimeout(function(){
+    if(location.protocol==="file:"){$("rqPreviewBody").textContent="المعاينة تحتاج الخادم المحلي";return;}
+    fetch(cfg.api+"/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body())})
+      .then(function(r){return r.json();}).then(function(j){$("rqPreviewBody").textContent=j.ok?j.body:"لا معاينة بعد: "+(j.error||"");})
+      .catch(function(){$("rqPreviewBody").textContent="تعذّر الوصول إلى الخادم";});},300);
+}
+$("rqPreview").addEventListener("toggle",function(){if($("rqPreview").open)preview();});
+function clearErrors(){Object.keys(ERR).forEach(function(k){$(ERR[k]).hidden=true;$(ERR[k]).textContent="";var f=$(FIELDS[k]);if(f)f.removeAttribute("aria-invalid");});}
+function showError(field,msg){var id=ERR[field];if(!id)return false;$(id).textContent=msg;$(id).hidden=false;var f=$(FIELDS[field]);if(f)f.setAttribute("aria-invalid","true");return true;}
+function focusField(field){var f=$(FIELDS[field]);if(!f)return;if(f.tagName==="DIV"){var c=f.querySelector("input");if(c)c.focus();}else f.focus();}
 function dirty(){return ["rqTitle","rqAsk","rqAccept"].some(function(i){return $(i).value.trim();});}
 window.addEventListener("beforeunload",function(e){if(dirty()){e.preventDefault();e.returnValue="";}});
-$("rqAsk").addEventListener("input",function(){$("rqAskCount").textContent=$("rqAsk").value.length+" / 1500";});
 function localCheck(b){
   var errs=[];
   if(!b.title.trim())errs.push(["title","العنوان مطلوب"]);
+  if(!b.type)errs.push(["type","اختر نوع الطلب"]);
   if(!b.ask.trim())errs.push(["ask","المطلوب مطلوب"]);
-  if(!b.accept.trim())errs.push(["accept","أدخل معيار قبول واحدًا على الأقل"]);
-  if(!b.size)errs.push(["size","اختر الوسم"]);
+  if(!b.criteria.length&&!b.accept.trim())errs.push(["criteria","اختر معيار قبول واحدًا على الأقل"]);
+  if(!b.size)errs.push(["size","اختر الحجم"]);
   if(!b.priority)errs.push(["priority","اختر الأولوية"]);
   return errs;
 }
-$("rqForm").addEventListener("submit",function(e){
-  e.preventDefault();clearErrors();$("rqMsg").textContent="";
-  var body={title:$("rqTitle").value,ask:$("rqAsk").value,accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,approval:$("rqApproval").value,
-    touches:[].slice.call(document.querySelectorAll("#rqTouches input:checked")).map(function(c){return c.value;})};
-  var errs=localCheck(body);
-  if(errs.length){errs.forEach(function(x){showError(x[0],x[1]);});$(FIELDS[errs[0][0]]).focus();return;}
+function send(){
+  clearErrors();$("rqMsg").textContent="";
+  var b=body(),errs=localCheck(b);
+  if(errs.length){errs.forEach(function(x){showError(x[0],x[1]);});focusField(errs[0][0]);return;}
   $("rqSend").disabled=true;$("rqMsg").textContent="جارٍ الإرسال…";
-  fetch(cfg.api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+  fetch(cfg.api,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})
     .then(function(r){
       var ct=r.headers.get("content-type")||"";
       if(ct.indexOf("application/json")<0)return {ok:false,j:{error:"ردّ الخادم بخطأ (HTTP "+r.status+")"}};
@@ -73,12 +212,15 @@ $("rqForm").addEventListener("submit",function(e){
     })
     .then(function(x){
       if(x.ok){
-        $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+"). سيلتقطه المشغّل قريبًا.";
-        $("rqForm").reset();$("rqPrio").value="P2";defApproval();$("rqAskCount").textContent="0 / 1500";
-      }else if(x.j.field&&showError(x.j.field,x.j.error)){$(FIELDS[x.j.field]).focus();}
+        $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+")"+(x.j.auto_touches&&x.j.auto_touches.length?"، وأُضيف «يمسّ "+x.j.auto_touches.join("، ")+"» من الملفات":"")+". سيلتقطه المشغّل قريبًا.";
+        clearDraft();$("rqForm").reset();files=[];critTouched=false;lastType="";renderFiles();$("rqTpl").hidden=true;$("rqSimilar").hidden=true;update();clearDraft();
+      }else if(x.j.field&&showError(x.j.field,x.j.error)){focusField(x.j.field);}
       else{$("rqMsg").textContent=x.j.error||"تعذّر الإرسال";}
     }).catch(function(){$("rqMsg").textContent="تعذّر الاتصال بالخادم";})
     .then(function(){$("rqSend").disabled=false;});
-});
+}
+$("rqForm").addEventListener("submit",function(e){e.preventDefault();send();});
+$("rqForm").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();send();}});
+loadDraft();update();
 })();
 </script>

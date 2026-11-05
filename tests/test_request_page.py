@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import request_page  # noqa: E402
 import serve  # noqa: E402
 
-OK = {"title": "عنوان الطلب", "ask": "م", "accept": "أ\nب", "size": "صغير", "priority": "P2", "touches": ["الأمن"]}
+OK = {"title": "عنوان الطلب", "ask": "م", "accept": "أ\nب", "size": "صغير", "priority": "P2", "touches": ["الأمن"], "type": "خلل"}
 
 
 @pytest.fixture()
@@ -29,7 +29,7 @@ def test_valid_request_is_written_in_the_intake_template_with_provenance(reqdir)
     assert not list((reqdir / ".incoming").iterdir())  # لا ملف مؤقت باقٍ: الكتابة ذرّية
 
 
-@pytest.mark.parametrize("bad,field", [({"title": ""}, "title"), ({"ask": ""}, "ask"), ({"accept": "  "}, "accept"),
+@pytest.mark.parametrize("bad,field", [({"title": ""}, "title"), ({"ask": ""}, "ask"), ({"accept": "  "}, "criteria"),
                                        ({"size": "ضخم"}, "size"), ({"priority": ""}, "priority"), ({"priority": "P0"}, "priority"),
                                        ({"touches": ["شيء"]}, "touches"), ({"extra": "x"}, "extra")])
 def test_invalid_fields_are_rejected_with_field_name_and_no_file(reqdir, bad, field):
@@ -156,3 +156,121 @@ def test_pii_fallback_matches_ledger_when_present(monkeypatch):
         pytest.skip("سجلّ المايسترو غير موجود هنا")
     assert request_page.pii_pattern().pattern == request_page._PII_FALLBACK.pattern
     assert request_page.PII_SOURCE == "ledger"
+
+
+# ───────── المرحلة 2: النوع والمعايير والنطاق والجاهزية والمعاينة وكشف التكرار ─────────
+FULL = {"title": "زر الحفظ لا يعمل في صفحة الحضور", "type": "خلل", "ask": "ماذا يحدث؟ لا شيء\nما المتوقَّع؟ يُحفظ",
+        "criteria": [1, 2, 3, 4], "accept": "", "size": "صغير", "priority": "P2", "page": "/attendance/",
+        "files": ["attendance/views.py", "templates/attendance/form.html"], "out_of_scope": "التقارير"}
+
+
+def test_type_is_required_and_criteria_ids_map_to_text(reqdir):
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit({**FULL, "type": ""})
+    assert e.value.field == "type"
+    text = (reqdir / request_page.submit(FULL)["file"]).read_text(encoding="utf-8")
+    lib = request_page.criteria_lib()["by_id"]
+    assert "معايير القبول: " + " ؛ ".join(lib[i]["text"] for i in (1, 2, 3, 4)) in text
+    for line in ("النوع: خلل", "معايير مرقّمة: 1، 2، 3، 4", "فحوص المشغّل: tests_in_diff، scope_only، no_migrations",
+                 "الصفحة: /attendance/", "الملفات: attendance/views.py، templates/attendance/form.html", "خارج النطاق: التقارير"):
+        assert line in text, line
+    assert "المطلوب: ماذا يحدث؟ لا شيء / ما المتوقَّع؟ يُحفظ" in text  # الأسطر تبقى مفصولة في سطر واحد
+
+
+@pytest.mark.parametrize("bad,field", [({"criteria": [99]}, "criteria"), ({"criteria": ["1"]}, "criteria"), ({"criteria": [True]}, "criteria"),
+                                       ({"criteria": [], "accept": ""}, "criteria"), ({"files": ["../etc/passwd"]}, "files"),
+                                       ({"files": ["a b.py"]}, "files"), ({"files": ["f%d.py" % i for i in range(21)]}, "files"),
+                                       ({"size": "ضخم"}, "size"), ({"page": "راسل a@b.com"}, "page")])
+def test_phase2_fields_are_validated(reqdir, bad, field):
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit({**FULL, **bad})
+    assert e.value.field == field
+
+
+def test_declared_forbidden_file_adds_the_touch_automatically(reqdir):
+    out = request_page.submit({**FULL, "files": ["core/migrations/0042_x.py", "app/security/auth.py"]})
+    assert out["auto_touches"] == ["الأمن", "الهجرات"]
+    text = (reqdir / out["file"]).read_text(encoding="utf-8")
+    assert "يمسّ: الأمن، الهجرات" in text
+
+
+def test_touch_globs_match_the_merge_gate():
+    """مصدر واحد: اتحاد أنماط «يمسّ» يساوي FORBIDDEN_GLOBS في بوّابة الدمج إن وُجد مستودع المنصّة."""
+    import ast
+    gate = request_page.REPO / "scripts" / "auto_merge_gate.py"
+    if not gate.is_file():
+        pytest.skip("مستودع المنصّة غير موجود هنا")
+    tree = ast.parse(gate.read_text(encoding="utf-8"))
+    globs = next(ast.literal_eval(n.value) for n in ast.walk(tree) if isinstance(n, ast.Assign) and any(getattr(t, "id", "") == "FORBIDDEN_GLOBS" for t in n.targets))
+    assert set(globs) == {g for v in request_page.TOUCH_GLOBS.values() for g in v}
+
+
+def test_legacy_design_size_still_accepted_and_defaults_to_preview(reqdir):
+    text = (reqdir / request_page.submit({**FULL, "size": "تصميم"})["file"]).read_text(encoding="utf-8")
+    assert "الوسم: تصميم" in text and "الاعتماد: معاينة" in text
+    text = (reqdir / request_page.submit({**FULL, "type": "تحسين واجهة"})["file"]).read_text(encoding="utf-8")
+    assert "الاعتماد: معاينة" in text  # افتراضي النوع
+
+
+def test_default_criteria_per_type_match_the_workorder():
+    lib = request_page.criteria_lib()
+    want = {"خلل": [1, 2, 3, 4], "تحسين واجهة": [1, 3, 4, 7, 8, 9, 11, 12, 13], "ميزة صغيرة": [1, 2, 3, 4, 5, 6], "نص ومحتوى": [1, 3, 11]}
+    for t, ids in want.items():
+        assert [c["id"] for c in lib["criteria"] if t in c["types"]] == ids, t
+    assert {c["verify"]["check"] for c in lib["criteria"] if c["verify"].get("auto") == "runner"} == {"tests_in_diff", "scope_only", "no_migrations"}
+
+
+def test_readiness_notes_do_not_block():
+    f = request_page.validate({**FULL, "title": "زر", "ask": "قصير", "criteria": [1], "page": "", "files": []})
+    notes = request_page.readiness(f)
+    assert len(notes) == 4
+    assert request_page.readiness(request_page.validate({**FULL, "ask": "و" * 130})) == []
+
+
+def test_preview_writes_nothing(reqdir):
+    out = request_page.preview(FULL)
+    assert out["ok"] and out["body"].startswith("العنوان: ") and "النوع: خلل" in out["body"]
+    assert not [p for p in reqdir.iterdir() if p.is_file()]
+
+
+def test_similar_titles_from_open_cards():
+    cards = [{"id": "W-1", "title": "زرّ الحفظ لا يعمل في صفحة الحضور والغياب", "state": "routed"},
+             {"id": "W-2", "title": "تحسين ألوان التقارير", "state": "routed"}]
+    hits = request_page.similar("زر الحفظ لا يعمل بصفحة الحضور", cards)
+    assert [h["id"] for h in hits] == ["W-1"]
+    assert request_page.similar("كلمة", cards) == []
+
+
+def test_open_cards_reads_ledger_and_skips_closed(tmp_path):
+    import json
+    p = tmp_path / "events.jsonl"
+    rows = [{"id": "W-1", "kind": "created", "data": {"problem": "أ ب ج"}}, {"id": "W-1", "kind": "state", "data": {"state": "routed"}},
+            {"id": "W-2", "kind": "created", "data": {"problem": "د ه و"}}, {"id": "W-2", "kind": "state", "data": {"state": "closed"}}]
+    p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\nnot json\n", encoding="utf-8")
+    assert [c["id"] for c in request_page.open_cards(p)] == ["W-1"]
+
+
+def test_match_files_all_words_shortest_first():
+    files = ["attendance/views.py", "attendance/tests/test_views.py", "core/views.py"]
+    assert request_page.match_files("attendance views", files) == ["attendance/views.py", "attendance/tests/test_views.py"]
+    assert request_page.match_files("", files) == []
+
+
+def test_preview_and_api_endpoints(server):
+    port = server
+    c = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+    data = json.dumps(FULL).encode()
+    c.request("POST", "/request/preview", body=data, headers={"Content-Type": "application/json", "Origin": "http://127.0.0.1:%d" % port,
+                                                              "Host": "127.0.0.1:%d" % port, "Content-Length": str(len(data))})
+    r = c.getresponse()
+    j = json.loads(r.read())
+    assert r.status == 200 and "النوع: خلل" in j["body"]
+    for path in ("/api/files?q=views", "/api/similar?title=%D8%B2%D8%B1+%D8%A7%D9%84%D8%AD%D9%81%D8%B8"):
+        c.request("GET", path, headers={"Host": "127.0.0.1:%d" % port})
+        r = c.getresponse()
+        assert r.status == 200 and isinstance(json.loads(r.read()), dict)
+    c.request("GET", "/api/files?q=x", headers={"Host": "evil:1"})
+    r = c.getresponse()
+    r.read()
+    assert r.status == 403
+    c.close()
