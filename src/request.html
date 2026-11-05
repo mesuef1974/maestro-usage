@@ -69,7 +69,10 @@ __SHELL_OPEN__
     <details class="rq-preview" id="rqPreview"><summary>معاينة الطلب كما يقرؤه المشغّل</summary><pre id="rqPreviewBody" dir="rtl"></pre></details>
     <p><button type="submit" class="rq-send" id="rqSend">إرسال الطلب</button> <span class="sub">أو Ctrl+Enter</span> <span id="rqMsg" role="status" aria-live="polite"></span></p>
   </form>
-  <p class="sub">بعد الإرسال تتابعه في «المشغّل الحيّ» أعلاه. المسوّدة تُحفظ في هذا المتصفح حتى ترسل.</p>
+  <p class="sub">بعد الإرسال تتابعه في «طلباتي» أدناه. المسوّدة تُحفظ في هذا المتصفح حتى ترسل.</p>
+  <section class="rq-mine" aria-labelledby="rqMineH"><h3 id="rqMineH">طلباتي <button type="button" class="rq-mini" id="rqMineRefresh">تحديث</button></h3>
+    <p class="sub" id="rqMineMsg" role="status" aria-live="polite"></p>
+    <ul class="rq-mlist" id="rqMine"></ul></section>
 </section><!--@/sec-->
 
 __SHELL_CLOSE__
@@ -80,7 +83,7 @@ __LIB__
 var cfg=JSON.parse(document.getElementById("data").textContent).request;
 var FIELDS={attachments:"rqDrop",title:"rqTitle",ask:"rqAsk",type:"rqType",criteria:"rqCrit",accept:"rqAccept",size:"rqSize",priority:"rqPrio",page:"rqPage",files:"rqFileIn",out_of_scope:"rqOut"};
 var ERR={attachments:"rqAttErr",title:"rqTitleErr",ask:"rqAskErr",type:"rqTypeErr",criteria:"rqCritErr",accept:"rqCritErr",size:"rqSizeErr",priority:"rqPrioErr",page:"rqPageErr",files:"rqFilesErr",out_of_scope:"rqOutErr"};
-var DRAFT="mu_rq_draft",files=[],critTouched=false,lastType="",atts=[],attToken="";
+var DRAFT="mu_rq_draft",files=[],critTouched=false,lastType="",atts=[],attToken="",retryOf="";
 function $(i){return document.getElementById(i);}
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function fill(id,items){$(id).innerHTML='<option value="">اختر…</option>'+items.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join("");}
@@ -209,7 +212,7 @@ function body(){
     criteria:critBoxes().filter(function(b){return b.checked;}).map(function(b){return Number(b.value);}),
     accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,approval:$("rqApproval").value,
     touches:touchBoxes().filter(function(b){return b.checked;}).map(function(b){return b.value;}),
-    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value,attachments:attToken};
+    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value,attachments:attToken,retry_of:retryOf};
 }
 /* مقياس الجاهزية: القواعد نفسها في request_page.readiness؛ لا يمنع الإرسال */
 function readiness(b){
@@ -237,7 +240,10 @@ var st=null;
 function saveDraft(b){clearTimeout(st);st=setTimeout(function(){try{localStorage.setItem(DRAFT,JSON.stringify(b));}catch(e){}},400);}
 function loadDraft(){
   var d=null;try{d=JSON.parse(localStorage.getItem(DRAFT)||"null");}catch(e){}
-  if(!d)return;
+  if(d)fillForm(d);
+}
+function fillForm(d){
+  retryOf=d.retry_of||"";
   $("rqTitle").value=d.title||"";$("rqAsk").value=d.ask||"";$("rqType").value=d.type||"";lastType=d.type||"";
   $("rqAccept").value=d.accept||"";$("rqSize").value=d.size||"";$("rqPrio").value=d.priority||"";$("rqApproval").value=d.approval||"";
   $("rqPage").value=d.page||"";$("rqOut").value=d.out_of_scope||"";files=(d.files||[]).slice(0,cfg.max_files);
@@ -295,7 +301,7 @@ function send(){
     .then(function(x){
       if(x.ok){
         $("rqMsg").textContent="أُرسل الطلب ("+x.j.file+")"+(x.j.attachments?" مع "+x.j.attachments+" مرفق":"")+(x.j.auto_touches&&x.j.auto_touches.length?"، وأُضيف «يمسّ "+x.j.auto_touches.join("، ")+"» من الملفات":"")+". سيلتقطه المشغّل قريبًا.";
-        clearDraft();$("rqForm").reset();files=[];atts=[];attToken="";renderAtts();critTouched=false;lastType="";renderFiles();$("rqTpl").hidden=true;$("rqSimilar").hidden=true;update();clearDraft();
+        clearDraft();$("rqForm").reset();files=[];retryOf="";atts=[];attToken="";renderAtts();critTouched=false;lastType="";renderFiles();$("rqTpl").hidden=true;$("rqSimilar").hidden=true;update();clearDraft();loadMine();
       }else if(x.j.field&&showError(x.j.field,x.j.error)){focusField(x.j.field);}
       else{$("rqMsg").textContent=x.j.error||"تعذّر الإرسال";}
     }).catch(function(err){
@@ -303,8 +309,36 @@ function send(){
       else $("rqMsg").textContent="تعذّر الاتصال بالخادم";})
     .then(function(){$("rqSend").disabled=false;});
 }
+/* طلباتي: حال كل طلب من /api/my_requests، مع إلغاء قبل الالتقاط وإعادة محاولة تملأ الاستمارة بالأصل وسبب الفشل */
+var ST_CLS={pending:"wait",picked:"wait",routed:"wait",in_progress:"run",ready_for_review:"run",approved:"run",pushed:"run",merged:"ok",published:"ok",failed:"bad",rejected:"bad",held:"warn",cancelled:"off",closed:"off",deferred:"off"};
+function loadMine(){
+  if(location.protocol==="file:"){$("rqMineMsg").textContent="تظهر الطلبات حين تُفتح الصفحة من الخادم.";return;}
+  fetch("/api/my_requests").then(function(r){return r.ok?r.json():{requests:[]};}).then(function(j){
+    var L=j.requests||[];$("rqMineMsg").textContent=L.length?"":"لا طلبات بعد.";
+    $("rqMine").innerHTML=L.map(function(x){
+      var meta=[x.card?'<bdi dir="ltr">'+esc(x.card)+'</bdi>':"",x.size,x.cost?'<bdi dir="ltr">'+x.cost.toFixed(2)+'$</bdi>':"",esc((x.submitted||"").replace("T"," ").slice(0,16))].filter(Boolean).join(" · ");
+      var btn=(x.can_cancel?'<button type="button" class="rq-mini" data-cancel="'+esc(x.name)+'">ألغِ</button>':"")+(x.can_retry?'<button type="button" class="rq-mini" data-retry="'+esc(x.name)+'">أعد المحاولة</button>':"");
+      return '<li><span class="rq-st '+(ST_CLS[x.status]||"wait")+'">'+esc(x.label.split(":")[0])+'</span> <b>'+esc(x.title)+'</b>'+(x.attachments?' <span class="sub">· مرفقات</span>':"")+
+        '<p class="sub">'+meta+'</p>'+(x.status==="failed"||x.status==="rejected"?'<p class="rq-why">'+esc(x.label)+'</p>':"")+(btn?'<p>'+btn+'</p>':"")+'</li>';}).join("");
+  }).catch(function(){$("rqMineMsg").textContent="تعذّر جلب الطلبات";});
+}
+$("rqMine").addEventListener("click",function(e){
+  var c=e.target.getAttribute("data-cancel"),r=e.target.getAttribute("data-retry");
+  if(c){e.target.disabled=true;fetch("/request/"+encodeURIComponent(c)+"/cancel",{method:"POST"}).then(function(x){return x.json();})
+    .then(function(j){$("rqMineMsg").textContent=j.ok?"أُلغي الطلب "+c+".":(j.error||"تعذّر الإلغاء");loadMine();}).catch(function(){$("rqMineMsg").textContent="تعذّر الاتصال بالخادم";});}
+  if(r){if(dirty())try{localStorage.setItem(DRAFT+"_prev",JSON.stringify(body()));}catch(e){}
+    fetch("/api/my_requests/"+encodeURIComponent(r)+"/retry").then(function(x){return x.json();}).then(function(j){
+      if(!j.ok){$("rqMineMsg").textContent=j.error||"تعذّر";return;}
+      $("rqForm").reset();atts=[];attToken="";renderAtts();fillForm(j.fields);update();
+      $("rqMineMsg").textContent="مُلئت الاستمارة بالطلب الأصلي (وحُفظ ما كان فيها احتياطًا). أكمل «ما أضفته هذه المرة» ثم أرسل.";
+      $("rqAsk").focus();var v=$("rqAsk").value;$("rqAsk").setSelectionRange(v.length,v.length);$("rqAsk").scrollIntoView({block:"center"});});}
+});
+$("rqMineRefresh").addEventListener("click",loadMine);
+var nr=$("newreq");if(nr)nr.addEventListener("click",function(e){e.preventDefault();history.replaceState(null,"","#rqh");
+  $("rqh").scrollIntoView({block:"start"});$("rqTitle").focus({preventScroll:true});});
+setInterval(function(){if(!document.hidden&&$("rqMine").offsetParent)loadMine();},30000);
 $("rqForm").addEventListener("submit",function(e){e.preventDefault();send();});
 $("rqForm").addEventListener("keydown",function(e){if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();send();}});
-loadDraft();update();
+loadDraft();update();loadMine();
 })();
 </script>

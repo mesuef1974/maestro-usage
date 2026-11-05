@@ -85,3 +85,8 @@
 @media (max-width:1100px){.rl-cols{grid-template-columns:1fr}}
 @media (max-width:640px){.rl-trackbox{padding-inline:44px}}
 @media (prefers-reduced-motion:reduce){.rl *{animation:none!important;transition:none!important}}
+.rl-cap{display:grid;gap:3px;min-inline-size:7.5rem}
+.rl-capbar{display:block;block-size:5px;border-radius:999px;background:var(--grid);overflow:hidden}
+.rl-capbar i{display:block;block-size:100%;border-radius:inherit;background:var(--good)}
+.rl-capbar i.warn{background:var(--warn)}
+.rl-capbar i.bad{background:var(--bad)}

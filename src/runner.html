@@ -69,6 +69,7 @@ __SHELL_CLOSE__
 var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 var API=(D.runner&&D.runner.api)||"runner.json";
+var RCFG=D.runner||{};
 var STAGES=[
   {k:"ready",t:"في الطابور"},{k:"model",t:"النموذج يكتب"},{k:"verify",t:"الفحص في الحاوية"},
   {k:"gate",t:"طلب الدمج والبوّابة"},{k:"deploy",t:"النشر وفحص الصحّة"},{k:"published",t:"منشورة"}];
@@ -169,8 +170,16 @@ function render(){
     $i("log").innerHTML=(c.log||[]).map(function(e){return '<li class="k-'+esc(e.kind)+'"><span class="tm">'+hm(e.ts)+'</span><span class="d"></span><span>'+esc(e.text)+'</span></li>'}).join("")||'<li class="rl-empty">لا أحداث</li>';
   }
 
+  /* الكلفة مقابل السقف الكلّيّ للبطاقة (TOTAL_CAP_USD من runner.py)، وميزانية التشغيل الأول للوسم في التلميح */
+  function capCell(x){
+    var C=RCFG.caps||{};if(!C.total)return money(x.cost_total);
+    var p=Math.min(100,Math.round(100*(x.cost_total||0)/C.total)),cls=p>=80?"bad":p>=50?"warn":"ok",sb=C.sizes&&C.sizes[x.size];
+    var tip="من سقف البطاقة "+C.total.toFixed(2)+"$"+(sb?"؛ ميزانية تشغيل «"+x.size+"» "+sb.toFixed(2)+"$":"");
+    return '<span class="rl-cap" title="'+esc(tip)+'"><span>'+money(x.cost_total)+' <span class="sub">/ '+C.total.toFixed(2)+'$</span></span>'+
+      '<span class="rl-capbar" role="img" aria-label="'+p+'% '+esc(tip)+'"><i class="'+cls+'" style="inline-size:'+p+'%"></i></span></span>';
+  }
   $i("recent").innerHTML=(state.recent||[]).map(function(x){
-    return '<tr><td class="id">'+esc(x.id)+'</td><td>'+esc(x.problem)+'</td><td><span class="rl-st '+esc(x.stage)+'">'+(SL[x.stage]||esc(x.stage))+'</span></td><td class="rl-num">'+money(x.cost_total)+'</td><td class="rl-num">'+hm(x.last_ts)+'</td></tr>';
+    return '<tr><td class="id">'+esc(x.id)+'</td><td>'+esc(x.problem)+'</td><td><span class="rl-st '+esc(x.stage)+'">'+(SL[x.stage]||esc(x.stage))+'</span></td><td class="rl-num">'+capCell(x)+'</td><td class="rl-num">'+hm(x.last_ts)+'</td></tr>';
   }).join("")||'<tr><td colspan="5" class="rl-empty">لا بطاقات عبر المشغّل بعد</td></tr>';
 
   $i("oq").innerHTML=(state.owner_queue||[]).map(function(l){

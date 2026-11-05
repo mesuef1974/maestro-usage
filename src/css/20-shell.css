@@ -32,3 +32,7 @@ main [id]{scroll-margin-block-start:var(--sp-4)}
 
 .gh{position:relative;font-size:var(--t-lg);line-height:var(--lh-tight);margin:var(--sp-7) 0 var(--sp-4);padding-block-end:var(--sp-3);scroll-margin-block-start:var(--sp-4)}
 .gh::after{background-position:0 100%,0 100%}
+.newreq{display:flex;align-items:center;justify-content:center;gap:var(--sp-2);margin-block-end:var(--sp-2);min-block-size:var(--tap);padding:0 var(--sp-3);border-radius:var(--r-sm);background:var(--brand);color:var(--on-brand);font-weight:700;font-size:var(--t-sm);text-decoration:none;white-space:nowrap}
+.newreq svg{inline-size:18px;block-size:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.newreq:hover{filter:brightness(1.08)}
+.newreq:focus-visible{outline:3px solid var(--focus);outline-offset:2px}

@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
 import product_share  # noqa: E402
 import reports  # noqa: E402
+import my_requests  # noqa: E402
 import request_files  # noqa: E402
 import request_page  # noqa: E402
 import run_cycle  # noqa: E402
@@ -101,6 +102,17 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
                 body = json.dumps(plan_fn(), ensure_ascii=False).encode("utf-8")
                 return self._send(200, body, "application/json")
+            if path == "/api/my_requests" or (path.startswith("/api/my_requests/") and path.endswith("/retry")):
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                try:
+                    if path == "/api/my_requests":
+                        out, code = {"requests": my_requests.list_requests()}, 200
+                    else:
+                        out, code = {"ok": True, "fields": my_requests.retry_fields(path.split("/")[3])}, 200
+                except (ValueError, OSError) as exc:
+                    out, code = {"ok": False, "error": str(exc)[:200]}, 400
+                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
             if path in ("/api/files", "/api/similar"):  # إكمال «الملفات المتوقَّعة» وكشف التكرار: قراءة فقط، مضيف محلي فقط
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
@@ -225,6 +237,14 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._post_request(request_page.preview, rate=False)
             if path == "/request/upload":  # المرفقات: multipart منفصل لأن سقف 20000 بايت للنص يبقى كما هو
                 return self._post_upload()
+            m_cancel = re.match(r"^/request/(web-[0-9-]+)/cancel$", path)
+            if m_cancel:  # إلغاء طلب لم يُلتقط بعد: الشرط نفسه من المصدر، ولا جسم
+                if not self._origin_strict_ok():
+                    return self._json(403, {"error": "مصدر الطلب غير مسموح"})
+                try:
+                    return self._json(200, my_requests.cancel(m_cancel.group(1)))
+                except ValueError as exc:
+                    return self._json(409, {"error": str(exc)[:200]})
             if path == "/share":  # نسب المنتجات اليدوية: JSON صغير يُحفظ في data/product_share.json
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")

@@ -64,3 +64,15 @@
 .rq .rq-an bdi{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rq .rq-confirm{display:flex;align-items:baseline;gap:var(--sp-2);margin:var(--sp-3) 0 0;font-weight:600}
 .rq .rq-confirm input{flex:none;inline-size:auto}
+.rq .rq-mine{margin-block-start:var(--sp-5);border-block-start:1px solid var(--line);padding-block-start:var(--sp-4)}
+.rq .rq-mine h3{display:flex;align-items:center;gap:var(--sp-3)}
+.rq .rq-mlist{list-style:none;margin:0;padding:0;display:grid;gap:var(--sp-3)}
+.rq .rq-mlist li{padding:var(--sp-3);border:1px solid var(--line);border-radius:var(--r-sm);min-inline-size:0;overflow-wrap:anywhere}
+.rq .rq-mlist p{margin:var(--sp-1) 0 0}
+.rq .rq-mlist .rq-mini+.rq-mini{margin-inline-start:var(--sp-2)}
+.rq .rq-st{display:inline-block;padding:0 var(--sp-2);border-radius:999px;font-size:var(--t-xs);font-weight:700;background:var(--chip);color:var(--ink2)}
+.rq .rq-st.ok{background:var(--good-soft);color:var(--good)}
+.rq .rq-st.bad{background:var(--bad-soft);color:var(--bad)}
+.rq .rq-st.warn{background:var(--warn-soft);color:var(--warn)}
+.rq .rq-st.run{background:var(--accent-soft);color:var(--accent)}
+.rq .rq-why{font-size:var(--t-xs);color:var(--bad)}

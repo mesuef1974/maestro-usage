@@ -6,6 +6,7 @@
   .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:.2rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
   .nav ul{display:flex;gap:var(--sp-1);flex:none}
   .nav li{flex:none}
+  .newreq{flex:none;margin-block-end:0}
   .nav a{white-space:nowrap}
   .gh{margin-block-start:var(--sp-6);scroll-margin-block-start:4.5rem}
   .sidefoot{display:flex;flex-wrap:wrap;gap:var(--sp-2);padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0}  /* زرّا السمة والتحديث في صف واحد كي يبقى الرأس والأرقام الثلاثة في أول شاشة */

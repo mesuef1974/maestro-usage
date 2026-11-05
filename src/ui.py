@@ -75,7 +75,10 @@ def nav_html():
     """الشريط الجانبي: رابط لكل قسم من الصفحة الواحدة (الإبراز عند التمرير يتولاه rail.js)."""
     links = "".join('<li><a href="#%s"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">%s</svg><span>%s</span></a></li>'
                     % (sid, pages.ICON[icon], html.escape(title)) for sid, title, icon in pages.SECTIONS)
-    return '<ul>%s</ul>' % links
+    # «طلب جديد» أول الشريط: لاصق في الحالين (عمود جانبي ≥1024px وشريط علوي أدناه)؛ fold.js يفتح بطاقته، والاستمارة تركّز العنوان
+    new = ('<a class="newreq" id="newreq" href="#rqh"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>'
+           '<span>طلب جديد</span></a>')
+    return new + '<ul>%s</ul>' % links
 
 
 def shell(cur=None):

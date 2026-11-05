@@ -68,7 +68,7 @@ class ValidationError(ValueError):
         self.field = field
 
 
-ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval", "type", "criteria", "page", "files", "out_of_scope", "attachments"})
+ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval", "type", "criteria", "page", "files", "out_of_scope", "attachments", "retry_of"})
 _PII = None
 PII_SOURCE = None  # "ledger" حين يُحمَّل من سجلّ المايسترو، أو "fallback" حين يغيب (نسخة مطابقة هنا)
 # نسخةٌ مطابقة لتعبير سجلّ المايسترو (tools/ledger.py: _PII) تُستعمل إن غاب السجلّ، فلا تتعطّل صفحة الطلب ولا اختباراتها خارج جهاز المالك
@@ -195,10 +195,13 @@ def validate(params):
     touches = sorted(set(touches) | set(auto), key=TOUCHES.index)
     checks = [lib["by_id"][i]["verify"]["check"] for i in ids if lib["by_id"][i]["verify"].get("auto") == "runner"]
     accept_list = chosen + extra
+    retry_of = str(params.get("retry_of") or "")
+    if retry_of and not re.fullmatch(r"web-\d{8}-\d{6}(?:-\d+)?", retry_of):
+        raise ValidationError("مرجع إعادة المحاولة غير صالح", "retry_of")
     att = params.get("attachments") or ""
     if att and not re.fullmatch(r"[0-9a-f]{16}", str(att)):
         raise ValidationError("رمز المرفقات غير صالح", "attachments")
-    return dict(attachments=att, title=title, ask=ask, accept=" ؛ ".join(accept_list), accept_list=accept_list, size=size, priority=prio, touches=touches,
+    return dict(retry_of=retry_of, attachments=att, title=title, ask=ask, accept=" ؛ ".join(accept_list), accept_list=accept_list, size=size, priority=prio, touches=touches,
                 auto_touches=auto, approval=approval, type=rtype, criteria=ids, checks=checks, page=page, files=files, out_of_scope=out_of_scope)
 
 
@@ -220,6 +223,8 @@ def render_body(fields):
         body += "الملفات: %s\n" % "، ".join(fields["files"])
     if fields["out_of_scope"]:
         body += "خارج النطاق: %s\n" % fields["out_of_scope"]
+    if fields.get("retry_of"):
+        body += "إعادة لـ: %s\n" % fields["retry_of"]
     if fields.get("attachments_dir"):
         body += "المرفقات: %s\n" % fields["attachments_dir"]
         body += "ملفات المرفقات: %s\n" % "، ".join("%s|%s" % (f["name"], f["sha256"]) for f in fields["attachments_files"])

@@ -19,6 +19,12 @@
     var id=card.querySelector("h2").id;
     set(card,id in saved?saved[id]===1:!card.hasAttribute("data-open"),true);  /* الافتراضي: كل البطاقات مطويّة إلا ما يحمل data-open؛ الشاشة الأولى = الأرقام الثلاثة وأشرطة الحصة */
   });
+  /* رابط داخلي إلى عنصر في بطاقة مطويّة يفتحها أولًا (مثل «طلب جديد» في الشريط)، بلا حفظ كي لا يغيّر اختيار الطيّ */
+  document.addEventListener("click",function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a||a.getAttribute("href").length<2)return;
+    var t=document.getElementById(a.getAttribute("href").slice(1)),card=t&&t.closest("section.card.folded");
+    if(card)set(card,false,true);
+  },true);
   var live=document.querySelector(".pagehead .live");
   if(live&&cards.length){
     var all=document.createElement("button");all.type="button";all.className="refresh";all.textContent=cards.some(function(c){return !c.classList.contains("folded")})?"طيّ الكل":"فتح الكل";

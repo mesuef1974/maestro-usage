@@ -33,7 +33,33 @@ def snapshot():
     return _MOD.LEDGER.snapshot()
 
 
+def caps(path=None):
+    """سقوف الكلفة من runner.py قراءةً بـ ast بلا استيراد ولا تنفيذ: السقف الكلّيّ للبطاقة، وميزانية التشغيل لكل وسم.
+
+    الملفّ ملك جلسة الحوكمة؛ إن تغيّرت أسماؤه أو غاب نعيد {} فيختفي الشريط بدل رقمٍ قديم."""
+    import ast
+
+    path = Path(path or source_path().with_name("runner.py"))
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError):
+        return {}
+    out = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            name = node.targets[0].id
+            try:
+                val = ast.literal_eval(node.value)
+            except ValueError:
+                continue
+            if name == "TOTAL_CAP_USD" and isinstance(val, (int, float)):
+                out["total"] = float(val)
+            elif name == "DEFAULT_CONFIG" and isinstance(val, dict) and isinstance(val.get("sizes"), dict):
+                out["sizes"] = {k: float(v[2]) for k, v in val["sizes"].items() if isinstance(v, (list, tuple)) and len(v) >= 3}
+    return out if "total" in out else {}
+
+
 def payload():
-    return dict(runner=dict(api="runner.json", source=str(source_path())))
+    return dict(runner=dict(api="runner.json", source=str(source_path()), caps=caps()))
 
 
