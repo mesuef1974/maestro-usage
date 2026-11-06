@@ -10,12 +10,13 @@
 .seg button{border:0;background:transparent;padding:.3rem var(--sp-3);color:var(--ink2);border-inline-start:1px solid var(--line-strong);min-block-size:32px}
 .seg button:first-child{border-inline-start:0}
 .seg button:hover{background:var(--hover)}
+.seg button:focus-visible{outline-offset:-2px}  /* overflow:hidden في .seg يقصّ الحلقة خارج الزرّ */
 .seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand);font-weight:700}
 .dates{display:inline-flex;gap:var(--sp-2);align-items:center;color:var(--ink2);font-size:var(--t-sm)}
 .chips,.rchips{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
 .chip,.rchip{display:inline-flex;align-items:center;gap:var(--sp-2);border:1px solid var(--line-strong);background:var(--surface);border-radius:var(--r-pill);padding:.1rem var(--sp-3);font-size:var(--t-sm);color:var(--ink2);min-block-size:30px;transition:background var(--dur) var(--ease)}
 .chip:hover,.rchip:hover{background:var(--hover)}
-.chip[aria-pressed="false"]{opacity:.5;text-decoration:line-through}
+.chip[aria-pressed="false"]{color:var(--ink3);text-decoration:line-through}
 .rchip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:700}
 .rchip small{color:var(--ink3);font-weight:400}
 .sw{inline-size:10px;block-size:10px;border-radius:2px;display:inline-block;flex:none}

@@ -25,3 +25,4 @@ details{margin-block-start:var(--sp-3)}
 summary{cursor:pointer;color:var(--ink2);font-size:var(--t-sm);min-block-size:28px;display:list-item}
 .empty{color:var(--ink3);padding:var(--sp-5) 0;text-align:center}
 .sr{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+::placeholder{color:var(--ink3);opacity:1}

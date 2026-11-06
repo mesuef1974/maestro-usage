@@ -3,7 +3,7 @@
 .rq label{display:block;margin-block-end:var(--sp-1);font-weight:600}
 .rq input:not([type="checkbox"]),.rq select,.rq textarea{
   inline-size:100%;box-sizing:border-box;font:inherit;line-height:1.7;color:var(--ink);
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3)}
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-3)}
 .rq textarea{resize:vertical}
 .rq [aria-invalid="true"]{border-color:var(--bad)}
 .rq .rq-err{color:var(--bad);margin:var(--sp-1) 0 0}

@@ -1,7 +1,7 @@
 /* البيانات: الرسوم وأشرطة الصفوف والجداول والأدلّة. ألوان النماذج --s1..--s8 وألوان القياس --m1/--m2 (لوحات محقَّقة)، والنص بألوان النص لا بلون السلسلة. لا نص في SVG دون 12px. */
 .chart{inline-size:100%;position:relative;opacity:1;transition:opacity var(--dur)}
 .chart svg{display:block;max-inline-size:100%;touch-action:pan-y}
-.chart.busy{opacity:.5}
+.chart.busy{opacity:.85}
 svg text{font-family:var(--font-num);fill:var(--ink2);font-size:12px;font-variant-numeric:tabular-nums}
 svg .grid{stroke:var(--grid);stroke-width:1}
 svg .axis{stroke:var(--line);stroke-width:1}
@@ -31,6 +31,7 @@ th[aria-sort="ascending"] button::after{content:"▲";font-size:.75rem}
 th[aria-sort="descending"] button::after{content:"▼";font-size:.75rem}
 td.num{font-variant-numeric:tabular-nums}
 tr.sel td{background:var(--hover)}
+tr.sel td:first-child{border-inline-start:3px solid var(--brand)}  /* التظليل وحده 1.1، والشريط يحمل التحديد */
 .cmp td:nth-child(2),.cmp td:nth-child(3){font-weight:700}
 /* الحصة الأسبوعية */
 .qgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-4)}

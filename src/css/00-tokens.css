@@ -45,3 +45,7 @@
   --focus:#6da7ec;--warn:#e0a13a;--bad:#f0837b;--good:#4cc18b;--good-soft:#1c3a2a;--warn-soft:#3d2f14;--bad-soft:#44221f;
   --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s7:#9085e9;--s8:#e66767;--oth:#85847d;
   --m1:#d6782f;--m2:#3b88d4;}
+/* الطباعة بألوان النهار دائمًا: الورق أبيض ولا تُطبع الخلفيّات، فنصّ الليل عليه 1.2 */
+@media print{:root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+  color-scheme:light;--ink:#2a2622;--ink2:#5e574e;--ink3:#70685d;--line:#d6cfc2;--line-strong:#857b6e;--grid:#e6e0d5;
+}}

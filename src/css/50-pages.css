@@ -74,7 +74,7 @@
 #fsvg .nd.gate polygon{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.5}
 #fsvg .nd text{fill:var(--ink);text-anchor:middle}
 #fsvg .nd .tt{font-weight:700;font-size:13px}
-#fsvg .nd .cd{font-family:var(--font-num);font-size:11px;fill:var(--ink3)}
+#fsvg .nd .cd{font-family:var(--font-num);font-size:11px;fill:var(--ink2)}
 #fsvg .nd .bd{fill:var(--brand);stroke:var(--surface);stroke-width:2}
 #fsvg .nd .bn{fill:var(--on-brand);font-family:var(--font-num);font-size:11px;font-weight:700;text-anchor:middle}
 #fsvg .nd:hover rect,#fsvg .nd:hover polygon,#fsvg .nd:focus-visible rect,#fsvg .nd:focus-visible polygon,#fsvg .nd.sel rect,#fsvg .nd.sel polygon{stroke-width:2.6}
@@ -89,7 +89,8 @@
 #fsvg .mk.bad path{fill:var(--bad)}
 #fsvg .al{fill:var(--ink2);font-size:11px;text-anchor:middle}
 #fsvg .alb{fill:var(--raised);stroke:var(--line)}
-#fsvg.on .nd:not(.hi),#fsvg.on .ar:not(.hi){opacity:.28}
+#fsvg.on .nd:not(.hi){opacity:.7}
+#fsvg.on .ar:not(.hi){opacity:.28}
 #fsvg.on .ar.hi{stroke-width:2.4}
 .flowfig .leg{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);margin:var(--sp-2) 0 0;font-size:var(--t-xs);color:var(--ink2)}
 .flowfig .leg .k{display:inline-flex;align-items:center;gap:var(--sp-2)}
