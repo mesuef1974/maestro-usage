@@ -1,0 +1,245 @@
+<!-- تاريخ الأتمتة: كلّ بطاقة من الدخول إلى النشر أو التوقّف. الحمولة من /automation.json عند العرض لا في التقرير. -->
+__SHELL_OPEN__
+<!--@sec automation--><section class="ah" id="ahRoot" aria-labelledby="ahh">
+  <div class="ah-bar">
+    <h2 id="ahh">تاريخ الأتمتة</h2>
+    <div class="seg" role="group" aria-label="النطاق" id="ahEra">
+      <button type="button" data-era="auto" aria-pressed="true">المشغّل</button>
+      <button type="button" data-era="all" aria-pressed="false">الكلّ</button>
+      <button type="button" data-era="manual" aria-pressed="false">قبل المشغّل</button>
+    </div>
+    <span class="sub" id="ahSync" role="status">بانتظار الدفتر…</span>
+  </div>
+
+  <div class="tiles" aria-label="مؤشّرات النطاق">
+    <div class="tile"><div class="l">بطاقات</div><div class="v" id="ahCards">–</div><div class="d" id="ahActive">–</div></div>
+    <div class="tile"><div class="l">نُشرت</div><div class="v" id="ahPub">–</div><div class="d" id="ahPubD">–</div></div>
+    <div class="tile"><div class="l">توقّفت</div><div class="v" id="ahStop">–</div><div class="d" id="ahStopD">–</div></div>
+    <div class="tile"><div class="l">كلفة النموذج</div><div class="v" id="ahCost">–</div><div class="d" id="ahCostD">–</div></div>
+    <div class="tile"><div class="l">وسيط الرحلة حتى النشر</div><div class="v" id="ahMed">–</div><div class="d">من الدخول إلى النشر</div></div>
+  </div>
+
+  <div class="ah-grid">
+    <section class="card" aria-labelledby="ahf">
+      <div class="cardhead"><h3 id="ahf">المسار</h3><span class="sub">كم بطاقة بلغت كلّ مرحلة</span></div>
+      <div id="ahFunnel" class="ah-bars"></div>
+    </section>
+    <section class="card" aria-labelledby="ahw">
+      <div class="cardhead"><h3 id="ahw">لماذا توقّفت</h3><span class="sub">السبب وآخر مرحلة بلغتها</span></div>
+      <div id="ahStops" class="ah-bars"></div>
+    </section>
+    <section class="card" aria-labelledby="ahl">
+      <div class="cardhead"><h3 id="ahl">أين يذهب الوقت</h3><span class="sub">الوسيط لكلّ مقطع، بطاقات المشغّل وحدها</span></div>
+      <div id="ahLegs" class="ah-bars"></div>
+    </section>
+    <section class="card" aria-labelledby="aho">
+      <div class="cardhead"><h3 id="aho">العمليات</h3><span class="sub">تشغيلات النموذج وكلفتها</span></div>
+      <div class="wrap" id="ahOps"></div>
+    </section>
+  </div>
+
+  <section class="card" id="ahStalledBox" aria-labelledby="ahs" hidden>
+    <div class="cardhead"><h3 id="ahs">متوقّفة الآن</h3><span class="sub">مفتوحة بلا حدث منذ يوم فأكثر</span></div>
+    <div id="ahStalled" class="ah-list"></div>
+  </section>
+
+  <section class="card" aria-labelledby="ahd">
+    <div class="cardhead"><h3 id="ahd">يومًا بيوم</h3><span class="sub ah-legend"><i class="good"></i>نُشرت <i class="bad"></i>أُغلقت</span></div>
+    <div id="ahDaily" class="ah-daily" role="img" aria-label="المنشور والمغلق في كلّ يوم"></div>
+    <div class="ah-axis sub" id="ahAxis"></div>
+  </section>
+
+  <section class="card" aria-labelledby="ahc">
+    <div class="cardhead"><h3 id="ahc">البطاقات</h3><span class="sub" id="ahShown">–</span></div>
+    <div class="filters2">
+      <input type="search" id="ahQ" placeholder="ابحث بالمعرّف أو العنوان أو رقم الطلب" aria-label="بحث في البطاقات">
+      <select id="ahState" aria-label="الحالة"><option value="">كلّ الحالات</option></select>
+      <select id="ahWhy" aria-label="سبب التوقّف"><option value="">كلّ الأسباب</option></select>
+    </div>
+    <div class="wrap"><table class="ah-table">
+      <thead><tr><th>البطاقة</th><th>العنوان</th><th>الحالة</th><th>بلغت</th><th>السبب</th><th class="num">الطلب</th><th class="num">المدّة</th><th class="num">الكلفة</th></tr></thead>
+      <tbody id="ahRows"></tbody>
+    </table></div>
+    <button type="button" class="mini ah-more" id="ahMore" hidden>عرض المزيد</button>
+  </section>
+  <p class="sub">الأوقات UTC. المصدر دفتر الحوكمة، يُقرأ ولا يُكتب فيه، وتُحجب البيانات الشخصيّة من نصوصه عند العرض.</p>
+
+  <dialog class="ah-dialog" id="ahDlg" aria-labelledby="ahDlgT">
+    <div class="ah-dlghead">
+      <div><div class="sub ah-mono" id="ahDlgId"></div><h3 id="ahDlgT"></h3></div>
+      <button type="button" class="mini" id="ahClose">إغلاق</button>
+    </div>
+    <div id="ahDlgBody"></div>
+  </dialog>
+</section><!--@/sec-->
+__SHELL_CLOSE__
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+(function(){
+var D=JSON.parse(document.getElementById("data").textContent);
+__LIB__
+var CFG=D.automation||{api:"automation.json",card_api:"automation/card.json"};
+var STATES={routed:"في الطابور",captured:"مسجَّلة",in_progress:"قيد العمل",pushed:"دُفعت",ready_for_review:"للمراجعة",approved:"معتمدة",
+  verified:"متحقَّقة",notes:"ملاحظات",merged:"مدموجة",published:"منشورة",closed:"مغلقة",deferred:"مؤجَّلة"};
+var KINDS={created:"دخلت",state:"حالة",note:"ملاحظة",update:"تحديث",approval:"اعتماد"};
+var PAGE=50;
+var era="auto",data=null,limit=PAGE,seen=false,root=document.getElementById("ahRoot");
+function $i(id){return document.getElementById(id)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function money(v){if(v==null)return "–";v=+v;return (v>0&&v<0.1?v.toFixed(4):v.toFixed(2))+"$"}
+function dur(s){if(s==null)return "–";if(s<60)return s+" ث";if(s<3600)return Math.round(s/60)+" د";if(s<86400)return (s/3600).toFixed(1)+" س";return (s/86400).toFixed(1)+" يوم"}
+function when(ts){return ts?String(ts).slice(0,16).replace("T"," "):"–"}
+function share(n,t){return t?Math.round(100*n/t)+"%":"–"}
+
+/* صفّ قياس أفقيّ: الاسم، الشريط، الرقم، وتفصيل تحته */
+function bar(label,val,max,text,note,cls){
+  var w=max?Math.max(2,Math.round(100*val/max)):0;
+  return '<div class="ah-row"><div class="ah-lb">'+esc(label)+'</div><div class="ah-track"><i class="'+(cls||"")+'" style="inline-size:'+w+'%"></i></div>'+
+    '<div class="ah-val">'+esc(text)+'</div>'+(note?'<div class="ah-note">'+esc(note)+'</div>':'')+'</div>';
+}
+function empty(t){return '<p class="sub">'+esc(t)+'</p>'}
+
+function paintTotals(t){
+  $i("ahCards").textContent=num(t.cards);
+  $i("ahActive").textContent=num(t.active)+" مفتوحة"+(t.stalled?"، "+num(t.stalled)+" متوقّفة":"");
+  $i("ahPub").textContent=num(t.published);$i("ahPubD").textContent=share(t.published,t.cards)+" من البطاقات";
+  $i("ahStop").textContent=num(t.closed+t.deferred);
+  $i("ahStopD").textContent=num(t.closed)+" مغلقة، "+num(t.deferred)+" مؤجَّلة";
+  $i("ahCost").textContent=money(t.cost);$i("ahCostD").textContent=num(t.runs)+" تشغيلًا، "+num(t.ci_fixes)+" إصلاح CI";
+  $i("ahMed").textContent=dur(t.median_s);
+}
+function paintFunnel(f){
+  var top=f.length?f[0].n:0;
+  $i("ahFunnel").innerHTML=top?f.map(function(s,i){
+    var lost=i?f[i-1].n-s.n:0;
+    return bar(s.label,s.n,top,num(s.n),lost>0?"خرجت قبلها "+num(lost):"");
+  }).join(""):empty("لا بطاقات في هذا النطاق");
+}
+function paintStops(list,stages){
+  var top=list.reduce(function(m,s){return Math.max(m,s.n)},0);
+  $i("ahStops").innerHTML=top?list.map(function(s){
+    var at=s.stages.map(function(n,i){return n?stages[i]+" "+n:""}).filter(Boolean).join("، ");
+    return bar(s.label,s.n,top,num(s.n),at+(s.cost?" · "+money(s.cost):""),"warn");
+  }).join(""):empty("لم تتوقّف بطاقة في هذا النطاق");
+}
+function paintLegs(legs){
+  var top=legs.reduce(function(m,l){return Math.max(m,l.median_s||0)},0);
+  $i("ahLegs").innerHTML=top?legs.map(function(l){
+    return bar(l.label,l.median_s||0,top,dur(l.median_s),num(l.n)+" بطاقة");
+  }).join(""):empty("مراحل ما قبل المشغّل كُتبت دفعةً فلا زمن موثوقًا لها");
+}
+function paintOps(ops){
+  var box=$i("ahOps");box.textContent="";
+  if(!ops.length){box.innerHTML=empty("لا تشغيلات في هذا النطاق");return}
+  dataTable(box,["العملية","النموذج","تشغيلات","أدوار","الكلفة"],ops.map(function(o){return [o.op,o.model,o.runs,o.turns,money(o.cost)]}));
+}
+function paintStalled(list){
+  $i("ahStalledBox").hidden=!list.length;
+  $i("ahStalled").innerHTML=list.map(function(s){
+    return '<button type="button" class="ah-item" data-card="'+esc(s.card_id)+'"><span class="ah-mono">'+esc(s.card_id)+'</span> <b>'+esc(s.title)+'</b>'+
+      '<span class="sub">'+esc(STATES[s.state]||s.state)+' منذ '+esc(dur(s.idle_s))+(s.note?' · '+esc(s.note):'')+'</span></button>';
+  }).join("");
+}
+function paintDaily(days){
+  var box=$i("ahDaily"),top=days.reduce(function(m,d){return Math.max(m,d.published+d.closed)},0);
+  box.innerHTML=days.map(function(d){
+    var g=top?100*d.published/top:0,b=top?100*d.closed/top:0;
+    return '<div class="ah-day" title="'+esc(d.day+": دخلت "+d.created+"، نُشرت "+d.published+"، أُغلقت "+d.closed+"، "+money(d.cost))+'">'+
+      '<i class="bad" style="block-size:'+b+'%"></i><i class="good" style="block-size:'+g+'%"></i></div>';
+  }).join("");
+  $i("ahAxis").innerHTML=days.length?'<span>'+esc(days[0].day)+'</span><span>'+esc(days[days.length-1].day)+'</span>':"";
+}
+function fillSelect(sel,pairs){
+  var keep=sel.value,first=sel.options[0];
+  sel.textContent="";sel.appendChild(first);
+  pairs.forEach(function(p){var o=document.createElement("option");o.value=p[0];o.textContent=p[1];sel.appendChild(o)});
+  sel.value=pairs.some(function(p){return p[0]===keep})?keep:"";
+}
+function matches(c,q,st,why){
+  if(st&&c.state!==st)return false;
+  if(why&&c.stop_key!==why)return false;
+  if(!q)return true;
+  return (c.card_id+" "+c.title+" "+(c.pr||"")).toLowerCase().indexOf(q)>=0;
+}
+function paintCards(){
+  if(!data)return;
+  var q=$i("ahQ").value.trim().toLowerCase(),st=$i("ahState").value,why=$i("ahWhy").value;
+  var rows=data.cards.filter(function(c){return matches(c,q,st,why)});
+  $i("ahShown").textContent=num(Math.min(limit,rows.length))+" من "+num(rows.length);
+  $i("ahMore").hidden=rows.length<=limit;
+  $i("ahRows").innerHTML=rows.slice(0,limit).map(function(c){
+    return '<tr><td><button type="button" class="ah-link ah-mono" data-card="'+esc(c.card_id)+'">'+esc(c.card_id)+'</button></td>'+
+      '<td class="ah-ttl">'+esc(c.title||"—")+'</td><td><span class="ah-st '+esc(c.state)+'">'+esc(STATES[c.state]||c.state)+'</span></td>'+
+      '<td>'+esc(data.stages[c.stage_rank])+'</td><td>'+esc(c.stop||"")+'</td><td class="num">'+(c.pr?'<a href="'+esc(data.pr_url+c.pr)+'" target="_blank" rel="noopener">#'+c.pr+'</a>':"–")+'</td>'+
+      '<td class="num">'+esc(dur(c.duration_s))+'</td><td class="num">'+(c.cost_usd?esc(money(c.cost_usd)):"–")+'</td></tr>';
+  }).join("")||'<tr><td colspan="8">'+empty("لا نتائج")+'</td></tr>';
+}
+function paint(o){
+  data=o;
+  $i("ahSync").textContent=o.sync?"الدفتر: "+num(o.sync.events)+" حدثًا، مزامنة "+when(o.sync.synced_at):"لا مزامنة بعد";
+  paintTotals(o.totals);paintFunnel(o.funnel);paintStops(o.stops,o.stages);paintLegs(o.legs);paintOps(o.ops);paintStalled(o.stalled);paintDaily(o.daily);
+  var st={},why={};
+  o.cards.forEach(function(c){st[c.state]=STATES[c.state]||c.state;if(c.stop_key)why[c.stop_key]=c.stop});
+  fillSelect($i("ahState"),Object.keys(st).map(function(k){return [k,st[k]]}));
+  fillSelect($i("ahWhy"),Object.keys(why).map(function(k){return [k,why[k]]}));
+  paintCards();
+}
+function load(){
+  return fetch(CFG.api+"?era="+era,{cache:"no-store"}).then(function(r){return r.json()}).then(function(o){
+    if(!o.ok)throw new Error(o.error||"تعذّرت القراءة");
+    paint(o);
+  }).catch(function(e){$i("ahSync").textContent="تعذّرت قراءة السجلّ: "+e.message});
+}
+
+/* تفاصيل البطاقة */
+function pathHtml(c){
+  return '<ol class="ah-path">'+c.stages.map(function(s,i){
+    var cls=i<=c.stage_rank?"done":"";
+    if(c.stop_key&&i===c.stage_rank)cls="stop";
+    return '<li class="'+cls+'">'+esc(s)+'</li>';
+  }).join("")+'</ol>';
+}
+function facts(c){
+  var f=[["الحالة",STATES[c.state]||c.state],["دخلت",when(c.created_ts)],["آخر حدث",when(c.last_ts)],["المدّة",dur(c.duration_s)],
+    ["الكلفة",money(c.cost_usd)],["تشغيلات",c.runs],["إصلاح CI",c.ci_fixes],["النوع",c.req_type],["الحجم",c.size],["الاعتماد",c.approval],["الأولويّة",c.priority]];
+  return '<dl class="ah-facts">'+f.filter(function(x){return x[1]!=null&&x[1]!==""}).map(function(x){return '<div><dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd></div>'}).join("")+
+    (c.pr_url?'<div><dt>الطلب</dt><dd><a href="'+esc(c.pr_url)+'" target="_blank" rel="noopener">#'+esc(c.pr)+'</a></dd></div>':"")+'</dl>';
+}
+function timeline(list){
+  return '<ol class="ah-time">'+list.map(function(e){
+    var head=e.kind==="state"?(STATES[e.state]||e.state):(KINDS[e.kind]||e.kind);
+    var cost=e.cost_usd!=null?' · '+money(e.cost_usd):"";
+    return '<li class="'+esc(e.kind)+'"><div class="ah-when">'+esc(when(e.ts))+'</div><div><b>'+esc(head)+'</b>'+esc(cost)+(e.text?'<p>'+esc(e.text)+'</p>':'')+'</div></li>';
+  }).join("")+'</ol>';
+}
+function openCard(id){
+  var dlg=$i("ahDlg");
+  $i("ahDlgId").textContent=id;$i("ahDlgT").textContent="…";$i("ahDlgBody").innerHTML="";
+  if(!dlg.open)dlg.showModal();
+  fetch(CFG.card_api+"?id="+encodeURIComponent(id),{cache:"no-store"}).then(function(r){return r.json()}).then(function(c){
+    if(!c.ok)throw new Error(c.error||"تعذّرت القراءة");
+    $i("ahDlgT").textContent=c.title||id;
+    var why=c.stop?'<div class="ah-why"><b>لماذا توقّفت: '+esc(c.stop)+'</b><p>'+esc(c.reason)+'</p><span class="sub">آخر مرحلة: '+esc(c.stage_label)+'</span></div>':
+      (c.waiting?'<div class="ah-why open"><b>آخر ما حدث</b><p>'+esc(c.waiting)+'</p></div>':"");
+    $i("ahDlgBody").innerHTML=pathHtml(c)+why+facts(c)+'<h4>المسار كاملًا ('+num(c.timeline.length)+')</h4>'+timeline(c.timeline);
+  }).catch(function(e){$i("ahDlgT").textContent="تعذّرت القراءة";$i("ahDlgBody").innerHTML=empty(e.message)});
+}
+
+$i("ahEra").addEventListener("click",function(ev){
+  var b=ev.target.closest("button");if(!b)return;
+  era=b.getAttribute("data-era");limit=PAGE;
+  [].forEach.call(this.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",String(x===b))});
+  load();
+});
+["ahQ","ahState","ahWhy"].forEach(function(id){$i(id).addEventListener("input",function(){limit=PAGE;paintCards()})});
+$i("ahMore").addEventListener("click",function(){limit+=PAGE;paintCards()});
+$i("ahClose").addEventListener("click",function(){$i("ahDlg").close()});
+root.addEventListener("click",function(ev){var b=ev.target.closest("[data-card]");if(b)openCard(b.getAttribute("data-card"))});
+
+/* يُحمَّل مرّة مع الصفحة، ويتجدّد ما دام القسم ظاهرًا */
+load();
+new IntersectionObserver(function(es){seen=es.some(function(e){return e.isIntersecting})}).observe(root);
+setInterval(function(){if(seen&&!document.hidden&&!$i("ahDlg").open)load()},60000);
+})();
+</script>

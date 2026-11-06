@@ -18,6 +18,7 @@ import storage_page  # noqa: E402
 import flow_page  # noqa: E402
 import request_page  # noqa: E402
 import runner_page  # noqa: E402
+import automation_history  # noqa: E402
 import summary_page  # noqa: E402
 import onepage  # noqa: E402
 import ui  # noqa: E402
@@ -170,7 +171,7 @@ def build(con, out_dir=REPORTS_DIR):
     makers = {"dashboard.html": lambda: dashboard.payload(con, NOT_APPLIED_MARK, MIN_TURNS_SUMMARY),
               "hourly.html": lambda: hourly_page.payload(con), "skills.html": skills_page.payload,
               "storage.html": lambda: storage_page.payload(con), "flow.html": flow_page.payload, "runner.html": runner_page.payload,
-              "request.html": request_page.payload, "summary.html": lambda: summary_page.payload(con)}
+              "request.html": request_page.payload, "automation.html": automation_history.payload, "summary.html": lambda: summary_page.payload(con)}
     payloads = {}
     TIMES.clear()
     TIMES["static"] = static_sec

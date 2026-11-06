@@ -13,6 +13,7 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hourly_page  # noqa: E402
@@ -24,13 +25,14 @@ import request_page  # noqa: E402
 import run_cycle  # noqa: E402
 import server_guard  # noqa: E402
 import runner_page  # noqa: E402
+import automation_history  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
 
 PAGES = {"/": "index.html", "/index.html": "index.html"}
 # روابط الصفحات القديمة تحوَّل إلى قسمها في الصفحة الواحدة (محفوظات المتصفح والإشارات المرجعية لا تنكسر)
 LEGACY = {"plan.html": "quota", "hourly.html": "usage", "cache.html": "usage", "origins.html": "usage", "summary.html": "usage", "skills.html": "skills",
-          "data.html": "data", "storage.html": "data", "flow.html": "auto", "runner.html": "auto", "request.html": "auto"}
+          "data.html": "data", "storage.html": "data", "flow.html": "auto", "runner.html": "auto", "automation.html": "auto", "request.html": "auto"}
 FONT_RE = re.compile(r"^/assets/fonts/[A-Za-z]+\.ttf$")
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
@@ -59,12 +61,14 @@ def live_storage(op, params):
         con.close()
 
 
-def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_fn=None, runner_fn=None):
+def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_fn=None, runner_fn=None, history_fn=None, history_card_fn=None):
     reports_dir = reports_dir or reports.REPORTS_DIR
     storage_fn = storage_fn or live_storage
     refresh_fn = refresh_fn or run_cycle.force_or_wait  # زر التحديث يفرض البناء وينتظر دورة مجدولة إن كانت تعمل؛ يأخذ لحظة الطلب
     plan_fn = plan_fn or live_plan
     runner_fn = runner_fn or runner_page.snapshot  # «المشغّل الحيّ»: لقطة الدفتر عند كلّ طلب (تقرأ فقط)
+    history_fn = history_fn or automation_history.live  # تاريخ الأتمتة: الفهرس يتبع الدفتر عند كلّ طلب
+    history_card_fn = history_card_fn or automation_history.live_card
     lock = threading.Lock()  # دورة واحدة في وقت واحد
     request_rate = request_page.RateLimit(request_page.RATE_PER_HOUR)
     upload_rate = request_page.RateLimit(60)  # الرفع يتكرر أكثر من الإرسال (إضافة ملف ثم آخر)
@@ -116,7 +120,6 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             if path in ("/api/files", "/api/similar"):  # إكمال «الملفات المتوقَّعة» وكشف التكرار: قراءة فقط، مضيف محلي فقط
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
-                from urllib.parse import parse_qs, urlsplit
                 q = parse_qs(urlsplit(self.path).query)
                 if path == "/api/files":
                     out = {"files": request_page.match_files((q.get("q") or [""])[0][:100])}
@@ -138,6 +141,19 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
                 try:
                     out, code = runner_fn(), 200
+                except Exception as exc:  # noqa: BLE001 — مصدر خارجيّ (دفتر مجلّد المدير): لا يُسقط الخادم
+                    out, code = {"ok": False, "error": str(exc)[:200]}, 503
+                return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
+            if path in ("/automation.json", "/automation/card.json"):
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                q = parse_qs(urlsplit(self.path).query)
+                try:
+                    if path == "/automation.json":
+                        out, code = history_fn(q.get("era", ["all"])[0]), 200
+                    else:
+                        out = history_card_fn(q.get("id", [""])[0])
+                        out, code = (out, 200) if out else ({"ok": False, "error": "لا بطاقة بهذا المعرّف"}, 404)
                 except Exception as exc:  # noqa: BLE001 — مصدر خارجيّ (دفتر مجلّد المدير): لا يُسقط الخادم
                     out, code = {"ok": False, "error": str(exc)[:200]}, 503
                 return self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")

@@ -232,3 +232,52 @@ SELECT session_key, MIN(ts) AS first_ts, MAX(ts) AS last_ts, COUNT(*) AS turns, 
        SUM(input_tokens) AS input_tokens, SUM(cache_creation_tokens) AS cache_creation_tokens,
        SUM(cache_read_tokens) AS cache_read_tokens, SUM(output_tokens) AS output_tokens
 FROM usage_turns GROUP BY session_key;
+
+-- تاريخ الأتمتة (v8): فهرسٌ مشتقٌّ من دفتر الحوكمة يُعاد بناؤه كاملًا، فلا مصدرَ فيه غيرُ الدفتر.
+-- معرّفات وتصنيفات وأوقات وأرقام فقط؛ نصوص البطاقات تبقى في الدفتر وتُقرأ عند العرض.
+CREATE TABLE IF NOT EXISTS auto_cards (
+    card_id TEXT PRIMARY KEY,
+    era TEXT NOT NULL,           -- auto: مرّت بالمشغّل، manual: قبله
+    source TEXT,
+    req_type_key TEXT,
+    size_key TEXT,
+    priority TEXT,
+    approval_key TEXT,
+    state TEXT NOT NULL,
+    stage_rank INTEGER NOT NULL, -- أبعد مرحلة: 0 دخلت، 1 بدأ العمل، 2 طلب دمج، 3 اندمجت، 4 نُشرت
+    pr INTEGER,
+    created_ts TEXT,
+    first_run_ts TEXT,
+    pr_ts TEXT,
+    merged_ts TEXT,
+    ended_ts TEXT,
+    last_ts TEXT,
+    duration_s INTEGER,
+    cost_usd REAL NOT NULL DEFAULT 0,
+    runs INTEGER NOT NULL DEFAULT 0,
+    turns INTEGER NOT NULL DEFAULT 0,
+    ci_fixes INTEGER NOT NULL DEFAULT 0,
+    stop_key TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_auto_cards_era ON auto_cards(era, created_ts);
+CREATE TABLE IF NOT EXISTS auto_events (
+    card_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,        -- ترتيب الحدث في بطاقته داخل الدفتر، وبه يُجلب نصّه عند العرض
+    ts TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    state TEXT,
+    op TEXT,
+    model TEXT,
+    cost_usd REAL,
+    turns INTEGER,
+    PRIMARY KEY (card_id, seq)
+);
+CREATE INDEX IF NOT EXISTS idx_auto_events_ts ON auto_events(ts);
+CREATE TABLE IF NOT EXISTS auto_sync (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    size INTEGER NOT NULL,
+    mtime_ns INTEGER NOT NULL,
+    events INTEGER NOT NULL,
+    cards INTEGER NOT NULL,
+    synced_at TEXT NOT NULL
+);

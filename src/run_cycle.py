@@ -18,6 +18,7 @@ import reports  # noqa: E402
 import rollups  # noqa: E402
 import server_guard  # noqa: E402
 import statusline_loader  # noqa: E402
+import automation_history  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
 import usage_ingest  # noqa: E402
@@ -141,6 +142,7 @@ def main(argv=None):
         if new_data:
             timed("rollups", lambda: rollups.refresh(con))  # تجميعات الاستهلاك تتبع كل بيانات جديدة (تُعاد كتابتها كاملةً في معاملة)
         sc = {}
+        timed("automation", lambda: automation_history.sync(con))  # فهرس تاريخ الأتمتة؛ لا يعمل إن لم يتغيّر الدفتر
         sg = timed("storage", lambda: storage_scan.run(con))  # حجم ~/.claude كل ساعة؛ صفر توكنات
         state = load_state()
         rep = "skipped"

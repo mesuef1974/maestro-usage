@@ -45,6 +45,7 @@ _ROWS = [
     ("flow", "flow.html", ["@auto", "flow", "stages", "source"]),
     ("runner", "runner.html", ["runner"]),
     ("request", "request.html", ["request"]),
+    ("automation", "automation.html", ["automation"]),
 ]
 SCRIPTLESS = {"static"}  # أجزاء تؤخذ منها الأقسام فقط (نصّها البرمجي نسخة مكرّرة من جزء آخر)
 
