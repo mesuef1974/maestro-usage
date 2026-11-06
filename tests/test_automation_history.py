@@ -172,6 +172,15 @@ class TestOverview(Base):
         self.assertNotIn("28763400123", title)
 
 
+class TestOffsite(Base):
+    def test_state_is_read_and_its_absence_is_not_an_error(self):
+        f = Path(self.tmp.name) / "o.json"
+        self.assertIsNone(ah.offsite(f))
+        f.write_text('{"ok": true, "ok_day": "2026-11-06", "head": "abc", "files": 3}', encoding="utf-8")
+        self.assertEqual(ah.offsite(f)["ok_day"], "2026-11-06")
+        self.assertNotIn("head", ah.offsite(f))
+
+
 class TestCard(Base):
     def test_timeline_carries_text_and_path(self):
         ah.sync(self.con, self.path)

@@ -177,7 +177,8 @@ function paintCards(){
 }
 function paint(o){
   data=o;
-  $i("ahSync").textContent=o.sync?"الدفتر: "+num(o.sync.events)+" حدثًا، مزامنة "+when(o.sync.synced_at):"لا مزامنة بعد";
+  var off=o.offsite,offText=!off?"لا نسخة خارجية بعد":off.ok?"النسخة الخارجية: "+off.ok_day:"تعذّرت النسخة الخارجية: "+(off.error||"");
+  $i("ahSync").textContent=(o.sync?"الدفتر: "+num(o.sync.events)+" حدثًا، مزامنة "+when(o.sync.synced_at):"لا مزامنة بعد")+" · "+offText;
   paintTotals(o.totals);paintFunnel(o.funnel);paintStops(o.stops,o.stages);paintLegs(o.legs);paintOps(o.ops);paintStalled(o.stalled);paintDaily(o.daily);
   var st={},why={};
   o.cards.forEach(function(c){st[c.state]=STATES[c.state]||c.state;if(c.stop_key)why[c.stop_key]=c.stop});

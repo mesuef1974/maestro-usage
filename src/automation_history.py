@@ -43,6 +43,7 @@ KEYS = {"خلل": "bug", "ميزة صغيرة": "feature", "تحسين": "improv
         "مباشر": "direct", "معاينة": "preview"}
 LABELS = {v: k for k, v in KEYS.items()}
 HIDDEN = "•••"
+OFFSITE_STATE = Path.home() / ".maestro" / "offsite_state.json"
 _PARSED = {}
 
 
@@ -210,6 +211,15 @@ def last_note(events):
     return mask(notes[-1]) if notes else ""
 
 
+def offsite(path=None):
+    """آخر نسخة خارج الجهاز كما كتبتها أداتها؛ غيابها يُعرض ولا يُسقط الصفحة."""
+    try:
+        s = json.loads(Path(path or OFFSITE_STATE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return {k: s.get(k) for k in ("ok", "ok_day", "checked_at", "files", "error")}
+
+
 def now_utc():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -268,7 +278,7 @@ def overview(con, era="all", path=None, now=None):
     ended = [c["duration_s"] for c in cards if c["state"] == "published" and c["duration_s"] is not None]
     sync_row = rows_of(con, "SELECT events, cards, synced_at FROM auto_sync WHERE id=1")
     return dict(
-        ok=True, era=era, now=now, sync=sync_row[0] if sync_row else None, pr_url=PR_URL,
+        ok=True, era=era, now=now, sync=sync_row[0] if sync_row else None, pr_url=PR_URL, offsite=offsite(),
         totals=dict(cards=len(cards), published=sum(c["state"] == "published" for c in cards),
                     closed=sum(c["state"] == "closed" for c in cards), deferred=sum(c["state"] == "deferred" for c in cards),
                     active=sum(c["state"] not in TERMINAL for c in cards), stalled=len(stalled),
