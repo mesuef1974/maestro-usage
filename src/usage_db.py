@@ -6,7 +6,7 @@ from pathlib import Path
 
 DB_PATH = Path(os.environ.get("MAESTRO_USAGE_DB", r"C:\Users\mesue\.maestro\flow_usage.sqlite3"))
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema" / "schema.sql"
-SCHEMA_VERSION = 8  # 8: تاريخ الأتمتة (auto_cards وauto_events وauto_sync)؛ 6: usage_rollups وv_session_totals؛ 7: تطبيع النماذج (models) وusage_rollups.model_id (5 سُجّل في القاعدة الحيّة قبلها)
+SCHEMA_VERSION = 9  # 9: مستودعات المشروع (project_repos)؛ 8: تاريخ الأتمتة (auto_cards وauto_events وauto_sync)؛ 6: usage_rollups وv_session_totals؛ 7: تطبيع النماذج (models) وusage_rollups.model_id (5 سُجّل في القاعدة الحيّة قبلها)
 
 # بذور config_changes (قرارات المالك في 2026-10-29)؛ الوقت اليوم فقط لأن الساعة غير معروفة.
 CONFIG_SEEDS = [
@@ -16,6 +16,15 @@ CONFIG_SEEDS = [
     ("2026-10-29", "statusLine", "none", "command", "ثبّتته 0101 بإذن المالك؛ يسري على الجلسات الجديدة"),
     ("2026-10-30T03:04:17Z", "autoCompactWindow", "250000", "1000000",
      "عدّلته 0101 بطلب المالك (النسبة 25% باقية)؛ وفق 0101 كانت 25% من 250000 تضغط قرب 62 ألفًا. يُقرأ عند بدء الجلسة. الزمن من تعديل settings.json"),
+]
+
+
+# مستودعات المشروع (طلب المالك 2026-11-06)؛ تُزرع عند كل اتصال فتعود إن أُعيد بناء القاعدة.
+REPO_SEEDS = [
+    ("sh-school/shschool_mvp", "public", "platform", r"D:\shschool_mvp"),
+    ("mesuef1974/shschool-docs", "private", "docs", r"D:\shschool-docs"),
+    ("mesuef1974/maestro-v2", "public", "automation", r"C:\Users\mesue\delivery_manager_work"),
+    ("mesuef1974/claude-backup", "private", "backup", None),
 ]
 
 
@@ -61,4 +70,8 @@ def init_schema(con):
     con.executemany(
         "INSERT INTO config_changes(ts, key, old_value, new_value, note) VALUES (?,?,?,?,?) "
         "ON CONFLICT(ts, key, old_value, new_value) DO UPDATE SET note=excluded.note", CONFIG_SEEDS)
+    con.executemany(
+        "INSERT INTO project_repos(repo, visibility, role, local_dir) VALUES (?,?,?,?) "
+        "ON CONFLICT(repo) DO UPDATE SET visibility=excluded.visibility, role=excluded.role, local_dir=excluded.local_dir",
+        REPO_SEEDS)
     con.commit()

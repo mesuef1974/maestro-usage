@@ -281,3 +281,11 @@ CREATE TABLE IF NOT EXISTS auto_sync (
     cards INTEGER NOT NULL,
     synced_at TEXT NOT NULL
 );
+
+-- مستودعات المشروع (v9): معرّفات وتصنيفات ومجلدات فقط؛ تزرعها usage_db.REPO_SEEDS.
+CREATE TABLE IF NOT EXISTS project_repos (
+    repo TEXT PRIMARY KEY,
+    visibility TEXT NOT NULL CHECK (visibility IN ('public', 'private')),
+    role TEXT NOT NULL,          -- platform|docs|automation|backup
+    local_dir TEXT
+);
