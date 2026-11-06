@@ -120,7 +120,7 @@ function paintStops(list,stages){
   var top=list.reduce(function(m,s){return Math.max(m,s.n)},0);
   $i("ahStops").innerHTML=top?list.map(function(s){
     var at=s.stages.map(function(n,i){return n?stages[i]+" "+n:""}).filter(Boolean).join("، ");
-    return bar(s.label,s.n,top,num(s.n),at+(s.cost?" · "+money(s.cost):""),"warn");
+    return bar(s.label,s.n,top,num(s.n),at+(s.cost?" · "+money(s.cost):""),"ah-stopbar");
   }).join(""):empty("لم تتوقّف بطاقة في هذا النطاق");
 }
 function paintLegs(legs){
