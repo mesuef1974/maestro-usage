@@ -179,12 +179,17 @@ function deskCard(c){
     '<input type="text" maxlength="300" placeholder="سبب الرفض" aria-label="سبب الرفض"><button type="button" class="mini" data-no="1">ارفض</button></div>'+
     '<p class="sub" role="status" data-msg></p></div>';
 }
+function needCard(c){
+  return '<div class="ah-deskitem" data-need="'+esc(c.card_id)+'"><div class="ah-mono sub">'+esc(c.card_id)+' · تحتاج قرارك · '+esc(money(c.cost))+'</div><b>'+esc(c.title)+'</b>'+
+    '<p class="sub">'+esc(c.reason)+'</p><div class="ah-deskact"><button type="button" class="ah-go" data-retry="1">أعد المحاولة</button>'+
+    '<button type="button" class="mini" data-drop="1">أغلق</button></div><p class="sub" role="status" data-msg></p></div>';
+}
 function loadDesk(){
   return fetch("preview.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(o){
     var ready=o.cards.filter(function(c){return c.ready}).length;
-    $i("ahDeskD").textContent=!o.up?"خادم المعاينة 8500 متوقّف":o.cards.length?num(ready)+" جاهزة، "+num(o.cards.length-ready)+" تنتظر دورها":"لا بطاقات تنتظرك";
+    $i("ahDeskD").textContent=!o.up?"خادم المعاينة 8500 متوقّف":(o.cards.length||o.needs.length)?num(ready)+" جاهزة، "+num(o.cards.length-ready)+" تنتظر دورها، "+num(o.needs.length)+" تحتاج قرارك":"لا بطاقات تنتظرك";
     var box=$i("ahDeskList"),typing=box.contains(document.activeElement)&&document.activeElement.tagName==="INPUT";
-    if(!typing)box.innerHTML=o.cards.map(deskCard).join("");
+    if(!typing)box.innerHTML=o.cards.map(deskCard).concat(o.needs.map(needCard)).join("");
   }).catch(function(){$i("ahDeskD").textContent="تعذّرت قراءة المعاينة"});
 }
 function deskPost(url,body){
@@ -193,6 +198,14 @@ function deskPost(url,body){
   });
 }
 $i("ahDeskList").addEventListener("click",function(ev){
+  var need=ev.target.closest("[data-need]"),nb=ev.target.closest("button");
+  if(need&&nb){
+    var nid=need.getAttribute("data-need"),nm=need.querySelector("[data-msg]"),again=nb.hasAttribute("data-retry");
+    if(!again&&!window.confirm("إغلاق "+nid+" نهائيًا؟"))return;
+    nb.disabled=true;
+    deskPost(again?"preview/retry":"preview/dismiss",{card:nid}).then(function(){nm.textContent=again?"أُرسل الطلب إلى المشغّل":"أُغلقت";setTimeout(loadDesk,1500)}).catch(function(e){nb.disabled=false;nm.textContent=e.message});
+    return;
+  }
   var item=ev.target.closest("[data-desk]"),b=ev.target.closest("button");
   if(!item||!b)return;
   var id=item.getAttribute("data-desk"),msg=item.querySelector("[data-msg]");

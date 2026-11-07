@@ -80,6 +80,36 @@ class Desk(unittest.TestCase):
         self.assertIn("--approve", seen[0])
         self.assertIn("--reject", seen[1])
 
+    def closed_card(self, cid="W-20261107-005", request="web-20261107-010101", extra=()):
+        base = dict(ts="2026-11-07T01:00:00+03:00", id=cid)
+        return [dict(base, kind="created", data=dict(problem="عنوان", request_file=request)),
+                dict(base, kind="note", data=dict(text="[مشغّل] sonnet تشغيل 1: كلفة=1.25$ أدوار=3")),
+                dict(base, kind="note", data=dict(text="[مشغّل] أُغلقت بتقرير: فشل الفحص")),
+                dict(base, kind="state", data=dict(state="closed")), *extra]
+
+    def needs(self, *events):
+        return pd.needs_decision(ledger_file(self.tmp.name, *events))
+
+    def test_a_failed_card_stays_until_decided(self):
+        got = self.needs(*self.closed_card())
+        self.assertEqual([c["card_id"] for c in got], ["W-20261107-005"])
+        self.assertEqual(got[0]["cost"], 1.25)
+        self.assertIn("فشل الفحص", got[0]["reason"])
+
+    def test_retried_dismissed_and_old_cards_leave(self):
+        retry = dict(ts="2026-11-07T02:00:00+03:00", id="W-20261107-009", kind="created", data=dict(problem="ع", retry_of="web-20261107-010101"))
+        self.assertEqual(self.needs(*self.closed_card(), retry), [])
+        ah._PARSED.clear()
+        drop = dict(ts="2026-11-07T02:00:00+03:00", id="W-20261107-005", kind="update", data=dict(owner_dismissed=True))
+        self.assertEqual(self.needs(*self.closed_card(extra=[drop])), [])
+        ah._PARSED.clear()
+        self.assertEqual(self.needs(*self.closed_card(cid="W-20261106-005")), [])
+
+    def test_retry_and_dismiss_refuse_cards_not_waiting(self):
+        for fn in (pd.retry, pd.dismiss):
+            with self.assertRaises(request_page.ValidationError):
+                fn(dict(card="W-20261107-005"), needs=[])
+
     def test_password_read_from_env_file(self):
         env = Path(self.tmp.name) / "a.env"
         env.write_text("PREVIEW_ACCOUNTS_PASSWORD=x1" + chr(10), encoding="utf-8")

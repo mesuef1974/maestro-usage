@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import automation_history as ah  # noqa: E402
+import my_requests  # noqa: E402
 import request_page  # noqa: E402
 
 ROOT = Path.home() / "delivery_manager_work"
@@ -21,6 +22,7 @@ HEALTH_URL = "http://localhost:8500/health/"
 CARD_ID = re.compile(r"W-[0-9]{8}-[0-9]{3}")
 PR_URL = ah.PR_URL
 MAX_REASON = 300
+NEEDS_SINCE = "2026-11-07"  # ما قبله قُضي فيه، فلا يُعرض 26 إغلاقًا قديمًا
 
 
 def served_commit(url=HEALTH_URL):
@@ -70,9 +72,58 @@ def waiting(path=None, served=None):
     return sorted(out, key=lambda x: (not x["ready"], x["card_id"]))
 
 
+def needs_decision(path=None):
+    """بطاقاتٌ أغلقها المشغّل بعد فشلها ولم يُعَد طلبها ولم يقرّ المالك إغلاقها: تبقى ظاهرة حتى قراره."""
+    path = Path(path or ah.ledger_path())
+    if not path.is_file():
+        return []
+    by_card = ah.read_events(path)[0]
+    made = {cid: next((e.get("data") or {} for e in ev if e.get("kind") == "created"), {}) for cid, ev in by_card.items()}
+    retried = {d.get("retry_of") for d in made.values() if d.get("retry_of")}
+    out = []
+    for cid, events in by_card.items():
+        d = made[cid]
+        if cid[2:10] < NEEDS_SINCE.replace("-", "") or fold(events)["state"] != "closed" or d.get("request_file") in retried or not d.get("request_file"):
+            continue
+        if any(e.get("kind") == "update" and (e.get("data") or {}).get("owner_dismissed") for e in events):
+            continue
+        reason = ah.closing_text(events)
+        if not reason:
+            continue
+        notes = [(e.get("data") or {}).get("text", "") for e in events if e.get("kind") == "note"]
+        cost = sum(float(m[3]) for m in map(ah.RUN_NOTE.match, notes) if m)
+        out.append(dict(card_id=cid, title=ah.title_of(events), reason=ah.mask(reason)[:300], cost=round(cost, 2)))
+    return sorted(out, key=lambda x: x["card_id"])
+
+
 def payload(path=None):
     served = served_commit()
-    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served))
+    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served), needs=needs_decision(path))
+
+
+def _need(params, needs=None):
+    cid = str(params.get("card") or "")
+    if not CARD_ID.fullmatch(cid) or cid not in {c["card_id"] for c in (needs_decision() if needs is None else needs)}:
+        raise request_page.ValidationError("البطاقة لا تنتظر قرارًا", "card")
+    return cid
+
+
+def retry(params, needs=None, path=None):
+    """إعادة بزرّ: الطلب الأصلي نفسه مع سبب الفشل، ويلتقطه المشغّل في دورته."""
+    cid = _need(params, needs)
+    made = next(e.get("data") or {} for e in ah.read_events(Path(path or ah.ledger_path()))[0][cid] if e.get("kind") == "created")
+    fields = my_requests.retry_fields(made["request_file"])
+    fields.pop("card", None)
+    return request_page.submit(fields)
+
+
+def dismiss(params, run=subprocess.run, needs=None):
+    cid = _need(params, needs)
+    p = run([sys.executable, str(ROOT / "tools" / "runner.py"), "--dismiss", cid], cwd=str(ROOT), capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=60)
+    if p.returncode:
+        raise request_page.ValidationError((p.stderr or "تعذّر التسجيل").strip()[-200:], "")
+    return dict(ok=True, message=(p.stdout or "").strip()[-200:])
 
 
 def password(_params=None, env=None):
