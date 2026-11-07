@@ -1,5 +1,16 @@
 <!-- تاريخ الأتمتة: كلّ بطاقة من الدخول إلى النشر أو التوقّف. الحمولة من /automation.json عند العرض لا في التقرير. -->
 __SHELL_OPEN__
+<!--@sec today--><section class="ah" id="ahToday" aria-label="ما ينتظرك الآن">
+  <section class="card ah-desk" id="ahDesk" aria-labelledby="ahdk">
+    <div class="cardhead"><h3 id="ahdk">ينتظر قرارك</h3><span class="sub" id="ahDeskD" role="status">–</span></div>
+    <div id="ahDeskList" class="ah-list"></div>
+  </section>
+
+  <section class="card" aria-labelledby="ahr">
+    <div class="cardhead"><h3 id="ahr">المتبقي في الجولة</h3><span class="sub" id="ahRemainD" role="status">–</span></div>
+    <div class="ah-remain"><div class="v" id="ahRemain">–</div><div id="ahRemainList" class="ah-list"></div></div>
+  </section>
+</section><!--@/sec-->
 <!--@sec automation--><section class="ah" id="ahRoot" aria-labelledby="ahh">
   <div class="ah-bar">
     <h2 id="ahh">تاريخ الأتمتة</h2>
@@ -11,11 +22,6 @@ __SHELL_OPEN__
     <span class="sub" id="ahSync" role="status">بانتظار الدفتر…</span>
   </div>
 
-  <section class="card ah-desk" id="ahDesk" aria-labelledby="ahdk">
-    <div class="cardhead"><h3 id="ahdk">المعاينة</h3><span class="sub" id="ahDeskD" role="status">–</span></div>
-    <div id="ahDeskList" class="ah-list"></div>
-  </section>
-
   <div class="tiles" aria-label="مؤشّرات النطاق">
     <div class="tile"><div class="l">بطاقات</div><div class="v" id="ahCards">–</div><div class="d" id="ahActive">–</div></div>
     <div class="tile"><div class="l">نُشرت</div><div class="v" id="ahPub">–</div><div class="d" id="ahPubD">–</div></div>
@@ -23,11 +29,6 @@ __SHELL_OPEN__
     <div class="tile"><div class="l">كلفة النموذج</div><div class="v" id="ahCost">–</div><div class="d" id="ahCostD">–</div></div>
     <div class="tile"><div class="l">وسيط الرحلة حتى النشر</div><div class="v" id="ahMed">–</div><div class="d">من الدخول إلى النشر</div></div>
   </div>
-
-  <section class="card" aria-labelledby="ahr">
-    <div class="cardhead"><h3 id="ahr">المتبقي في الجولة</h3><span class="sub" id="ahRemainD" role="status">–</span></div>
-    <div class="ah-remain"><div class="v" id="ahRemain">–</div><div id="ahRemainList" class="ah-list"></div></div>
-  </section>
 
   <div class="ah-grid">
     <section class="card" aria-labelledby="ahf">
@@ -187,6 +188,7 @@ function needCard(c){
 function loadDesk(){
   return fetch("preview.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(o){
     var ready=o.cards.filter(function(c){return c.ready}).length;
+    var badge=$i("navBadge-today"),wait=ready+o.needs.length;badge.textContent=wait;badge.hidden=!wait;
     $i("ahDeskD").textContent=!o.up?"خادم المعاينة 8500 متوقّف":(o.cards.length||o.needs.length)?num(ready)+" جاهزة، "+num(o.cards.length-ready)+" تنتظر دورها، "+num(o.needs.length)+" تحتاج قرارك":"لا بطاقات تنتظرك";
     var box=$i("ahDeskList"),typing=box.contains(document.activeElement)&&document.activeElement.tagName==="INPUT";
     if(!typing)box.innerHTML=o.cards.map(deskCard).concat(o.needs.map(needCard)).join("");
@@ -314,7 +316,7 @@ $i("ahEra").addEventListener("click",function(ev){
 ["ahQ","ahState","ahWhy"].forEach(function(id){$i(id).addEventListener("input",function(){limit=PAGE;paintCards()})});
 $i("ahMore").addEventListener("click",function(){limit+=PAGE;paintCards()});
 $i("ahClose").addEventListener("click",function(){$i("ahDlg").close()});
-root.addEventListener("click",function(ev){var b=ev.target.closest("[data-card]");if(b)openCard(b.getAttribute("data-card"))});
+document.getElementById("main").addEventListener("click",function(ev){var b=ev.target.closest("[data-card]");if(b)openCard(b.getAttribute("data-card"))});
 
 /* يُحمَّل مرّة مع الصفحة، ويتجدّد ما دام القسم ظاهرًا */
 load();

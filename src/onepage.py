@@ -10,7 +10,8 @@ import metrics
 import ui
 
 TITLE = "ميزان"
-LEDE = "الحصة والاستهلاك والمهارات والتخزين والأتمتة في صفحة واحدة."
+LEDE = "ما ينتظر قرارك، والأتمتة، والحصة، والاستهلاك، والمهارات، والتخزين."
+VIEW_RE = re.compile(r"<!--view (\w+)-->")
 MAIN_RE = re.compile(r'<main id="main" class="page" tabindex="-1">(.*?)</main>', re.S)
 DATA_RE = re.compile(r'<script type="application/json" id="data">(.*?)</script>', re.S)
 CODE_RE = re.compile(r"</main></div>\s*(?:<div id=\"tip\"[^>]*></div>\s*)?<script type=\"application/json\" id=\"data\">.*?</script>\s*<script>(.*?)</script>", re.S)
@@ -34,6 +35,18 @@ def extract(part, page_html, scriptless=False):
     return main, tag, "(function(){\n%s\n})();" % js
 
 
+def views(body):
+    """يجمع مقاطع كل شاشة وإن تفرّقت بين الأجزاء. والشاشات كلها ظاهرة بلا JS، فتبقى صفحة تُقرأ؛ rail.js يخفي غير الحالية."""
+    pieces = VIEW_RE.split(body)
+    grouped = {}
+    for name, text in zip(pieces[1::2], pieces[2::2]):
+        grouped[name] = grouped.get(name, "") + text
+    today = grouped.get("today", "")
+    grouped["today"] = today.replace("</h2>", "</h2>" + ui.HERO, 1) if today else ui.HERO
+    assert not pieces[0].strip(), "محتوى قبل أوّل شاشة"
+    return "\n".join('<div class="view" id="v-%s" data-view="%s">%s</div>' % (n, n, t) for n, t in grouped.items())
+
+
 def build(parts, stamp):
     """parts: قائمة (المعرّف، HTML الجزء مبنيًّا بـ ui.render، بلا نص؟) بالترتيب. تعيد صفحة index.html كاملة."""
     mains, tags, codes = [], [], []
@@ -46,11 +59,11 @@ def build(parts, stamp):
     head = (ui.SRC / "ui_theme_head.js").read_text(encoding="utf-8").strip()
     preload = "".join('<link rel="preload" as="font" type="font/ttf" crossorigin href="assets/fonts/%s.ttf">' % f for f in ui.PRELOAD_FONTS)
     assets = ui.FAVICON_LINK + preload + '<link rel="stylesheet" href="%s?v=%s">' % (ui.ASSET_URL, ui.css_hash())
-    defs = '<details class="card defs"><summary>التعريفات والتحفظات</summary>%s</details>' % metrics.defs_html()
+    defs = '<details class="card defs" id="defs"><summary>التعريفات والتحفظات</summary>%s</details>' % metrics.defs_html()
     rail = "\n".join((ui.SRC / n).read_text(encoding="utf-8") for n in ("rail.js", "fold.js"))
     shared = ui.lib_split()[0]  # المكتبة المشتركة مرة واحدة قبل الأجزاء (كانت تُضمَّن داخل كل جزء فتضخّم الصفحة)
     return ("<!doctype html>\n<html lang=\"ar\" dir=\"rtl\">\n<head><script>%s</script>\n<meta charset=\"utf-8\">\n"
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>%s</title>\n%s\n</head>\n<body>\n%s\n%s\n%s\n%s\n"
             "<div id=\"tip\" role=\"status\" aria-live=\"off\"></div>\n%s\n<script>\n%s\n</script>\n<script>\n%s\n</script>\n<script>\n%s\n</script>\n</body>\n</html>\n"
-            % (head, html.escape(TITLE), assets, top, ui.pagehead(TITLE, LEDE, stamp, hero=True), "\n".join(mains) + defs, bottom, "\n".join(tags),
+            % (head, html.escape(TITLE), assets, top, ui.pagehead(TITLE, LEDE, stamp), views("\n".join(mains)) + defs, bottom, "\n".join(tags),
                shared, "\n".join(codes), rail))

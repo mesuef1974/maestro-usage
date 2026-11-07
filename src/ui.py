@@ -15,6 +15,7 @@ CSS_DIR = SRC / "css"
 FONT_DIR = SRC / "fonts"
 ASSET_URL = "assets/platform.css"
 PRELOAD_FONTS = ("NotoNaskhArabic", "NotoKufiArabic", "Inter")  # تُحمَّل مبكرًا لئلا يرمش النص عند الانتقال بين الصفحات
+VIEW_MARK = "<!--view %s-->"
 SEC_RE = re.compile(r"<!--@sec (\w+)-->(.*?)<!--@/sec-->", re.S)
 
 # علامة «ميزان»: تميمة مبنية بالبكسل (أصلية، مستوحاة من فكرة تميمة المساعد لا نسخة منها): جسم نحاسي بعينين وذراعين وأربع أرجل،
@@ -73,18 +74,26 @@ def embed_json(data):
 
 def nav_html():
     """الشريط الجانبي: رابط لكل قسم من الصفحة الواحدة (الإبراز عند التمرير يتولاه rail.js)."""
-    links = "".join('<li><a href="#%s"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">%s</svg><span>%s</span></a></li>'
-                    % (sid, pages.ICON[icon], html.escape(title)) for sid, title, icon in pages.SECTIONS)
-    # «طلب جديد» أول الشريط: لاصق في الحالين (عمود جانبي ≥1024px وشريط علوي أدناه)؛ fold.js يفتح بطاقته، والاستمارة تركّز العنوان
-    new = ('<a class="newreq" id="newreq" href="#rqh"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>'
+    by_id = {sid: (title, icon) for sid, title, icon in pages.SECTIONS}
+
+    def link(sid):
+        title, icon = by_id[sid]
+        badge = '<b class="navbadge" id="navBadge-%s" hidden></b>' % sid if sid == "today" else ""
+        return ('<li><a href="#%s"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">%s</svg><span>%s</span>%s</a></li>'
+                % (sid, pages.ICON[icon], html.escape(title), badge))
+
+    groups = "".join(('<p class="navgroup">%s</p>' % html.escape(label) if label else "") + "<ul>%s</ul>" % "".join(link(s) for s in ids)
+                     for label, ids in pages.NAV_GROUPS)
+    # «طلب جديد» أول الشريط: لاصق في الحالين (عمود جانبي ≥1024px وشريط علوي أدناه)، والاستمارة تركّز العنوان
+    new = ('<a class="newreq" id="newreq" href="#new"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>'
            '<span>طلب جديد</span></a>')
-    return new + '<ul>%s</ul>' % links
+    return new + groups
 
 
 def shell(cur=None):
     """غلاف الصفحة: رابط تخطٍّ، شريط جانبي بعلامة «ميزان» وروابط الأقسام، وبداية main."""
     top = ('<a class="skip" href="#main">تخطَّ إلى المحتوى</a><div class="app"><aside class="side">'
-           '<a class="brand" href="#top" aria-label="ميزان، أعلى الصفحة">%s<span><b>ميزان</b><small>استهلاك Claude Code بالتوكن</small></span></a>'
+           '<a class="brand" href="#today" aria-label="ميزان، شاشة اليوم">%s<span><b>ميزان</b><small>القياس والأتمتة</small></span></a>'
            '<nav class="nav" aria-label="أقسام الصفحة">%s</nav>'
            '<div class="sidefoot" id="themeslot"></div></aside><main id="main" class="page" tabindex="-1">' % (LOGO, nav_html()))
     return top, "</main></div>"
@@ -113,7 +122,12 @@ def select_sections(page_html, wanted):
     """يُبقي من القالب الأقسام المطلوبة بترتيب `wanted`، ويتحقّق أن كل اسم موجود؛ الاسم @معرّف يولّد عنوان قسم الصفحة."""
     found = dict(SEC_RE.findall(page_html))
     first, last = page_html.index("__SHELL_OPEN__") + len("__SHELL_OPEN__"), page_html.index("__SHELL_CLOSE__")
-    body = "".join(section_head(n[1:]) if n.startswith("@") else found[n] for n in wanted)  # KeyError = اسم قسم غير موجود في القالب
+    def piece(n):
+        if n.startswith("~"):
+            return VIEW_MARK % n[1:]
+        return VIEW_MARK % n[1:] + section_head(n[1:]) if n.startswith("@") else found[n]  # KeyError = اسم قسم غير موجود في القالب
+
+    body = "".join(piece(n) for n in wanted)
     return page_html[:first] + "\n" + body + "\n" + page_html[last:]
 
 

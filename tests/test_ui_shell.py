@@ -41,14 +41,15 @@ class UiShellTest(unittest.TestCase):
         for p in pages.PAGES:
             known = set(template_sections(p["template"]))
             for sec in p["sections"]:
-                if sec.startswith("@"):
+                if sec[0] in "@~":
                     self.assertIn(sec[1:], pages.SECTION_TITLE, (p["file"], sec))
                 else:
                     self.assertIn(sec, known, (p["file"], sec))
         for _sid, _title, icon in pages.SECTIONS:
             self.assertIn(icon, pages.ICON)
         headed = [s[1:] for p in pages.PAGES for s in p["sections"] if s.startswith("@")]
-        self.assertEqual(headed, [sid for sid, _t, _i in pages.SECTIONS])  # كل قسم له عنوان واحد بالترتيب نفسه
+        self.assertEqual(sorted(headed), sorted(pages.SECTION_TITLE))  # كل شاشة لها عنوان واحد
+        self.assertEqual([s for _label, ids in pages.NAV_GROUPS for s in ids], [sid for sid, _t, _i in pages.SECTIONS])
 
     def test_every_template_section_is_used_by_some_part(self):
         for t in {p["template"] for p in pages.PAGES}:

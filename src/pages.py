@@ -25,29 +25,33 @@ ICON = {
 
 # أقسام الصفحة الواحدة بالترتيب: (المعرّف، العنوان، الأيقونة). الشريط الجانبي وعناوين المجموعات يقرآن من هنا وحده.
 SECTIONS = [
+    ("today", "اليوم", "home"),
+    ("auto", "الأتمتة", "flow"),
     ("quota", "الحصة الأسبوعية", "gauge"),
     ("usage", "الاستهلاك", "layers"),
     ("skills", "المهارات", "grid"),
     ("data", "البيانات والتخزين", "db"),
-    ("auto", "الأتمتة", "flow"),
 ]
-SECTION_TITLE = {sid: title for sid, title, _ in SECTIONS}
+NAV_GROUPS = [("", ("today", "auto")), ("القياس", ("quota", "usage")), ("المنصّة", ("skills", "data"))]
+# «طلب جديد» شاشة لها زرّها في رأس الشريط، فلا سطر لها بين الأقسام
+SECTION_TITLE = {**{sid: title for sid, title, _ in SECTIONS}, "new": "طلب جديد"}
 
 # أجزاء الصفحة الواحدة بالترتيب: (المعرّف، القالب، الأقسام). يخدم كل قالب جزءًا واحدًا (نسخة JS واحدة) إلا «static» فهو HTML بلا نص برمجي.
-# الاسم الذي يبدأ بـ@ يولّد عنوان قسم من SECTIONS قبل ما يليه.
+# الاسم الذي يبدأ بـ@ يولّد عنوان شاشة قبل ما يليه، والذي يبدأ بـ~ يُكمل شاشة بدأت في جزء آخر؛ onepage تجمع الشاشات.
 _ROWS = [
     ("main", "dashboard.html", ["@quota", "limits", "h3", "@usage", "filters", "tiles", "month", "h1", "h2"]),
     ("hourly", "hourly.html", ["ht"]),
     ("summary", "summary.html", ["sum"]),
     ("skills", "skills.html", ["@skills", "tiles", "filters2", "tbl", "gone"]),
     ("storage", "storage.html", ["@data", "tiles", "src", "proj", "age", "growth", "tools"]),
-    ("static", "dashboard.html", ["static"]),
-    ("flow", "flow.html", ["@auto", "flow", "stages", "source"]),
-    ("runner", "runner.html", ["runner"]),
-    ("request", "request.html", ["request"]),
-    ("automation", "automation.html", ["automation"]),
+    ("static", "dashboard.html", ["~quota", "static"]),
+    ("automation", "automation.html", ["@today", "today"]),
+    ("runner", "runner.html", ["~today", "rlkpi", "@auto", "runner"]),
+    ("history", "automation.html", ["~auto", "automation"]),
+    ("flow", "flow.html", ["~auto", "flow", "stages", "source"]),
+    ("request", "request.html", ["@new", "request"]),
 ]
-SCRIPTLESS = {"static"}  # أجزاء تؤخذ منها الأقسام فقط (نصّها البرمجي نسخة مكرّرة من جزء آخر)
+SCRIPTLESS = {"static", "history"}  # أجزاء تؤخذ منها الأقسام فقط (نصّها البرمجي نسخة مكرّرة من جزء آخر)
 
 PAGES = [dict(file=f, template=t, sections=s) for f, t, s in _ROWS]
 BY_FILE = {p["file"]: p for p in PAGES}

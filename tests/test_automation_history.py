@@ -208,9 +208,9 @@ class TestCard(Base):
 
 
 class TestPage(unittest.TestCase):
-    def test_page_is_registered_after_the_request_page(self):
-        names = [p["file"] for p in pages.PAGES]
-        self.assertEqual(names.index("automation"), names.index("request") + 1)
+    def test_desk_opens_today_and_history_stays_in_automation(self):
+        self.assertEqual(pages.BY_FILE["automation"]["sections"], ["@today", "today"])
+        self.assertEqual(pages.BY_FILE["history"]["sections"], ["~auto", "automation"])
 
     def test_report_payload_carries_no_ledger_text(self):
         self.assertEqual(ah.payload(), {"automation": {"api": "automation.json", "card_api": "automation/card.json"}})

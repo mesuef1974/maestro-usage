@@ -5,6 +5,7 @@
   .brand{display:none}
   .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:.2rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
   .nav ul{display:flex;gap:var(--sp-1);flex:none}
+  .navgroup{display:none}
   .nav li{flex:none}
   .newreq{flex:none;margin-block-end:0}
   .nav a{white-space:nowrap}
@@ -44,3 +45,10 @@
   .card,.limits,.tiles{break-inside:avoid;border-color:#999}
 }
 @media (min-width:1024px){.sidefoot{min-block-size:calc(2*var(--tap) + var(--sp-2))}}  /* مكان زرّي السمة والتحديث محجوز قبل أن يضيفهما JS فلا ينزاح الشريط */
+/* الهاتف: رقمان جنبًا ورقم المشغّل بعرضه لأنّ نصّه أطول، وزرّ الطيّ الجماعي لا حاجة له في شاشة واحدة */
+@media (max-width:640px){
+  .hero{grid-template-columns:1fr 1fr}
+  .htile:last-child{grid-column:1/-1}
+  .pagehead .live{justify-content:flex-start}
+  .pagehead .live>.refresh:last-child{display:none}
+}

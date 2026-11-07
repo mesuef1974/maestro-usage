@@ -39,3 +39,27 @@ main [id]{scroll-margin-block-start:var(--sp-4)}
 .newreq svg{inline-size:18px;block-size:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
 .newreq:hover{filter:brightness(1.08)}
 .newreq:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* الشاشات: رأس نحيل بحالة البيانات، وكل قسم شاشته، والمجموعات تُسمّى في الشريط */
+.view[hidden]{display:none}
+.view>.gh:first-child{margin-block-start:0}
+.pagehead{padding-block-end:var(--sp-2);margin-block-end:var(--sp-3)}
+.pagehead::after,.pagehead .lede{display:none}
+.pagehead h1{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.pagehead .live{justify-content:flex-end;margin-block:0}
+.navgroup{margin:var(--sp-4) var(--sp-2) var(--sp-1);color:var(--ink3);font-size:var(--t-xs);font-weight:700}
+.navbadge{margin-inline-start:auto;min-inline-size:1.5rem;padding-inline:var(--sp-1);border-radius:var(--r-pill);background:var(--brand);color:var(--on-brand);font:700 var(--t-xs)/1.5rem var(--font-num);text-align:center}
+.navbadge[hidden]{display:none}
+.nav a[aria-current="page"]{background:var(--brand-soft);color:var(--brand-ink);font-weight:700;box-shadow:inset -3px 0 0 var(--brand)}
+#v-today .ah-desk{border-color:var(--brand)}
+#v-today>.tiles{margin-block-start:var(--sp-4)}
+.defs#defs{margin-block-start:var(--sp-7)}
+
+.pagehead .refresh{background:var(--surface);color:var(--ink2);border-color:var(--line-strong);font-weight:400}
+.pagehead .refresh:hover{background:var(--hover);color:var(--ink);filter:none}
+.qfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:var(--sp-2) var(--sp-4);margin-block-start:var(--sp-2)}
+.qfact{display:grid;gap:0;min-inline-size:0}
+.qfact small{color:var(--ink3);font-size:var(--t-xs)}
+.qfact b{font-weight:500;color:var(--ink)}
+.qfact.hot b{color:var(--bad);font-weight:700}
+.rq-mlist{max-block-size:30rem;overflow-y:auto;overscroll-behavior:contain}

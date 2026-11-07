@@ -198,13 +198,14 @@ function quotaLine(id,q,pct,resets,now){
   var el=$("#"+id);if(!q){el.textContent="";return}
   var c=q.cost||{},f=q.fc||{};
   if(c.per_pct==null){el.textContent="كلفة 1% غير مقدَّرة بعد ("+(c.n||0)+" من "+QUOTA_MIN+" أزواج انتقال دقيقة).";return}
-  var parts=["≈ "+compact(c.per_pct)+" توكن Claude Code لكل 1% (وسيط "+compact(c.med)+"، "+c.n+" أزواج)"];
-  var pr=D.product||{};if(pr.factor)parts.push("الكلفة الحقيقية التقريبية ≈ "+compact(c.per_pct*pr.factor)+" توكن لكل 1% (حصة Claude Code "+num(pr.share.claude_code)+"%"+(pr.stale?"، النسبة قديمة":"")+")");
-  if(f.rate_day!=null)parts.push("الحرق "+num(f.rate_day,1)+"%/يوم"+(RATE_SRC[f.rate_src]?" ("+RATE_SRC[f.rate_src]+")":""));
-  var fc=quotaForecast(f,pct,resets,now||Date.now());
-  if(fc.full_at)parts.push("يبلغ 100% نحو "+clock(Date.parse(fc.full_at),true));
-  else if(fc.at_reset!=null)parts.push("المتوقَّع عند التصفير "+num(Math.min(100,fc.at_reset),0)+"%");
-  el.textContent=parts.join(" · ");
+  var facts=[],pr=D.product||{},fc=quotaForecast(f,pct,resets,now||Date.now());
+  if(fc.full_at)facts.push(["يبلغ 100%",clock(Date.parse(fc.full_at),true),"تحذير"]);
+  else if(fc.at_reset!=null)facts.push(["المتوقَّع عند التصفير",num(Math.min(100,fc.at_reset),0)+"%"]);
+  if(f.rate_day!=null)facts.push(["الحرق",num(f.rate_day,1)+"%/يوم"+(RATE_SRC[f.rate_src]?" ("+RATE_SRC[f.rate_src]+")":"")]);
+  facts.push(["كلفة 1%","≈ "+compact(c.per_pct)+" توكن Claude Code (وسيط "+compact(c.med)+"، "+c.n+" أزواج)"]);
+  if(pr.factor)facts.push(["الكلفة الحقيقية لـ1%","≈ "+compact(c.per_pct*pr.factor)+" توكن (حصة Claude Code "+num(pr.share.claude_code)+"%"+(pr.stale?"، النسبة قديمة":"")+")"]);
+  clear(el);el.classList.add("qfacts");
+  facts.forEach(function(x){var s=mk("span",{class:x[2]?"qfact hot":"qfact"});s.appendChild(mk("small",null,x[0]));s.appendChild(mk("b",null,x[1]));el.appendChild(s)});
   return fc;
 }
 /* تنبيه بلوغ السقف: لون حالة مع كلمة «تحذير» دائمًا (لا لون وحده)؛ يُعاد حسابه مع كل لقطة حيّة لأن quotaLine تُستدعى من renderLimits */

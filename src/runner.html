@@ -1,17 +1,16 @@
 <!-- جزء من صفحة ميزان الواحدة: يُبنى بـ ui.render ويجمعه onepage.build؛ الرأس والغلاف من onepage لا من هنا -->
 __SHELL_OPEN__
+<!--@sec rlkpi--><div class="tiles" aria-label="مؤشّرات اليوم">
+    <div class="tile"><div class="l">كلفة النموذج اليوم</div><div class="v rl-brand" id="kCost">–</div><div class="d">الأتمتة نفسها بصفر توكنز</div></div>
+    <div class="tile"><div class="l">بطاقات بدأت اليوم</div><div class="v" id="kStarted">–</div><div class="d" id="kRuns">–</div></div>
+    <div class="tile"><div class="l">منشورة اليوم</div><div class="v rl-good" id="kPub">–</div><div class="d" id="kAvg">–</div></div>
+    <div class="tile"><div class="l">أُغلقت بتقرير اليوم</div><div class="v rl-bad" id="kRef">–</div><div class="d">التقرير في طابور المالك</div></div>
+  </div><!--@/sec-->
 <!--@sec runner--><section class="rl" aria-label="المشغّل الحيّ">
   <div class="rl-bar">
     <span class="rl-live" id="rlLive"><i></i><span id="rlLiveTxt">حيّ</span></span>
     <span class="rl-runner" id="rlRunner"><span class="dot"></span><span id="rlRunnerTxt">…</span></span>
     <span class="sub">آخر تحديث <span class="rl-num" id="rlUpd">–</span></span>
-  </div>
-
-  <div class="tiles" aria-label="مؤشّرات اليوم">
-    <div class="tile"><div class="l">كلفة النموذج اليوم</div><div class="v rl-brand" id="kCost">–</div><div class="d">الأتمتة نفسها بصفر توكنز</div></div>
-    <div class="tile"><div class="l">بطاقات بدأت اليوم</div><div class="v" id="kStarted">–</div><div class="d" id="kRuns">–</div></div>
-    <div class="tile"><div class="l">منشورة اليوم</div><div class="v rl-good" id="kPub">–</div><div class="d" id="kAvg">–</div></div>
-    <div class="tile"><div class="l">أُغلقت بتقرير اليوم</div><div class="v rl-bad" id="kRef">–</div><div class="d">التقرير في طابور المالك</div></div>
   </div>
 
   <section class="card" aria-labelledby="rlh">

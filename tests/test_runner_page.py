@@ -15,9 +15,8 @@ import serve  # noqa: E402
 
 
 class RunnerPageTest(unittest.TestCase):
-    def test_registered_right_after_flow(self):
-        files = [p["file"] for p in pages.PAGES]
-        self.assertEqual(files[files.index("flow") + 1], "runner")
+    def test_opens_the_automation_screen_and_feeds_today(self):
+        self.assertEqual(pages.BY_FILE["runner"]["sections"], ["~today", "rlkpi", "@auto", "runner"])
 
     def test_render_uses_shell_and_live_api(self):
         page = ui.render("runner", runner_page.payload(), {"__STAMP__": "2026-11-04 15:00"})

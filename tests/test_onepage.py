@@ -39,6 +39,15 @@ class TestOnePage(unittest.TestCase):
         dup = sorted({i for i in ids if ids.count(i) > 1})
         self.assertEqual(dup, [])
 
+    def test_each_screen_is_one_view_and_today_comes_first(self):
+        found = re.findall(r'<div class="view" id="v-(\w+)"', self.body)
+        self.assertEqual(sorted(found), sorted(pages.SECTION_TITLE))
+        self.assertNotIn("<!--view", self.body)
+        desk, hero = self.body.index('id="ahDesk"'), self.body.index('id="hero"')
+        self.assertLess(self.body.index('id="v-today"'), hero)
+        self.assertLess(hero, desk)
+        self.assertLess(desk, self.body.index('id="v-auto"'))
+
     def test_every_section_has_one_anchor_and_nav_link(self):
         for sid, _title, _icon in pages.SECTIONS:
             self.assertEqual(self.body.count('<h2 class="gh" id="%s">' % sid), 1, sid)
@@ -100,4 +109,4 @@ class TestHero(unittest.TestCase):
         self.assertNotIn('id="hero"', ui.pagehead("t", "l", "x"))  # الأجزاء المنفردة بلا شريط
         self.assertIn("function heroQuota", (ui.SRC / "dashboard.html").read_text(encoding="utf-8"))
         self.assertIn('getElementById("hero-run")', (ui.SRC / "runner.html").read_text(encoding="utf-8"))
-        self.assertIn('!card.hasAttribute("data-open")', (ui.SRC / "fold.js").read_text(encoding="utf-8"))  # الافتراضي مطويّ
+        self.assertIn('card.hasAttribute("data-fold")', (ui.SRC / "fold.js").read_text(encoding="utf-8"))  # الافتراضي مفتوح في شاشته

@@ -39,7 +39,7 @@ class FlowPageTest(unittest.TestCase):
             self.assertIn(s, html)
         self.assertNotIn("__DEFS__", html)
         self.assertNotIn('id="refresh"', html)  # صفحة ساكنة بلا زرّ التحديث الفوري
-        self.assertEqual(pages.BY_FILE["flow"]["sections"], ["@auto", "flow", "stages", "source"])
+        self.assertEqual(pages.BY_FILE["flow"]["sections"], ["~auto", "flow", "stages", "source"])
 
 
 if __name__ == "__main__":
