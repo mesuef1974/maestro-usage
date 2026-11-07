@@ -10,10 +10,8 @@ import time
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import alerts  # noqa: E402
 import backup_db  # noqa: E402
 import import_external  # noqa: E402
-import quota_model  # noqa: E402
 import reports  # noqa: E402
 import rollups  # noqa: E402
 import server_guard  # noqa: E402
@@ -166,14 +164,6 @@ def main(argv=None):
             log("ingest " + json.dumps({k: st[k] for k in ("files_ingested", "turns_new", "turns_updated", "turns_reassigned", "files_error", "turns_total")})
                 + " spool " + json.dumps(sp) + " startup " + json.dumps(sc) + " storage " + json.dumps(sg)
                 + " reports " + rep + " sec %.1f" % (time.time() - t) + " times " + json.dumps(times))
-        try:  # تنبيه ويندوز حين يُتوقَّع بلوغ 100% قبل التصفير (مرة لكل تصفير)؛ فشله لا يمسّ الدورة
-            con2 = usage_db.connect()
-            n_alerts = alerts.run(quota_model.payload(con2))
-            con2.close()
-            if n_alerts:
-                log("alerts sent %d" % n_alerts)
-        except Exception as exc:  # noqa: BLE001
-            log("alerts ERROR " + type(exc).__name__)
         try:  # مرفقات «طلب جديد»: رفعٌ لم يُربط خلال يوم، ومرفقات أقدم من 30 يومًا
             import request_files
             n_clean = request_files.cleanup()
