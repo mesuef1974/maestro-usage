@@ -52,7 +52,7 @@ def fold(events):
 
 
 def waiting(path=None, served=None):
-    """بطاقات المعاينة التي لم يُقضَ فيها، والجاهزة منها ما يخدمه 8500 فعلًا."""
+    """بطاقات المعاينة التي لم يُقضَ فيها، والجاهزة منها ما يخدمه 8500 أو خانتها فعلًا."""
     path = Path(path or ah.ledger_path())
     if not path.is_file():
         return []
@@ -64,7 +64,10 @@ def waiting(path=None, served=None):
         if c["approval"] != "معاينة" or c["state"] in ah.TERMINAL or not head or c["approved"] or c["rejected"]:
             continue
         info = c["info"] or {}
-        ready = c["seen"] == head and bool(served) and head.startswith(served)
+        url = info.get("url", "")
+        slot = re.match(r"http://localhost:(86[0-9]{2})/", url)
+        now_served = served_commit("http://localhost:%s/health/" % slot[1]) if slot else served
+        ready = c["seen"] == head and bool(now_served) and head.startswith(now_served)
         pr = (c["resume"] or {}).get("pr")
         out.append(dict(card_id=cid, title=ah.title_of(events), head=head[:8], ready=ready, pr=pr,
                         pr_url=(PR_URL + str(pr)) if pr else "", url=info.get("url", ""), account=info.get("account", ""),
@@ -147,7 +150,7 @@ def decide(params, run=subprocess.run, cards=None):
     if card is None:
         raise request_page.ValidationError("البطاقة لا تنتظر معاينة", "card")
     if approve and not card["ready"]:
-        raise request_page.ValidationError("هذه البطاقة ليست المعروضة على 8500 الآن", "card")
+        raise request_page.ValidationError("هذه البطاقة غير معروضة الآن", "card")
     if not approve and not reason:
         raise request_page.ValidationError("الرفض يحتاج سببًا", "reason")
     cmd = [sys.executable, str(ROOT / "tools" / "runner.py")] + (["--approve", cid] if approve else ["--reject", cid, "--reason", reason])

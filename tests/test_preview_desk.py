@@ -45,6 +45,17 @@ class Desk(unittest.TestCase):
         ah._PARSED.clear()
         self.assertFalse(self.cards(served="9999999")[0]["ready"])
 
+    def test_a_card_on_a_slot_is_judged_by_that_slot_not_8500(self):
+        events = card_events()
+        events[2]["data"]["preview_info"]["url"] = "http://localhost:8601/x/"
+        path = ledger_file(self.tmp.name, *events)
+        seen = []
+        real = pd.served_commit
+        pd.served_commit = lambda url: seen.append(url) or "abcdef1"
+        self.addCleanup(setattr, pd, "served_commit", real)
+        self.assertTrue(pd.waiting(path, "9999999")[0]["ready"])
+        self.assertEqual(seen, ["http://localhost:8601/health/"])
+
     def test_not_listed_after_approval_or_for_direct_cards_or_closed(self):
         self.assertEqual(self.cards(approved=True), [])
         ah._PARSED.clear()
