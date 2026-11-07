@@ -88,6 +88,14 @@ class TestSync(Base):
     def test_missing_ledger_is_reported(self):
         self.assertEqual(ah.sync(self.con, Path(self.tmp.name) / "none.jsonl")["reason"], "no-ledger")
 
+    def test_remaining_counts_open_cards_by_phase_and_pending_requests(self):
+        ah.sync(self.con, self.path)
+        r = ah.remaining(self.con, self.path)
+        opened = [c for c in ah.rows_of(self.con, "SELECT state FROM auto_cards") if c["state"] not in ah.TERMINAL]
+        self.assertEqual(len(r["items"]), len(opened))
+        self.assertEqual(r["total"], r["requests"] + r["queued"] + r["running"] + r["waiting"])
+        self.assertEqual(ah.overview(self.con, "manual", self.path)["remaining"], r)
+
     def test_no_free_text_reaches_the_tables(self):
         ah.sync(self.con, self.path)
         for table in ("auto_cards", "auto_events", "auto_sync"):

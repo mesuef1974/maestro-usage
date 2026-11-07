@@ -19,6 +19,11 @@ __SHELL_OPEN__
     <div class="tile"><div class="l">وسيط الرحلة حتى النشر</div><div class="v" id="ahMed">–</div><div class="d">من الدخول إلى النشر</div></div>
   </div>
 
+  <section class="card" aria-labelledby="ahr">
+    <div class="cardhead"><h3 id="ahr">المتبقي في الجولة</h3><span class="sub" id="ahRemainD" role="status">–</span></div>
+    <div class="ah-remain"><div class="v" id="ahRemain">–</div><div id="ahRemainList" class="ah-list"></div></div>
+  </section>
+
   <div class="ah-grid">
     <section class="card" aria-labelledby="ahf">
       <div class="cardhead"><h3 id="ahf">المسار</h3><span class="sub">كم بطاقة بلغت كلّ مرحلة</span></div>
@@ -141,6 +146,20 @@ function paintStalled(list){
       '<span class="sub">'+esc(STATES[s.state]||s.state)+' منذ '+esc(dur(s.idle_s))+(s.note?' · '+esc(s.note):'')+'</span></button>';
   }).join("");
 }
+function paintRemaining(r){
+  var names={waiting:"بانتظار معاينتك",running:"تعمل الآن",queued:"في الطابور"};
+  $i("ahRemain").textContent=num(r.total);
+  var parts=[];
+  if(r.waiting)parts.push(num(r.waiting)+" بانتظار معاينتك");
+  if(r.running)parts.push(num(r.running)+" تعمل");
+  if(r.queued)parts.push(num(r.queued)+" في الطابور");
+  if(r.requests)parts.push(num(r.requests)+" طلب لم يُلتقط");
+  $i("ahRemainD").textContent=parts.join("، ")||"انتهت الجولة";
+  $i("ahRemainList").innerHTML=r.items.map(function(c){
+    return '<button type="button" class="ah-item" data-card="'+esc(c.card_id)+'"><span class="ah-mono">'+esc(c.card_id)+'</span> <b>'+esc(c.title||"—")+'</b>'+
+      '<span class="sub">'+esc(names[c.phase])+(c.pr?' · #'+esc(c.pr):'')+'</span></button>';
+  }).join("");
+}
 function paintDaily(days){
   var box=$i("ahDaily"),top=days.reduce(function(m,d){return Math.max(m,d.published+d.closed)},0);
   box.innerHTML=days.map(function(d){
@@ -179,7 +198,7 @@ function paint(o){
   data=o;
   var off=o.offsite,offText=!off?"لا نسخة خارجية بعد":off.ok?"النسخة الخارجية: "+off.ok_day:"تعذّرت النسخة الخارجية: "+(off.error||"");
   $i("ahSync").textContent=(o.sync?"الدفتر: "+num(o.sync.events)+" حدثًا، مزامنة "+when(o.sync.synced_at):"لا مزامنة بعد")+" · "+offText;
-  paintTotals(o.totals);paintFunnel(o.funnel);paintStops(o.stops,o.stages);paintLegs(o.legs);paintOps(o.ops);paintStalled(o.stalled);paintDaily(o.daily);
+  paintTotals(o.totals);paintFunnel(o.funnel);paintStops(o.stops,o.stages);paintLegs(o.legs);paintOps(o.ops);paintStalled(o.stalled);paintRemaining(o.remaining);paintDaily(o.daily);
   var st={},why={};
   o.cards.forEach(function(c){st[c.state]=STATES[c.state]||c.state;if(c.stop_key)why[c.stop_key]=c.stop});
   fillSelect($i("ahState"),Object.keys(st).map(function(k){return [k,st[k]]}));

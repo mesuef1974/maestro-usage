@@ -55,3 +55,6 @@
   .ah-time li{grid-template-columns:1fr;gap:0}
   .ah-when{text-align:start}
 }
+.ah-remain{display:flex;gap:var(--sp-4);align-items:flex-start}
+.ah-remain .v{font-size:2.5rem;font-weight:700;line-height:1;min-inline-size:3ch}
+.ah-remain .ah-list{flex:1;min-inline-size:0}

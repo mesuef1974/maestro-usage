@@ -224,6 +224,31 @@ def now_utc():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def remaining(con, path=None):
+    """ما بقي في الجولة: طلباتٌ لم يلتقطها المشغّل وبطاقاتٌ مفتوحة، من الدفتر مباشرة بلا إدخال يدوي. المؤجَّلة ليست منها."""
+    path = Path(path or ledger_path())
+    rows = rows_of(con, "SELECT card_id, state, pr FROM auto_cards WHERE state NOT IN (?, ?, ?) ORDER BY created_ts", TERMINAL)
+    by_card = read_events(path)[0] if path.is_file() else {}
+    shown, titles = {}, {}
+    for r in rows:
+        events = by_card.get(r["card_id"], [])
+        titles[r["card_id"]] = mask(title_of(events))
+        for e in events:
+            d = e.get("data") or {}
+            if e.get("kind") == "update" and "preview_seen" in d:
+                shown[r["card_id"]] = bool(d["preview_seen"])
+            if e.get("kind") == "update" and d.get("preview_approved"):
+                shown[r["card_id"]] = False
+    items = []
+    for r in rows:
+        phase = "waiting" if shown.get(r["card_id"]) else "running" if r["state"] != "routed" else "queued"
+        items.append(dict(card_id=r["card_id"], title=titles[r["card_id"]], state=r["state"], pr=r["pr"], phase=phase))
+    req = path.parent.parent / "requests"
+    requests = len(list(req.glob("*.md"))) if req.is_dir() else 0
+    count = lambda k: sum(i["phase"] == k for i in items)  # noqa: E731
+    return dict(total=requests + len(items), requests=requests, queued=count("queued"), running=count("running"), waiting=count("waiting"), items=items)
+
+
 def overview(con, era="all", path=None, now=None):
     """الصفحة كاملةً لنطاق واحد: all أو auto أو manual."""
     if era not in ("all", "auto", "manual"):
@@ -279,6 +304,7 @@ def overview(con, era="all", path=None, now=None):
     sync_row = rows_of(con, "SELECT events, cards, synced_at FROM auto_sync WHERE id=1")
     return dict(
         ok=True, era=era, now=now, sync=sync_row[0] if sync_row else None, pr_url=PR_URL, offsite=offsite(),
+        remaining=remaining(con, path),
         totals=dict(cards=len(cards), published=sum(c["state"] == "published" for c in cards),
                     closed=sum(c["state"] == "closed" for c in cards), deferred=sum(c["state"] == "deferred" for c in cards),
                     active=sum(c["state"] not in TERMINAL for c in cards), stalled=len(stalled),
