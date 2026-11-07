@@ -20,6 +20,7 @@ import request_page  # noqa: E402
 ROOT = Path.home() / "delivery_manager_work"
 HEALTH_URL = "http://localhost:8500/health/"
 CARD_ID = re.compile(r"W-[0-9]{8}-[0-9]{3}")
+RETRY_LINE = re.compile(r"^إعادة لـ: (\S+)", re.M)
 PR_URL = ah.PR_URL
 MAX_REASON = 300
 NEEDS_SINCE = "2026-11-07"  # ما قبله قُضي فيه، فلا يُعرض 26 إغلاقًا قديمًا
@@ -75,14 +76,21 @@ def waiting(path=None, served=None):
     return sorted(out, key=lambda x: (not x["ready"], x["card_id"]))
 
 
-def needs_decision(path=None):
+def pending_retries(folder=None):
+    """طلبات إعادة لم يلتقطها المشغّل بعد: بلا هذا تبقى البطاقة بزرّها دقائق فتتكرّر الإعادة (W-011 وW-012)."""
+    folder = Path(folder or ROOT / "requests")
+    found = (RETRY_LINE.search(f.read_text(encoding="utf-8")) for f in folder.glob("*.md"))
+    return {m[1] for m in found if m}
+
+
+def needs_decision(path=None, pending=None):
     """بطاقاتٌ أغلقها المشغّل بعد فشلها ولم يُعَد طلبها ولم يقرّ المالك إغلاقها: تبقى ظاهرة حتى قراره."""
     path = Path(path or ah.ledger_path())
     if not path.is_file():
         return []
     by_card = ah.read_events(path)[0]
     made = {cid: next((e.get("data") or {} for e in ev if e.get("kind") == "created"), {}) for cid, ev in by_card.items()}
-    retried = {d.get("retry_of") for d in made.values() if d.get("retry_of")}
+    retried = {d.get("retry_of") for d in made.values() if d.get("retry_of")} | (pending_retries() if pending is None else pending)
     out = []
     for cid, events in by_card.items():
         d = made[cid]

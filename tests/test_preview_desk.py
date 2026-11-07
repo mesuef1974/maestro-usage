@@ -99,7 +99,7 @@ class Desk(unittest.TestCase):
                 dict(base, kind="state", data=dict(state="closed")), *extra]
 
     def needs(self, *events):
-        return pd.needs_decision(ledger_file(self.tmp.name, *events))
+        return pd.needs_decision(ledger_file(self.tmp.name, *events), pending=set())
 
     def test_a_failed_card_stays_until_decided(self):
         got = self.needs(*self.closed_card())
@@ -115,6 +115,13 @@ class Desk(unittest.TestCase):
         self.assertEqual(self.needs(*self.closed_card(extra=[drop])), [])
         ah._PARSED.clear()
         self.assertEqual(self.needs(*self.closed_card(cid="W-20261106-005")), [])
+
+    def test_a_retry_not_yet_picked_up_hides_the_card(self):
+        folder = Path(self.tmp.name)
+        (folder / "web-20261107-020202.md").write_text("النوع: إصلاح" + chr(10) + "إعادة لـ: web-20261107-010101" + chr(10), encoding="utf-8")
+        pending = pd.pending_retries(folder)
+        self.assertEqual(pending, {"web-20261107-010101"})
+        self.assertEqual(pd.needs_decision(ledger_file(self.tmp.name, *self.closed_card()), pending=pending), [])
 
     def test_retry_and_dismiss_refuse_cards_not_waiting(self):
         for fn in (pd.retry, pd.dismiss):
