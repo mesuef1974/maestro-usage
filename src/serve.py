@@ -26,6 +26,7 @@ import run_cycle  # noqa: E402
 import server_guard  # noqa: E402
 import runner_page  # noqa: E402
 import automation_history  # noqa: E402
+import preview_desk  # noqa: E402
 import storage_scan  # noqa: E402
 import usage_db  # noqa: E402
 
@@ -136,6 +137,10 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                     h = {"ts": None, "ok": None, "error": "لا سجل صحة بعد"}
                 h["now"] = usage_db.now_iso()
                 return self._send(200, json.dumps(h, ensure_ascii=False).encode("utf-8"), "application/json")
+            if path == "/preview.json":  # مكتب المعاينة: قراءة من الدفتر و8500
+                if not self._host_ok():
+                    return self._send(403, b"forbidden", "text/plain; charset=utf-8")
+                return self._send(200, json.dumps(preview_desk.payload(), ensure_ascii=False).encode("utf-8"), "application/json")
             if path == "/runner.json":
                 if not self._host_ok():
                     return self._send(403, b"forbidden", "text/plain; charset=utf-8")
@@ -251,6 +256,10 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._post_request()
             if path == "/request/preview":  # معاينة الطلب كما سيقرؤه المشغّل وملاحظات جاهزيته؛ لا كتابة
                 return self._post_request(request_page.preview, rate=False)
+            if path == "/preview/decide":  # قرار المالك بالزرّ: يمرّ بـ runner.py نفسه
+                return self._post_request(preview_desk.decide, rate=False)
+            if path == "/preview/password":
+                return self._post_request(preview_desk.password, rate=False)
             if path == "/request/upload":  # المرفقات: multipart منفصل لأن سقف 20000 بايت للنص يبقى كما هو
                 return self._post_upload()
             m_cancel = re.match(r"^/request/(web-[0-9-]+)/cancel$", path)

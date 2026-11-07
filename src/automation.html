@@ -11,6 +11,11 @@ __SHELL_OPEN__
     <span class="sub" id="ahSync" role="status">بانتظار الدفتر…</span>
   </div>
 
+  <section class="card ah-desk" id="ahDesk" aria-labelledby="ahdk">
+    <div class="cardhead"><h3 id="ahdk">المعاينة</h3><span class="sub" id="ahDeskD" role="status">–</span></div>
+    <div id="ahDeskList" class="ah-list"></div>
+  </section>
+
   <div class="tiles" aria-label="مؤشّرات النطاق">
     <div class="tile"><div class="l">بطاقات</div><div class="v" id="ahCards">–</div><div class="d" id="ahActive">–</div></div>
     <div class="tile"><div class="l">نُشرت</div><div class="v" id="ahPub">–</div><div class="d" id="ahPubD">–</div></div>
@@ -160,6 +165,47 @@ function paintRemaining(r){
       '<span class="sub">'+esc(names[c.phase])+(c.pr?' · #'+esc(c.pr):'')+'</span></button>';
   }).join("");
 }
+function deskCard(c){
+  var checks=c.checks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("");
+  var seen=c.visual.length?'<p class="sub">تغيّر شكل: '+esc(c.visual.join("، "))+'</p>':"";
+  var head='<div class="ah-mono sub">'+esc(c.card_id)+(c.pr?' · <a href="'+esc(c.pr_url)+'/files" target="_blank" rel="noopener">فرق #'+esc(c.pr)+'</a>':"")+'</div><b>'+esc(c.title)+'</b>';
+  if(!c.ready)return '<div class="ah-deskitem">'+head+'<p class="sub">تنتظر دورها على خادم المعاينة، وتظهر هنا تلقائيًا حين تجهز.</p></div>';
+  return '<div class="ah-deskitem" data-desk="'+esc(c.card_id)+'">'+head+seen+
+    '<div class="ah-deskact"><a class="ah-go" href="'+esc(c.url)+'" target="_blank" rel="noopener">افتح المعاينة</a>'+
+    '<button type="button" class="mini" data-copy="'+esc(c.account)+'">انسخ رقم الدخول ('+esc(c.role)+')</button>'+
+    '<button type="button" class="mini" data-pass="1">انسخ كلمة المرور</button></div>'+
+    (checks?'<h4>تحقّق من</h4><ul class="ah-checks">'+checks+'</ul>':"")+
+    '<div class="ah-deskact"><button type="button" class="ah-go good" data-ok="1">اعتمد</button>'+
+    '<input type="text" maxlength="300" placeholder="سبب الرفض" aria-label="سبب الرفض"><button type="button" class="mini" data-no="1">ارفض</button></div>'+
+    '<p class="sub" role="status" data-msg></p></div>';
+}
+function loadDesk(){
+  return fetch("preview.json",{cache:"no-store"}).then(function(r){return r.json()}).then(function(o){
+    var ready=o.cards.filter(function(c){return c.ready}).length;
+    $i("ahDeskD").textContent=!o.up?"خادم المعاينة 8500 متوقّف":o.cards.length?num(ready)+" جاهزة، "+num(o.cards.length-ready)+" تنتظر دورها":"لا بطاقات تنتظرك";
+    var box=$i("ahDeskList"),typing=box.contains(document.activeElement)&&document.activeElement.tagName==="INPUT";
+    if(!typing)box.innerHTML=o.cards.map(deskCard).join("");
+  }).catch(function(){$i("ahDeskD").textContent="تعذّرت قراءة المعاينة"});
+}
+function deskPost(url,body){
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){
+    return r.json().then(function(o){if(!r.ok)throw new Error(o.error||"تعذّر");return o});
+  });
+}
+$i("ahDeskList").addEventListener("click",function(ev){
+  var item=ev.target.closest("[data-desk]"),b=ev.target.closest("button");
+  if(!item||!b)return;
+  var id=item.getAttribute("data-desk"),msg=item.querySelector("[data-msg]");
+  function say(t){msg.textContent=t}
+  if(b.hasAttribute("data-copy")){navigator.clipboard.writeText(b.getAttribute("data-copy")).then(function(){say("نُسخ رقم الدخول")});return}
+  if(b.hasAttribute("data-pass")){deskPost("preview/password",{}).then(function(o){return navigator.clipboard.writeText(o.password)}).then(function(){say("نُسخت كلمة المرور")}).catch(function(e){say(e.message)});return}
+  var ok=b.hasAttribute("data-ok");
+  if(!ok&&!b.hasAttribute("data-no"))return;
+  if(ok&&!window.confirm("اعتماد "+id+"؟ يدمجها المشغّل بعد ذلك."))return;
+  b.disabled=true;
+  deskPost("preview/decide",{card:id,approve:ok,reason:item.querySelector("input").value}).then(function(o){say(o.message);setTimeout(function(){loadDesk();load()},1500)}).catch(function(e){b.disabled=false;say(e.message)});
+});
+loadDesk();setInterval(function(){if(!document.hidden)loadDesk()},20000);
 function paintDaily(days){
   var box=$i("ahDaily"),top=days.reduce(function(m,d){return Math.max(m,d.published+d.closed)},0);
   box.innerHTML=days.map(function(d){
