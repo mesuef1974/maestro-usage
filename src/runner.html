@@ -178,7 +178,7 @@ function render(){
       '<span class="rl-capbar" role="img" aria-label="'+p+'% '+esc(tip)+'"><i class="'+cls+'" style="inline-size:'+p+'%"></i></span></span>';
   }
   $i("recent").innerHTML=(state.recent||[]).map(function(x){
-    return '<tr><td class="id">'+esc(x.id)+'</td><td>'+esc(x.problem)+'</td><td><span class="rl-st '+esc(x.stage)+'">'+(SL[x.stage]||esc(x.stage))+'</span></td><td class="rl-num">'+capCell(x)+'</td><td class="rl-num">'+hm(x.last_ts)+'</td></tr>';
+    return '<tr><td class="id">'+esc(x.id)+'</td><td class="ttl" title="'+esc(x.problem)+'">'+esc(x.problem)+'</td><td><span class="rl-st '+esc(x.stage)+'">'+(SL[x.stage]||esc(x.stage))+'</span></td><td class="rl-num">'+capCell(x)+'</td><td class="rl-num">'+hm(x.last_ts)+'</td></tr>';
   }).join("")||'<tr><td colspan="5" class="rl-empty">لا بطاقات عبر المشغّل بعد</td></tr>';
 
   $i("oq").innerHTML=(state.owner_queue||[]).map(function(l){

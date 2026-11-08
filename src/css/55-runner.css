@@ -60,6 +60,7 @@
 .rl-runs tfoot td{font-weight:700;border-block-end:0}
 .rl-tbl td.id{font-family:var(--font-num);direction:ltr;text-align:end;white-space:nowrap;color:var(--brand-ink)}
 .rl-tbl td.rl-num{white-space:nowrap}
+.rl-tbl td.ttl{inline-size:100%;max-inline-size:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rl-tblbox{overflow-x:auto}
 .rl-facts{margin:var(--sp-3) 0 0;padding:0;list-style:none;font-size:var(--t-sm);color:var(--ink2)}
 .rl-facts li{display:flex;justify-content:space-between;gap:var(--sp-2);padding-block:var(--sp-1);border-block-end:1px dotted var(--line)}
