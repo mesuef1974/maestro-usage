@@ -165,3 +165,40 @@ def test_retry_maps_legacy_types_to_known_ones():
     assert my_requests._known_type("خلل") == "خلل"
     assert my_requests._known_type("شيء آخر") == ""
 
+
+
+def test_retry_recovers_numbered_criteria_from_plain_text(env):
+    reqdir, _ = env
+    lib = request_page.criteria_lib()["by_id"]
+    (reqdir / "web-20260101-000000.md").write_text(
+        "العنوان: ت\nالمطلوب: س\nالنوع: إصلاح عيب\nالوسم: صغير\nمعايير القبول: %s ؛ %s ؛ سطر حرّ\n" % (lib[1]["text"], lib[3]["text"]), encoding="utf-8")
+    f = my_requests.retry_fields("web-20260101-000000")
+    assert f["type"] == "خلل" and f["criteria"] == [1, 3] and f["accept"] == "سطر حرّ"
+
+
+def test_retry_falls_back_to_minimum_automatic_criteria(env):
+    reqdir, _ = env
+    (reqdir / "web-20260101-000001.md").write_text("العنوان: ت\nالمطلوب: س\nالنوع: نوع مجهول\nمعايير القبول: شيء حرّ\n", encoding="utf-8")
+    f = my_requests.retry_fields("web-20260101-000001")
+    assert f["type"] == "" and f["criteria"] == [1, 3] and f["accept"] == "شيء حرّ"
+
+
+def test_retry_legacy_request_passes_the_form_validation(env):
+    reqdir, _ = env
+    (reqdir / "web-20260101-000002.md").write_text(
+        "العنوان: عنوان طويل كفاية\nالمطلوب: طلب فيه تفاصيل كافية للتحقق\nالنوع: ميزة\nالوسم: كبير\nالأولوية: P2\nمعايير القبول: سطر حرّ\n", encoding="utf-8")
+    f = my_requests.retry_fields("web-20260101-000002")
+    sub = {k: v for k, v in f.items() if k in request_page.ALLOWED_KEYS}
+    assert request_page.submit(sub)["ok"]
+
+
+def test_submit_cli_accepts_valid_and_rejects_bad_type_and_criteria(env):
+    import json
+    import submit_cli
+    code, msg = submit_cli.run(json.dumps(OK))
+    assert code == 0 and msg.startswith("web-")
+    code, msg = submit_cli.run(json.dumps({**OK, "type": "إصلاح عيب"}))
+    assert code == 2 and "نوع" in msg
+    code, msg = submit_cli.run(json.dumps({**OK, "criteria": []}))
+    assert code == 2 and "معيار" in msg
+    assert submit_cli.run("{")[0] == 2
