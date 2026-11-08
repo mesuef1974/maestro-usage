@@ -198,7 +198,8 @@ function tick(){
   var c=state.current,done=(c.stage==="published"||c.stage==="referred")&&c.ended,end=done?Date.parse(c.ended):nowMs();
   $i("cElapsed").textContent=c.cycle_start?dur(end-Date.parse(c.cycle_start)):"–";
   $i("cElapsedK").textContent=done?"مدّة المحاولة (انتهت)":"مدّة المحاولة (جارية)";
-  var sa=$i("stageAgo");if(sa)sa.textContent=ago(c.stage_ts);
+  var sa=$i("stageAgo");if(sa)sa.textContent=done?"انتهت":ago(c.stage_ts);
+  var h=$i("rlh");if(h)h.textContent=done?"آخر بطاقة (لا بطاقة جارية)":"البطاقة الآن";
 }
 
 function setLive(ok){$i("rlLive").className="rl-live"+(ok?"":" off");$i("rlLiveTxt").textContent=ok?"حيّ":"انقطع";}
