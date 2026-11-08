@@ -65,7 +65,7 @@
 #fsvg .nd.own rect{stroke:var(--accent);fill:var(--accent-soft)}
 #fsvg .nd.auto rect{stroke:var(--good);fill:var(--good-soft)}
 #fsvg .nd.model rect{stroke:var(--brand);stroke-width:1.5}
-#fsvg .nd.gh rect{stroke:var(--line-strong);fill:var(--surface)}
+#fsvg .nd.git rect{stroke:var(--line-strong);fill:var(--surface)}
 #fsvg .nd.end rect{stroke:var(--good);stroke-width:2.4;fill:var(--surface)}
 #fsvg .nd.gate polygon{fill:var(--warn-soft);stroke:var(--warn);stroke-width:1.5}
 #fsvg .nd text{fill:var(--ink);text-anchor:middle}
@@ -87,13 +87,14 @@
 #fsvg .alb{fill:var(--raised);stroke:var(--line)}
 #fsvg.on .nd:not(.hi){opacity:.7}
 #fsvg.on .ar:not(.hi){opacity:.28}
+#fsvg.on .xl:not(.hi){opacity:.28}
 #fsvg.on .ar.hi{stroke-width:2.4}
 .flowfig .leg{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);margin:var(--sp-2) 0 0;font-size:var(--t-xs);color:var(--ink2)}
 .flowfig .leg .k{display:inline-flex;align-items:center;gap:var(--sp-2)}
 .flowfig .leg i{display:inline-block;inline-size:16px;block-size:11px;border-radius:3px;border:1.3px solid var(--ink);background:var(--surface);flex:none}
 .flowfig .leg .own i{border-color:var(--accent);background:var(--accent-soft)}
 .flowfig .leg .auto i{border-color:var(--good);background:var(--good-soft)}
-.flowfig .leg .gh i{border-color:var(--line-strong)}
+.flowfig .leg .git i{border-color:var(--line-strong)}
 .flowfig .leg .end i{border-color:var(--good);border-width:2.4px}
 .flowfig .leg .gate i{border-color:var(--warn);background:var(--warn-soft);inline-size:10px;block-size:10px;transform:rotate(45deg);border-radius:2px}
 .flowfig .leg .ln-dash i,.flowfig .leg .ln-bad i{block-size:0;border-width:1.6px 0 0;border-style:dashed;border-color:var(--ink3);border-radius:0;inline-size:20px}
@@ -114,7 +115,7 @@
 .kt{display:inline-block;border:1px solid var(--ink);border-radius:var(--r-pill);padding:0 .5rem;font-size:var(--t-xs);background:var(--surface);white-space:nowrap}
 .kt.own{border-color:var(--accent);background:var(--accent-soft)}
 .kt.auto{border-color:var(--good);background:var(--good-soft)}
-.kt.gh{border-color:var(--line-strong)}
+.kt.git{border-color:var(--line-strong)}
 .kt.gate{border-color:var(--warn);background:var(--warn-soft)}
 .kt.end{border-color:var(--good);border-width:2px}
 @media (max-width:640px){.fdet dl{grid-template-columns:1fr}}

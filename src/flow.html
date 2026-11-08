@@ -38,7 +38,7 @@ var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 function has(id){return !!document.getElementById(id)}
 var F=D.flow,NS="http://www.w3.org/2000/svg";
-var G={m:20,lbl:176,colw:170,top:48,gap:12,nh:60,gh:78,r:12}; /* ارتفاع المرحلة 52 ليبلغ 44px لمسًا على الهاتف عند عرض 1400px */
+var G={m:20,lbl:176,colw:170,top:72,gap:12,nh:60,gh:78,r:12,per:6,bgap:76}; /* per: أعمدة كل شريط؛ الرسم شريطان متتاليان ليبقى الخط مقروءًا */ /* ارتفاع المرحلة 52 ليبلغ 44px لمسًا على الهاتف عند عرض 1400px */
 var byId={},sel=null;
 F.nodes.forEach(function(n){byId[n.id]=n});
 
@@ -47,14 +47,23 @@ function ltr(s){return "⁦"+s+"⁩"}
 
 /* ---------- التخطيط من الشبكة: x من العمود (اليمين أوّلًا)، y من المسار ---------- */
 function layout(){
-  var W=G.m*2+G.lbl+F.cols*G.colw,y=G.top,lanes={};
-  F.lanes.forEach(function(l){l.y=y;l.cy=y+l.h/2;lanes[l.k]=l;y+=l.h+G.gap});
-  var H=y-G.gap+G.m;
+  /* كل شريط يعرض المسارات التي فيها مراحل فقط، فلا صفوف فارغة */
+  var W=G.m*2+G.lbl+G.per*G.colw,nb=Math.ceil(F.cols/G.per),y=G.top,bands=[];
+  F.nodes.forEach(function(n){n.band=Math.floor(n.col/G.per);n.cc=n.col%G.per});
+  for(var bi=0;bi<nb;bi++){
+    var used=F.lanes.filter(function(l){return F.nodes.some(function(n){return n.band===bi&&n.lane===l.k})}),ly={},top=y;
+    used.forEach(function(l){ly[l.k]={k:l.k,name:l.name,desc:l.desc,h:l.h,y:y,cy:y+l.h/2};y+=l.h+G.gap});
+    bands.push({lanes:used.map(function(l){return ly[l.k]}),by:ly,top:top,end:y-G.gap});
+    y=y-G.gap+G.bgap;
+  }
+  var H=bands[nb-1].end+G.m;
+  F.nb=nb;F.bands=bands;
   F.nodes.forEach(function(n){
-    var l=lanes[n.lane];n.x=W-G.m-G.lbl-(n.col+.5)*G.colw;n.y=l.cy;n.h=n.kind==="gate"?G.gh:G.nh;
+    var l=bands[n.band].by[n.lane];
+    n.x=W-G.m-G.lbl-(n.cc+.5)*G.colw;n.y=l.cy;n.h=n.kind==="gate"?G.gh:G.nh;
     n.l=n.x-n.w/2;n.r=n.x+n.w/2;n.t=n.y-n.h/2;n.b=n.y+n.h/2;
   });
-  return {W:W,H:H,lanes:lanes};
+  return {W:W,H:H,bands:bands};
 }
 /* نقطة الالتحام: جانب الصندوق المواجه للآخر */
 function side(n,other){return other.x<n.x?{x:n.l,y:n.y}:{x:n.r,y:n.y}}
@@ -68,18 +77,18 @@ function elbow(pts){ /* مضلّع بزوايا مدوّرة نصف قطرها G
   var e=pts[pts.length-1];return d+" L"+e.x+" "+e.y;
 }
 function dir(p,q){var dx=q.x-p.x,dy=q.y-p.y,l=Math.hypot(dx,dy)||1;return {x:dx/l,y:dy/l}}
-function gapY(a,b,lanes){ /* منتصف الفراغ بين مساري المرحلتين */
-  var la=lanes[a.lane],lb=lanes[b.lane],lo=la.y<lb.y?la:lb;return lo.y+lo.h+G.gap/2;
+function gapY(a,b,L){ /* منتصف الفراغ بين مساري المرحلتين */
+  var by=L.bands[a.band].by,la=by[a.lane],lb=by[b.lane],lo=la.y<lb.y?la:lb;return lo.y+lo.h+G.gap/2;
 }
 function gapX(a,b){ /* منتصف الفراغ بين عمود المرحلة الأولى والعمود المجاور لها في اتجاه الثانية (بحسب أوسع الصناديق فيهما) */
-  var toRight=b.x>a.x,nc=a.col+(toRight?-1:1);
-  var ea=F.nodes.filter(function(n){return n.col===a.col}).reduce(function(m,n){return toRight?Math.max(m,n.r):Math.min(m,n.l)},toRight?a.r:a.l);
-  var en=F.nodes.filter(function(n){return n.col===nc}).reduce(function(m,n){return toRight?Math.min(m,n.l):Math.max(m,n.r)},toRight?Infinity:-Infinity);
+  var toRight=b.x>a.x,nc=a.cc+(toRight?-1:1);
+  var ea=F.nodes.filter(function(n){return n.band===a.band&&n.cc===a.cc}).reduce(function(m,n){return toRight?Math.max(m,n.r):Math.min(m,n.l)},toRight?a.r:a.l);
+  var en=F.nodes.filter(function(n){return n.band===a.band&&n.cc===nc}).reduce(function(m,n){return toRight?Math.min(m,n.l):Math.max(m,n.r)},toRight?Infinity:-Infinity);
   return (ea+en)/2;
 }
 function route(e,L){
   var a=byId[e.a],b=byId[e.b],r=e.route;
-  if(!r)r=a.lane===b.lane?"h":a.col===b.col?"v":"vh";
+  if(!r)r=a.lane===b.lane?"h":a.cc===b.cc?"v":"vh";
   var down=b.y>a.y,vs={x:a.x,y:down?a.b:a.t},ve={x:b.x,y:down?b.t:b.b};
   elbow.last=null;
   if(r==="h")return "M"+side(a,b).x+" "+a.y+" L"+side(b,a).x+" "+b.y;
@@ -87,7 +96,7 @@ function route(e,L){
   if(r==="vh")return elbow([vs,{x:a.x,y:b.y},side(b,a)]);
   if(r==="hv")return elbow([side(a,b),{x:b.x,y:a.y},ve]);
   if(r==="hvh"){var vx=e.via==="gap"?gapX(a,b):e.via;var s=vx<a.x?{x:a.l,y:a.y}:{x:a.r,y:a.y};return elbow([s,{x:vx,y:a.y},{x:vx,y:b.y},vx<b.x?{x:b.l,y:b.y}:{x:b.r,y:b.y}])}
-  if(r==="vhv"){var vy=e.via==="gap"?gapY(a,b,L.lanes):e.via;var s2=vy<a.y?{x:a.x,y:a.t}:{x:a.x,y:a.b};return elbow([s2,{x:a.x,y:vy},{x:b.x,y:vy},vy<b.y?{x:b.x,y:b.t}:{x:b.x,y:b.b}])}
+  if(r==="vhv"){var vy=e.via==="gap"?gapY(a,b,L):e.via;var s2=vy<a.y?{x:a.x,y:a.t}:{x:a.x,y:a.b};return elbow([s2,{x:a.x,y:vy},{x:b.x,y:vy},vy<b.y?{x:b.x,y:b.t}:{x:b.x,y:b.b}])}
   return "M"+vs.x+" "+vs.y+" L"+ve.x+" "+ve.y;
 }
 
@@ -100,18 +109,23 @@ function draw(){
     m.appendChild(sv("path",{d:"M0 0L10 5 0 10z"}));defs.appendChild(m)});
   svg.appendChild(defs);
   var gl=sv("g",{class:"lanes"});
-  F.lanes.forEach(function(l,i){
-    gl.appendChild(sv("rect",{class:"lane"+(i%2?" alt":""),x:G.m,y:l.y,width:L.W-G.m*2,height:l.h,rx:12}));
-    var lx=L.W-G.m-G.lbl/2;
-    gl.appendChild(sv("text",{class:"ln",x:lx,y:l.cy-4},l.name));
-    wrapText(gl,l.desc,lx,l.cy+13,G.lbl-16,"ls");
+  var CAP=["الشريط الأول — من الطلب إلى التحقق (المراحل 1 إلى 6)، والاتجاه من اليمين إلى اليسار","الشريط الثاني — من المراجعة إلى النشر (المراحل 7 إلى 15)، ويتابع من حيث انتهى الأول"];
+  L.bands.forEach(function(bd,bi){
+    bd.lanes.forEach(function(l,i){
+      gl.appendChild(sv("rect",{class:"lane"+(i%2?" alt":""),x:G.m,y:l.y,width:L.W-G.m*2,height:l.h,rx:12}));
+      var lx=L.W-G.m-G.lbl/2;
+      gl.appendChild(sv("text",{class:"ln",x:lx,y:l.cy-4},l.name));
+      wrapText(gl,l.desc,lx,l.cy+13,G.lbl-16,"ls");
+    });
+    gl.appendChild(sv("line",{class:"sep",x1:L.W-G.m-G.lbl,y1:bd.top,x2:L.W-G.m-G.lbl,y2:bd.end}));
+    gl.appendChild(sv("text",{class:"ls dirn",x:(L.W-G.lbl)/2,y:bd.top-46},CAP[bi]||""));
   });
   svg.appendChild(gl);
-  svg.appendChild(sv("line",{class:"sep",x1:L.W-G.m-G.lbl,y1:G.top,x2:L.W-G.m-G.lbl,y2:L.H-G.m}));
-  svg.appendChild(sv("text",{class:"ls dirn",x:(L.W-G.lbl)/2,y:G.top-16},"الاتجاه من اليمين إلى اليسار"));
   var ge=sv("g",{class:"edges"}),gn=sv("g",{class:"nodes"}),gt=sv("g",{class:"elabels"});
   F.edges.forEach(function(e,i){
-    e.id="e"+i;var p=sv("path",{class:"ar "+e.kind,d:route(e,L),"marker-end":"url(#ah-"+e.kind+")","data-a":e.a,"data-b":e.b,id:e.id});e.pts=elbow.last;ge.appendChild(p);
+    e.id="e"+i;
+    if(byId[e.a].band!==byId[e.b].band){cross(e,ge,gt);return}
+    var p=sv("path",{class:"ar "+e.kind,d:route(e,L),"marker-end":"url(#ah-"+e.kind+")","data-a":e.a,"data-b":e.b,id:e.id});e.pts=elbow.last;ge.appendChild(p);
   });
   F.nodes.forEach(function(n){
     var g=sv("g",{class:"nd "+n.kind,tabindex:"0",role:"button","data-id":n.id,"aria-label":"المرحلة "+n.n+": "+n.title+(n.code?"، "+n.code:"")});
@@ -128,7 +142,7 @@ function draw(){
   var box=$("#fw");box.replaceChildren(svg);
   /* تسميات الروابط بعد الإدراج (تحتاج طول المسار) مع خلفية تمنع تقاطع النص بالخط */
   F.edges.forEach(function(e){
-    if(!e.label)return;var p=document.getElementById(e.id),o=e.lab||{},pt;
+    if(!e.label||byId[e.a].band!==byId[e.b].band)return;var p=document.getElementById(e.id),o=e.lab||{},pt;
     if(o.seg!=null&&e.pts){var k=o.seg<0?e.pts.length-1+o.seg:o.seg,p1=e.pts[k],p2=e.pts[k+1];pt={x:(p1.x+p2.x)/2,y:(p1.y+p2.y)/2}}
     else{var len=p.getTotalLength();pt=p.getPointAtLength(len*(o.lp!=null?o.lp:.5))}
     var t=sv("text",{class:"al",x:pt.x+(o.dx||0),y:pt.y+4+(o.dy||0)},e.label);gt.appendChild(t);var bb=t.getBBox();
@@ -136,6 +150,20 @@ function draw(){
   });
   $("#flsum").textContent=F.nodes.length+" مرحلة في "+F.lanes.length+" مسارات و"+F.edges.length+" رابطًا";
   legend();wire(svg);
+}
+/* رابط بين شريطين: عروة قصيرة تنتهي بعلامة «إلى/من» تسمّي الطرف الآخر، فلا خطّ يعبر الشريطين */
+function cross(e,ge,gt){
+  var a=byId[e.a],b=byId[e.b],up=function(n,o){return o.band<n.band};
+  [[a,b,"out"],[b,a,"in"]].forEach(function(q){
+    var n=q[0],o=q[1],dir=q[2],top=up(n,o)||(dir==="in"&&n.id==="n16"),y0=top?n.t:n.b,y1=y0+(top?-12:12),py=top?y1-22:y1;
+    var d="M"+n.x+" "+(dir==="out"?y0:y1)+" L"+n.x+" "+(dir==="out"?y1:y0);
+    var p=sv("path",{class:"ar "+e.kind,d:d,"data-a":e.a,"data-b":e.b,id:e.id+dir});
+    if(dir==="in")p.setAttribute("marker-end","url(#ah-"+e.kind+")");
+    ge.appendChild(p);
+    var txt=(dir==="out"?"إلى ":"من ")+o.n+" · "+o.title,g=sv("g",{class:"xl "+e.kind,"data-id":e.id+"lbl"});
+    var t=sv("text",{class:"al",x:n.x,y:py+15},txt);g.appendChild(t);gt.appendChild(g);
+    var bb=t.getBBox();g.insertBefore(sv("rect",{class:"alb",x:bb.x-8,y:py,width:bb.width+16,height:22,rx:11}),t);
+  });
 }
 function wrapText(parent,txt,x,y,maxw,cls){ /* يقسم الوصف إلى سطرين إن طال */
   var words=txt.split(" "),lines=[],cur="";
@@ -150,11 +178,11 @@ function legend(){
 }
 
 /* ---------- التفاعل: إضاءة الجوار عند التمرير أو التركيز، والتحديد بالنقر ---------- */
-function neighbors(id){var ids={};ids[id]=1;F.edges.forEach(function(e){if(e.a===id){ids[e.b]=1;ids[e.id]=1}if(e.b===id){ids[e.a]=1;ids[e.id]=1}});return ids}
+function neighbors(id){var ids={};ids[id]=1;F.edges.forEach(function(e){if(e.a===id||e.b===id){ids[e.a]=1;ids[e.b]=1;ids[e.id]=1;ids[e.id+"out"]=1;ids[e.id+"in"]=1;ids[e.id+"lbl"]=1}});return ids}
 function light(id){
   var svg=$("#fsvg");if(!id){svg.classList.remove("on");svg.querySelectorAll(".hi").forEach(function(x){x.classList.remove("hi")});return}
   var ids=neighbors(id);svg.classList.add("on");
-  svg.querySelectorAll(".nd,.ar").forEach(function(x){var k=x.getAttribute("data-id")||x.id;x.classList.toggle("hi",!!ids[k])});
+  svg.querySelectorAll(".nd,.ar,.xl").forEach(function(x){var k=x.getAttribute("data-id")||x.id;x.classList.toggle("hi",!!ids[k])});
 }
 function select(id){
   sel=id;var svg=$("#fsvg");svg.querySelectorAll(".sel").forEach(function(x){x.classList.remove("sel")});
