@@ -101,6 +101,25 @@ class Desk(unittest.TestCase):
     def needs(self, *events):
         return pd.needs_decision(ledger_file(self.tmp.name, *events), pending=set())
 
+    def merge_events(self, state="in_progress", cid="W-20261108-040"):
+        base = dict(ts="2026-11-08T01:00:00+03:00", id=cid)
+        return [dict(base, kind="created", data=dict(problem="تسجيل المخالفة")),
+                dict(base, kind="update", data=dict(owner_action=dict(kind="merge", pr=1406, head="h", reason="مساراتٌ محظورةٌ: behavior/migrations/0026_x.py"))),
+                dict(base, kind="state", data=dict(state=state))]
+
+    def test_a_pr_waiting_for_the_owner_to_merge_shows_with_its_link(self):
+        got = pd.merges(ledger_file(self.tmp.name, *self.merge_events()))
+        self.assertEqual([c["card_id"] for c in got], ["W-20261108-040"])
+        self.assertEqual(got[0]["pr_url"], pd.PR_URL + "1406")
+        self.assertIn("migrations", got[0]["reason"])
+
+    def test_it_leaves_when_the_card_is_published_or_closed(self):
+        for state in ("published", "closed"):
+            self.assertEqual(pd.merges(ledger_file(self.tmp.name, *self.merge_events(state))), [])
+
+    def test_payload_carries_merges(self):
+        self.assertIn("merges", pd.payload(ledger_file(self.tmp.name, *self.merge_events())))
+
     def test_a_failed_card_stays_until_decided(self):
         got = self.needs(*self.closed_card())
         self.assertEqual([c["card_id"] for c in got], ["W-20261107-005"])

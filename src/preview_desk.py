@@ -37,7 +37,7 @@ def served_commit(url=HEALTH_URL):
 
 def fold(events):
     """حالة البطاقة وحقول المعاينة من أحداثها."""
-    c = {"state": "", "approval": "", "resume": None, "seen": "", "info": None, "approved": False, "rejected": "", "visual": []}
+    c = {"state": "", "approval": "", "resume": None, "seen": "", "info": None, "approved": False, "rejected": "", "visual": [], "action": None}
     for e in events:
         d = e.get("data") or {}
         if e.get("kind") == "created":
@@ -46,7 +46,7 @@ def fold(events):
             c["state"] = d.get("state") or c["state"]
         elif e.get("kind") == "update":
             for src, dst in (("runner_resume", "resume"), ("preview_seen", "seen"), ("preview_info", "info"),
-                             ("preview_approved", "approved"), ("preview_rejected", "rejected"), ("visual_pages", "visual")):
+                             ("preview_approved", "approved"), ("preview_rejected", "rejected"), ("visual_pages", "visual"), ("owner_action", "action")):
                 if src in d:
                     c[dst] = d[src]
     return c
@@ -74,6 +74,23 @@ def waiting(path=None, served=None):
                         pr_url=(PR_URL + str(pr)) if pr else "", url=info.get("url", ""), account=info.get("account", ""),
                         role=info.get("role", ""), checks=[ah.mask(x) for x in info.get("checks") or []], visual=c["visual"] or []))
     return sorted(out, key=lambda x: (not x["ready"], x["card_id"]))
+
+
+def merges(path=None):
+    """طلباتٌ أخضرُها ينتظر دمجَ المالك بيده (هجرة أو مسارٌ محظورٌ على الدمج الآلي): البطاقةُ حيّةٌ والأتمتةُ تكمل النشر بعد الدمج."""
+    path = Path(path or ah.ledger_path())
+    if not path.is_file():
+        return []
+    out = []
+    for cid, events in ah.read_events(path)[0].items():
+        c = fold(events)
+        action = c["action"] or {}
+        if action.get("kind") != "merge" or c["state"] in ah.TERMINAL:
+            continue
+        pr = action.get("pr")
+        out.append(dict(card_id=cid, title=ah.title_of(events), pr=pr, pr_url=(PR_URL + str(pr)) if pr else "",
+                        reason=ah.mask(str(action.get("reason") or ""))[:240], since=action.get("since") or 0))
+    return sorted(out, key=lambda x: x["card_id"])
 
 
 def pending_retries(folder=None):
@@ -109,7 +126,7 @@ def needs_decision(path=None, pending=None):
 
 def payload(path=None):
     served = served_commit()
-    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served), needs=needs_decision(path))
+    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served), needs=needs_decision(path), merges=merges(path))
 
 
 def _need(params, needs=None):
