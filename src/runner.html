@@ -47,11 +47,20 @@ __SHELL_OPEN__
     </div>
   </section>
 
-  <div class="rl-bottom">
-    <section class="card" data-fold aria-labelledby="rlr">
-      <div class="cardhead"><h2 id="rlr">آخر البطاقات</h2><span class="sub">عبر المشغّل</span></div>
-      <div class="rl-tblbox"><table class="rl-tbl"><thead><tr><th>البطاقة</th><th>العنوان</th><th>الحال</th><th>الكلفة</th><th>آخر حركة</th></tr></thead><tbody id="recent"></tbody></table></div>
+    <section class="card" data-fold aria-labelledby="ahc">
+      <div class="cardhead"><h3 id="ahc">البطاقات</h3><span class="sub"><span id="ahShown">–</span> · عبر المشغّل، تتجدّد حيّةً</span></div>
+      <div class="filters2">
+        <input type="search" id="ahQ" placeholder="ابحث بالمعرّف أو العنوان أو رقم الطلب" aria-label="بحث في البطاقات">
+        <select id="ahState" aria-label="الحالة"><option value="">كلّ الحالات</option></select>
+        <select id="ahWhy" aria-label="سبب التوقّف"><option value="">كلّ الأسباب</option></select>
+      </div>
+      <div class="wrap"><table class="ah-table">
+        <thead><tr><th>البطاقة</th><th>العنوان</th><th>الحالة</th><th>بلغت</th><th>السبب</th><th class="num">الطلب</th><th class="num">آخر حركة</th><th class="num">المدّة</th><th class="num">الكلفة</th></tr></thead>
+        <tbody id="ahRows"></tbody>
+      </table></div>
+      <button type="button" class="mini ah-more" id="ahMore" hidden>عرض المزيد</button>
     </section>
+  <div class="rl-bottom">
     <section class="card" data-fold aria-labelledby="rlq">
       <div class="cardhead"><h2 id="rlq">إحالات المالك</h2><span class="sub">owner_queue.md</span></div>
       <ul class="rl-oq" id="oq"></ul>
@@ -169,17 +178,7 @@ function render(){
     $i("log").innerHTML=(c.log||[]).map(function(e){return '<li class="k-'+esc(e.kind)+'"><span class="tm">'+hm(e.ts)+'</span><span class="d"></span><span>'+esc(e.text)+'</span></li>'}).join("")||'<li class="rl-empty">لا أحداث</li>';
   }
 
-  /* الكلفة مقابل السقف الكلّيّ للبطاقة (TOTAL_CAP_USD من runner.py)، وميزانية التشغيل الأول للوسم في التلميح */
-  function capCell(x){
-    var C=RCFG.caps||{};if(!C.total)return money(x.cost_total);
-    var p=Math.min(100,Math.round(100*(x.cost_total||0)/C.total)),cls=p>=80?"bad":p>=50?"warn":"ok",sb=C.sizes&&C.sizes[x.size];
-    var tip="من سقف البطاقة "+C.total.toFixed(2)+"$"+(sb?"؛ ميزانية تشغيل «"+x.size+"» "+sb.toFixed(2)+"$":"");
-    return '<span class="rl-cap" title="'+esc(tip)+'"><span>'+money(x.cost_total)+' <span class="sub">/ '+C.total.toFixed(2)+'$</span></span>'+
-      '<span class="rl-capbar" role="img" aria-label="'+p+'% '+esc(tip)+'"><i class="'+cls+'" style="inline-size:'+p+'%"></i></span></span>';
-  }
-  $i("recent").innerHTML=(state.recent||[]).map(function(x){
-    return '<tr><td class="id">'+esc(x.id)+'</td><td>'+esc(x.problem)+'</td><td><span class="rl-st '+esc(x.stage)+'">'+(SL[x.stage]||esc(x.stage))+'</span></td><td class="rl-num">'+capCell(x)+'</td><td class="rl-num">'+hm(x.last_ts)+'</td></tr>';
-  }).join("")||'<tr><td colspan="5" class="rl-empty">لا بطاقات عبر المشغّل بعد</td></tr>';
+  window.__RL={recent:state.recent||[],caps:RCFG.caps||{}};window.dispatchEvent(new Event("rl:recent"));
 
   $i("oq").innerHTML=(state.owner_queue||[]).map(function(l){
     var m=l.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\s+(.*)$/);

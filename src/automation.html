@@ -60,20 +60,7 @@ __SHELL_OPEN__
     <div class="ah-axis sub" id="ahAxis"></div>
   </section>
 
-  <section class="card" aria-labelledby="ahc">
-    <div class="cardhead"><h3 id="ahc">البطاقات</h3><span class="sub" id="ahShown">–</span></div>
-    <div class="filters2">
-      <input type="search" id="ahQ" placeholder="ابحث بالمعرّف أو العنوان أو رقم الطلب" aria-label="بحث في البطاقات">
-      <select id="ahState" aria-label="الحالة"><option value="">كلّ الحالات</option></select>
-      <select id="ahWhy" aria-label="سبب التوقّف"><option value="">كلّ الأسباب</option></select>
-    </div>
-    <div class="wrap"><table class="ah-table">
-      <thead><tr><th>البطاقة</th><th>العنوان</th><th>الحالة</th><th>بلغت</th><th>السبب</th><th class="num">الطلب</th><th class="num">المدّة</th><th class="num">الكلفة</th></tr></thead>
-      <tbody id="ahRows"></tbody>
-    </table></div>
-    <button type="button" class="mini ah-more" id="ahMore" hidden>عرض المزيد</button>
-  </section>
-  <p class="sub">الأوقات UTC. المصدر دفتر الحوكمة، يُقرأ ولا يُكتب فيه، وتُحجب البيانات الشخصيّة من نصوصه عند العرض.</p>
+  <p class="sub">الأوقات بتوقيت الدوحة. المصدر دفتر الحوكمة، يُقرأ ولا يُكتب فيه، وتُحجب البيانات الشخصيّة من نصوصه عند العرض.</p>
 
   <dialog class="ah-dialog" id="ahDlg" aria-labelledby="ahDlgT">
     <div class="ah-dlghead">
@@ -94,13 +81,26 @@ var CFG=D.automation||{api:"automation.json",card_api:"automation/card.json"};
 var STATES={routed:"في الطابور",captured:"مسجَّلة",in_progress:"قيد العمل",pushed:"دُفعت",ready_for_review:"للمراجعة",approved:"معتمدة",
   verified:"متحقَّقة",notes:"ملاحظات",merged:"مدموجة",published:"منشورة",closed:"مغلقة",deferred:"مؤجَّلة"};
 var KINDS={created:"دخلت",state:"حالة",note:"ملاحظة",update:"تحديث",approval:"اعتماد"};
-var PAGE=50;
+var PAGE=12;
 var era="auto",data=null,limit=PAGE,seen=false,root=document.getElementById("ahRoot");
 function $i(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function money(v){if(v==null)return "–";v=+v;return (v>0&&v<0.1?v.toFixed(4):v.toFixed(2))+"$"}
 function dur(s){if(s==null)return "–";if(s<60)return s+" ث";if(s<3600)return Math.round(s/60)+" د";if(s<86400)return (s/3600).toFixed(1)+" س";return (s/86400).toFixed(1)+" يوم"}
-function when(ts){return ts?String(ts).slice(0,16).replace("T"," "):"–"}
+var DOHA=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Qatar",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+function when(ts){if(!ts)return "–";var d=new Date(ts);return isNaN(d)?String(ts).slice(0,16).replace("T"," "):DOHA.format(d)}
+function hmq(ts){var w=when(ts);return w==="–"?w:w.slice(11,16)}
+var SL={ready:"في الطابور",model:"النموذج يكتب",verify:"الفحص",gate:"البوّابة",deploy:"النشر والصحّة",published:"منشورة",referred:"أُغلقت بتقرير"};
+/* الحقول الحيّة من المشغّل (كلّ ثانيتين من قسم المشغّل): المرحلة وآخر حركة والكلفة مقابل السقف */
+function live(id){var L=window.__RL;if(!L)return null;for(var i=0;i<L.recent.length;i++)if(L.recent[i].id===id)return L.recent[i];return null}
+function capCell(x,c){
+  var C=(window.__RL&&window.__RL.caps)||{};if(!C.total)return esc(money(x.cost_total!=null?x.cost_total:c.cost_usd));
+  var v=x.cost_total!=null?x.cost_total:c.cost_usd,p=Math.min(100,Math.round(100*(v||0)/C.total)),cls=p>=80?"bad":p>=50?"warn":"ok",sb=C.sizes&&C.sizes[x.size];
+  var tip="من سقف البطاقة "+C.total.toFixed(2)+"$"+(sb?"؛ ميزانية تشغيل «"+x.size+"» "+sb.toFixed(2)+"$":"");
+  return '<span class="rl-cap" title="'+esc(tip)+'"><span>'+esc(money(v))+' <span class="sub">/ '+C.total.toFixed(2)+'$</span></span><span class="rl-capbar" role="img" aria-label="'+p+'% '+esc(tip)+'"><i class="'+cls+'" style="inline-size:'+p+'%"></i></span></span>';
+}
+var liveSig="";
+window.addEventListener("rl:recent",function(){var s=JSON.stringify((window.__RL.recent||[]).map(function(x){return [x.id,x.stage,x.cost_total,x.last_ts]}));if(s!==liveSig){liveSig=s;paintCards()}});
 function share(n,t){return t?Math.round(100*n/t)+"%":"–"}
 
 /* صفّ قياس أفقيّ: الاسم، الشريط، الرقم، وتفصيل تحته */
@@ -249,11 +249,14 @@ function paintCards(){
   $i("ahShown").textContent=num(Math.min(limit,rows.length))+" من "+num(rows.length);
   $i("ahMore").hidden=rows.length<=limit;
   $i("ahRows").innerHTML=rows.slice(0,limit).map(function(c){
+    var lv=live(c.card_id);
+    var st=lv&&lv.stage&&SL[lv.stage]&&c.state!=="published"&&c.state!=="closed"?'<span class="rl-st '+esc(lv.stage)+'">'+esc(SL[lv.stage])+'</span>':'<span class="ah-st '+esc(c.state)+'">'+esc(STATES[c.state]||c.state)+'</span>';
     return '<tr><td><button type="button" class="ah-link ah-mono" data-card="'+esc(c.card_id)+'">'+esc(c.card_id)+'</button></td>'+
-      '<td class="ah-ttl">'+esc(c.title||"—")+'</td><td><span class="ah-st '+esc(c.state)+'">'+esc(STATES[c.state]||c.state)+'</span></td>'+
+      '<td class="ah-ttl">'+esc(c.title||"—")+'</td><td>'+st+'</td>'+
       '<td>'+esc(data.stages[c.stage_rank])+'</td><td>'+esc(c.stop||"")+'</td><td class="num">'+(c.pr?'<a href="'+esc(data.pr_url+c.pr)+'" target="_blank" rel="noopener">#'+c.pr+'</a>':"–")+'</td>'+
-      '<td class="num">'+esc(dur(c.duration_s))+'</td><td class="num">'+(c.cost_usd?esc(money(c.cost_usd)):"–")+'</td></tr>';
-  }).join("")||'<tr><td colspan="8">'+empty("لا نتائج")+'</td></tr>';
+      '<td class="num">'+esc(hmq(lv&&lv.last_ts||c.last_ts))+'</td>'+
+      '<td class="num">'+esc(dur(c.duration_s))+'</td><td class="num">'+(lv?capCell(lv,c):(c.cost_usd?esc(money(c.cost_usd)):"–"))+'</td></tr>';
+  }).join("")||'<tr><td colspan="9">'+empty("لا نتائج")+'</td></tr>';
 }
 function paint(o){
   data=o;
@@ -314,13 +317,13 @@ $i("ahEra").addEventListener("click",function(ev){
   load();
 });
 ["ahQ","ahState","ahWhy"].forEach(function(id){$i(id).addEventListener("input",function(){limit=PAGE;paintCards()})});
-$i("ahMore").addEventListener("click",function(){limit+=PAGE;paintCards()});
+$i("ahMore").addEventListener("click",function(){limit+=25;paintCards()});
 $i("ahClose").addEventListener("click",function(){$i("ahDlg").close()});
 document.getElementById("main").addEventListener("click",function(ev){var b=ev.target.closest("[data-card]");if(b)openCard(b.getAttribute("data-card"))});
 
 /* يُحمَّل مرّة مع الصفحة، ويتجدّد ما دام القسم ظاهرًا */
 load();
 new IntersectionObserver(function(es){seen=es.some(function(e){return e.isIntersecting})}).observe(root);
-setInterval(function(){if(seen&&!document.hidden&&!$i("ahDlg").open)load()},60000);
+setInterval(function(){if(!document.hidden&&!$i("ahDlg").open)load()},15000);
 })();
 </script>
