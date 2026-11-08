@@ -21,8 +21,8 @@
 .rl-status{margin-block:var(--sp-3) var(--sp-1);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-sm);background:var(--raised);border-inline-start:3px solid var(--brand);color:var(--ink2)}
 .rl-status.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
 .rl-status.good{border-color:var(--good);background:var(--good-soft);color:var(--good)}
-.rl-trackbox{overflow-x:auto;margin-block-start:var(--sp-2);padding-inline:52px;max-inline-size:100%}
-.rl-track{position:relative;min-inline-size:600px;padding-block:44px 6px}
+.rl-trackbox{overflow-x:hidden;margin-block-start:var(--sp-2);padding-inline:52px;max-inline-size:100%}
+.rl-track{position:relative;padding-block:44px 6px}
 .rl-rail,.rl-fill{position:absolute;inset-block-start:calc(44px + var(--node) / 2 - 2px);block-size:4px;border-radius:4px}
 .rl-rail{inset-inline:calc(var(--node) / 2);background:var(--line-strong)}
 .rl-fill{inset-inline-start:calc(var(--node) / 2);inline-size:calc(var(--p, 0) * (100% - var(--node)) / 5);background:linear-gradient(to left, var(--brand), var(--accent));transition:inline-size .9s var(--ease)}
@@ -60,7 +60,6 @@
 .rl-runs tfoot td{font-weight:700;border-block-end:0}
 .rl-tbl td.id{font-family:var(--font-num);direction:ltr;text-align:end;white-space:nowrap;color:var(--brand-ink)}
 .rl-tbl td.rl-num{white-space:nowrap}
-.rl-tblbox{overflow-x:auto}
 .rl-facts{margin:var(--sp-3) 0 0;padding:0;list-style:none;font-size:var(--t-sm);color:var(--ink2)}
 .rl-facts li{display:flex;justify-content:space-between;gap:var(--sp-2);padding-block:var(--sp-1);border-block-end:1px dotted var(--line)}
 .rl-facts li span:last-child{font-family:var(--font-num);color:var(--ink)}
@@ -90,3 +89,13 @@
 .rl-capbar i{display:block;block-size:100%;border-radius:inherit;background:var(--good)}
 .rl-capbar i.warn{background:var(--warn)}
 .rl-capbar i.bad{background:var(--bad)}
+/* الجوال: المتتبّع عموديّ — تسميات المراحل أعرض من المسافة بين العقد فتتداخل أفقياً */
+@media (max-width:640px){
+.rl-trackbox{padding-inline:0}
+.rl-track{padding-block:var(--sp-2)}
+.rl-rail,.rl-fill,.rl-chip{display:none}
+.rl-nodes{flex-direction:column;align-items:stretch;gap:var(--sp-3)}
+.rl-node{inline-size:auto;flex-direction:row;align-items:center;gap:var(--sp-3)}
+.rl-node .lb{position:static;inline-size:auto;text-align:start;display:flex;gap:var(--sp-3);align-items:baseline;flex-wrap:wrap}
+.rl-node .lb b{display:inline}
+}

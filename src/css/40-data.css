@@ -19,10 +19,11 @@ svg .hov{fill:var(--hover)}
 .brow .f{position:absolute;inset-block:0;inset-inline-start:0;border-radius:0 4px 4px 0;min-inline-size:2px}
 html[dir="rtl"] .brow .f{border-radius:4px 0 0 4px}
 .brow .x{font:var(--t-sm)/1.4 var(--font-num);color:var(--ink);text-align:start;white-space:nowrap}
-.wrap{overflow-x:auto;max-block-size:420px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.wrap{overflow-x:hidden;max-block-size:420px;border:1px solid var(--line);border-radius:var(--r-sm)}
 .wrap.short{max-block-size:220px}.wrap.mid{max-block-size:320px}.wrap.tall{max-block-size:520px}.wrap.free{max-block-size:none}
 table{border-collapse:collapse;inline-size:100%;font-size:var(--t-sm);line-height:1.5}
-th,td{padding:.35rem var(--sp-3);text-align:start;border-block-end:1px solid var(--grid);white-space:nowrap}
+th,td{padding:.35rem var(--sp-3);text-align:start;border-block-end:1px solid var(--grid);white-space:normal;overflow-wrap:anywhere}
+td.num,th.num,.nw{white-space:nowrap}
 td{font-family:var(--font-num)}
 th{background:var(--raised);position:sticky;top:0;font-weight:700;color:var(--ink2)}
 th button{all:unset;cursor:pointer;display:inline-flex;gap:var(--sp-1);align-items:center;min-block-size:28px;min-inline-size:28px}
@@ -48,3 +49,12 @@ tr.sel td:first-child{border-inline-start:3px solid var(--brand)}  /* التظل
 .rstat{display:flex;flex-wrap:wrap;gap:.1rem var(--sp-4);font-size:var(--t-xs);color:var(--ink2)}
 .rstat b{color:var(--ink);font-weight:700}
 .xlist{font-size:var(--t-xs);color:var(--ink3);margin-block:var(--sp-1) 0}
+
+/* لا تمريرَ أفقيًّا في أيّ بطاقة: جدولٌ لا يتّسع يتحوّل صفوفًا مكدَّسةً تُسمّي كلَّ خليّة (fit.js يضع .stack ويكتب data-l) */
+table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;inline-size:auto}
+table.stack thead{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%)}
+table.stack tr{border-block-end:1px solid var(--line);padding-block:var(--sp-2)}
+table.stack td,table.stack td.nw,table.stack td.num{border:0;padding:2px var(--sp-3);display:flex;gap:var(--sp-3);justify-content:space-between;text-align:start;white-space:normal}
+table.stack td::before{content:attr(data-l);color:var(--ink3);font-size:var(--t-xs);flex:none}
+table.stack tfoot td{font-weight:700}
+table.stack td{min-inline-size:0!important;max-inline-size:none!important}

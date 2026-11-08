@@ -247,12 +247,15 @@ function paintCards(){
   $i("ahRows").innerHTML=rows.slice(0,limit).map(function(c){
     var lv=live(c.card_id);
     var st=lv&&lv.stage&&SL[lv.stage]&&c.state!=="published"&&c.state!=="closed"?'<span class="rl-st '+esc(lv.stage)+'">'+esc(SL[lv.stage])+'</span>':'<span class="ah-st '+esc(c.state)+'">'+esc(STATES[c.state]||c.state)+'</span>';
-    return '<tr><td><button type="button" class="ah-link ah-mono" data-card="'+esc(c.card_id)+'">'+esc(c.card_id)+'</button></td>'+
-      '<td class="ah-ttl">'+esc(c.title||"—")+'</td><td>'+st+'</td>'+
-      '<td>'+esc(data.stages[c.stage_rank])+'</td><td>'+esc(c.stop||"")+'</td><td class="num">'+(c.pr?'<a href="'+esc(data.pr_url+c.pr)+'" target="_blank" rel="noopener">#'+c.pr+'</a>':"–")+'</td>'+
-      '<td class="num">'+esc(hmq(lv&&lv.last_ts||c.last_ts))+'</td>'+
-      '<td class="num">'+esc(dur(c.duration_s))+'</td><td class="num">'+(lv?capCell(lv,c):(c.cost_usd?esc(money(c.cost_usd)):"–"))+'</td></tr>';
-  }).join("")||'<tr><td colspan="9">'+empty("لا نتائج")+'</td></tr>';
+    var sub=[data.stages[c.stage_rank],c.stop].filter(Boolean).map(esc).join(" · ");
+    var pr=c.pr?'<a class="ah-pr" href="'+esc(data.pr_url+c.pr)+'" target="_blank" rel="noopener">#'+c.pr+'</a>':"";
+    return '<tr><td class="ah-id" data-l="البطاقة"><button type="button" class="ah-link ah-mono" data-card="'+esc(c.card_id)+'">'+esc(c.card_id)+'</button>'+pr+'</td>'+
+      '<td class="ah-ttl" data-l="العنوان">'+esc(c.title||"—")+'</td>'+
+      '<td class="ah-sts" data-l="الحالة">'+st+(sub?'<span class="ah-sub">'+sub+'</span>':"")+'</td>'+
+      '<td class="num ah-nw" data-l="آخر حركة">'+esc(hmq(lv&&lv.last_ts||c.last_ts))+'</td>'+
+      '<td class="num ah-nw" data-l="المدّة">'+esc(dur(c.duration_s))+'</td>'+
+      '<td class="num ah-cost" data-l="الكلفة">'+(lv?capCell(lv,c):(c.cost_usd?esc(money(c.cost_usd)):"–"))+'</td></tr>';
+  }).join("")||'<tr><td colspan="6">'+empty("لا نتائج")+'</td></tr>';
 }
 function paint(o){
   data=o;

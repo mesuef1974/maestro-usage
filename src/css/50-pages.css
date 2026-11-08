@@ -8,10 +8,9 @@
 .ctl{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);align-items:center;margin-block:var(--sp-2)}
 .filters2{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);align-items:center;margin-block:var(--sp-3)}
 /* حصر المهارات */
-#tbl .wrap{max-block-size:none;overflow-x:auto}
-#tbl table{table-layout:auto;min-inline-size:1100px}
+#tbl .wrap{max-block-size:none;overflow-x:hidden}
+#tbl table{table-layout:auto}
 #tbl td{white-space:normal;vertical-align:top;line-height:1.5;min-inline-size:0;font-family:var(--font)}
-#tbl td.nw,#tbl th{white-space:nowrap}
 #tbl td.b{min-inline-size:15rem;max-inline-size:22rem}
 #tbl td.nt{min-inline-size:17rem;max-inline-size:26rem;color:var(--ink2)}
 #tbl td.k{font-weight:700;direction:ltr;text-align:right;word-break:break-all;min-inline-size:11rem;font-family:var(--font-num)}
@@ -54,11 +53,8 @@
 
 /* صفحة رسم الأتمتة: الرسم داخل حاوية بتمرير أفقي وثلاثة أحجام، المسارات والمراحل والروابط بأصناف، ولوحة التفاصيل والمفتاح */
 .flowfig{margin:var(--sp-3) 0 0;border:1px solid var(--line);border-radius:var(--r-md);background:var(--raised);padding:var(--sp-3) var(--sp-3) var(--sp-2)}
-.flowfig .fw{overflow-x:auto;overscroll-behavior-x:contain}
-.flowfig svg{display:block;inline-size:100%;block-size:auto;min-inline-size:1000px;font-family:var(--font);font-size:13px}
-.flowfig.z2 svg{min-inline-size:1700px}
-.flowfig.z3 svg{min-inline-size:2400px}
-@media (max-width:767px){.flowfig svg{min-inline-size:1400px}} /* على الهاتف يكبر الرسم فتبلغ المراحل 44px لمسًا ويُمرَّر أفقيًّا داخل الإطار */
+.flowfig .fw{overflow-x:hidden}
+.flowfig svg{display:block;inline-size:100%;block-size:auto;font-family:var(--font);font-size:13px}
 #fsvg .lane{fill:var(--surface);stroke:var(--line)}
 #fsvg .lane.alt{fill:var(--raised)}
 #fsvg .sep{stroke:var(--line)}
@@ -123,3 +119,5 @@
 .kt.end{border-color:var(--good);border-width:2px}
 @media (max-width:640px){.fdet dl{grid-template-columns:1fr}}
 #tbl .wrap{max-block-size:75vh}  /* جدول المهارات الطويل يتمرّر داخل البطاقة فلا يطيل الصفحة */
+
+#fctl [data-z]{display:none} /* الرسم يملأ العرض بلا تمريرٍ أفقيّ فلا معنى لأزرار التكبير */

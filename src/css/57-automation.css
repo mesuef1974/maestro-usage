@@ -24,8 +24,7 @@
 .ah-day i{display:block}
 .ah-axis{display:flex;justify-content:space-between;direction:ltr;margin-block-start:var(--sp-1,4px);font-family:var(--font-num)}
 .ah-table td{vertical-align:top}
-.ah-ttl{min-inline-size:14rem;max-inline-size:32rem}
-.ah-link{background:transparent;border:0;padding:0;color:var(--brand-ink);cursor:pointer;text-decoration:underline;white-space:nowrap}
+.ah-link{background:transparent;border:0;padding:0;color:var(--brand-ink);cursor:pointer;text-decoration:underline;white-space:normal;overflow-wrap:anywhere;text-align:start}
 .ah-st{white-space:nowrap;color:var(--ink);padding-inline-start:var(--sp-2);border-inline-start:3px solid var(--line-strong)}
 .ah-st.published{border-inline-start-color:var(--good)}
 .ah-st.closed{border-inline-start-color:var(--bad)}
@@ -64,3 +63,18 @@
 .ah-go{display:inline-block;padding:.4rem .9rem;border:0;border-radius:8px;background:var(--focus);color:var(--surface);font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
 .ah-go.good{background:var(--good)}
 .ah-checks{margin:0;padding-inline-start:1.2rem}
+
+/* جدول البطاقات: ستة أعمدة بتخطيطٍ ثابت، والنصّ يلتفّ داخل خليّته فلا يتداخل ولا يُمرَّر أفقيًّا */
+.ah-wrap{overflow-x:hidden;max-block-size:none}
+.ah-table{table-layout:fixed;inline-size:100%}
+.ah-table th,.ah-table td{white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+.ah-table th:nth-child(1){inline-size:9.5rem}
+.ah-table th:nth-child(3){inline-size:9.5rem}
+.ah-table th:nth-child(4),.ah-table th:nth-child(5){inline-size:4.25rem}
+.ah-table th:nth-child(6){inline-size:6.5rem}
+.ah-table .ah-nw{white-space:nowrap}
+.ah-id{white-space:nowrap}
+.ah-pr{display:block;font-family:var(--font-num);font-size:var(--t-xs)}
+.ah-sub{display:block;margin-block-start:2px;font-size:var(--t-xs);color:var(--ink3)}
+.ah-sts .rl-st{white-space:normal}
+.ah-cost .rl-cap{display:block}
