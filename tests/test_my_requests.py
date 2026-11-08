@@ -157,3 +157,10 @@ def test_runner_caps_are_read_from_runner_py_without_importing_it(tmp_path):
     src.write_text("X = 1\n", encoding="utf-8")
     assert runner_page.caps(src) == {}
     assert runner_page.caps(tmp_path / "missing.py") == {}
+
+
+def test_retry_maps_legacy_types_to_known_ones():
+    assert my_requests._known_type("إصلاح عيب") == "خلل"
+    assert my_requests._known_type("ميزة") == "ميزة صغيرة"
+    assert my_requests._known_type("خلل") == "خلل"
+    assert my_requests._known_type("شيء آخر") == ""

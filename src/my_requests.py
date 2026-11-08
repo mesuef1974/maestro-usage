@@ -152,6 +152,15 @@ def cancel(name):
     return {"ok": True, "name": name}
 
 
+TYPE_ALIASES = {"إصلاح عيب": "خلل", "عيب": "خلل", "ميزة": "ميزة صغيرة", "ميزة جديدة": "ميزة صغيرة", "واجهة": "تحسين واجهة"}
+
+
+def _known_type(t):
+    """نوعٌ خارج القائمة (كُتب بيدٍ أو بأداة) يُطابَق بمرادفه فلا ترفض الاستمارةُ إعادةَ المحاولة بـ«اختر نوع الطلب»."""
+    t = (t or "").strip()
+    return t if t in request_page.TYPES else TYPE_ALIASES.get(t, "")
+
+
 def retry_fields(name, ledger=None):
     """حقول الطلب الأصلي للاستمارة مع سبب الفشل السابق، لإعادة المحاولة بطلبٍ أقوى لا بالصياغة نفسها."""
     if not NAME_RE.match(str(name or "")):
@@ -175,7 +184,7 @@ def retry_fields(name, ledger=None):
         room = request_page.MAX["ask"] - len(ask) - len(head) - len(tail)  # لا يتجاوز سقف الحقل فترفضه الاستمارة
         if room > 40:
             ask += head + card["report"][:room] + tail
-    return dict(title=f.get("العنوان", ""), ask=ask, type=f.get("النوع", ""), criteria=ids, accept="\n".join(extra),
+    return dict(title=f.get("العنوان", ""), ask=ask, type=_known_type(f.get("النوع", "")), criteria=ids, accept="\n".join(extra),
                 size=f.get("الوسم", "") if f.get("الوسم") in request_page.SIZES else "", priority=f.get("الأولوية", ""),
                 approval=f.get("الاعتماد", ""), page=f.get("الصفحة", ""), out_of_scope=f.get("خارج النطاق", ""),
                 files=[x.strip() for x in f.get("الملفات", "").split("،") if x.strip()], retry_of=name, card=card["id"] if card else "")
