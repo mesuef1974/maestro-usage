@@ -3,12 +3,15 @@
   .app{display:block}
   .side{display:contents}
   .brand{display:none}
-  .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:.2rem max(16px,env(safe-area-inset-left,0px));display:flex;gap:var(--sp-1);overflow-x:auto;scrollbar-width:none}
-  .nav ul{display:flex;gap:var(--sp-1);flex:none}
+  /* شبكة بلا تمرير أفقي: زرّ «طلب جديد» بعرض الصف ثم الأقسام خلايا متساوية (3 في الصف على الجوال، وصف واحد حين يتّسع) */
+  .nav{position:sticky;inset-block-start:0;z-index:30;background:var(--surface);border-block-end:1px solid var(--line);padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:repeat(auto-fit,minmax(5.5rem,1fr));gap:var(--sp-1);overflow:visible}
+  .nav ul{display:contents}
   .navgroup{display:none}
-  .nav li{flex:none}
-  .newreq{flex:none;margin-block-end:0}
-  .nav a{white-space:nowrap}
+  .nav li{min-inline-size:0;display:flex}
+  .newreq{grid-column:1/-1;justify-content:center;margin-block-end:0}
+  .nav a{flex:1;flex-direction:column;justify-content:center;text-align:center;gap:2px;min-block-size:44px;white-space:normal;overflow-wrap:anywhere;position:relative}
+  .nav a.newreq{flex-direction:row;gap:var(--sp-2)}
+  .nav a[aria-current="location"],.nav a[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--brand)}
   .gh{margin-block-start:var(--sp-6);scroll-margin-block-start:4.5rem}
   .sidefoot{display:flex;flex-wrap:wrap;gap:var(--sp-2);padding:var(--sp-2) max(16px,env(safe-area-inset-left,0px)) 0}  /* زرّا السمة والتحديث في صف واحد كي يبقى الرأس والأرقام الثلاثة في أول شاشة */
   .themebtn{inline-size:fit-content}
@@ -21,6 +24,7 @@
   main [id]{scroll-margin-block-start:4.5rem}
 }
 @media (max-width:640px){
+  .nav{position:static}  /* شبكة من صفّين لا تُلصق: تأكل ثلث الشاشة */
   .brow{grid-template-columns:1fr;gap:.2rem}
   .brow .x{white-space:normal}
   h1{font-size:var(--t-lg)}
