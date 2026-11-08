@@ -38,7 +38,7 @@ var D=JSON.parse(document.getElementById("data").textContent);
 __LIB__
 function has(id){return !!document.getElementById(id)}
 var F=D.flow,NS="http://www.w3.org/2000/svg";
-var G={m:20,lbl:176,colw:156,top:44,gap:10,nh:52,gh:68,r:12}; /* ارتفاع المرحلة 52 ليبلغ 44px لمسًا على الهاتف عند عرض 1400px */
+var G={m:20,lbl:176,colw:170,top:48,gap:12,nh:60,gh:78,r:12}; /* ارتفاع المرحلة 52 ليبلغ 44px لمسًا على الهاتف عند عرض 1400px */
 var byId={},sel=null;
 F.nodes.forEach(function(n){byId[n.id]=n});
 
@@ -139,7 +139,7 @@ function draw(){
 }
 function wrapText(parent,txt,x,y,maxw,cls){ /* يقسم الوصف إلى سطرين إن طال */
   var words=txt.split(" "),lines=[],cur="";
-  words.forEach(function(w){var t=cur?cur+" "+w:w;if(t.length*5.6>maxw&&cur){lines.push(cur);cur=w}else cur=t});
+  words.forEach(function(w){var t=cur?cur+" "+w:w;if(t.length*6.8>maxw&&cur){lines.push(cur);cur=w}else cur=t});
   if(cur)lines.push(cur);
   lines.slice(0,3).forEach(function(l,i){parent.appendChild(sv("text",{class:cls,x:x,y:y+i*13},l))});
 }

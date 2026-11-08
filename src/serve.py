@@ -189,6 +189,25 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
         def _json(self, code, out):
             self._send(code, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json")
 
+        def _reject(self, code, out):
+            """رفضٌ قبل قراءة الجسم: يُستهلك الجسم الصغير أوّلًا وإلا قطع ويندوز الاتصالَ على العميل (WinError 10053/10054) فتفشل الاختبارات عشوائيًّا."""
+            self._drain_body()
+            return self._json(code, out)
+
+        def _drain_body(self):
+            """يقرأ ما وصل من الجسم (حتى سقفٍ صغير) قبل ردّ الرفض؛ وما فوق السقف يُغلق معه الاتصال بعد الردّ."""
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                n = 0
+            if 0 < n <= 1 << 20:
+                try:
+                    self.rfile.read(n)
+                except OSError:
+                    pass
+            elif n:
+                self.close_connection = True
+
         def _origin_strict_ok(self):
             """كلّ POST: Host وOrigin معاً من القائمة البيضاء؛ غيابُ Origin يُرفض (المتصفّح يرسله دائماً مع POST)."""
             origin = self.headers.get("Origin")
@@ -200,9 +219,9 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             """POST /request (يكتب) و/request/preview (لا يكتب ولا يُحسب على حدّ الساعة): الشروط نفسها من المصدر والنوع والطول."""
             fn = fn or request_page.submit
             if not self._origin_strict_ok():
-                return self._json(403, {"error": "مصدر الطلب غير مسموح", "field": ""})
+                return self._reject(403, {"error": "مصدر الطلب غير مسموح", "field": ""})
             if not (self.headers.get("Content-Type") or "").lower().startswith("application/json"):
-                return self._json(415, {"error": "نوع المحتوى يجب أن يكون application/json", "field": ""})
+                return self._reject(415, {"error": "نوع المحتوى يجب أن يكون application/json", "field": ""})
             raw_len = self.headers.get("Content-Length")
             if raw_len is None:
                 return self._json(411, {"error": "طول المحتوى مطلوب", "field": ""})
@@ -211,9 +230,9 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             except ValueError:
                 return self._json(400, {"error": "طول المحتوى غير صالح", "field": ""})
             if n > request_page.MAX_BODY:
-                return self._json(413, {"error": "الطلب أكبر من الحد المسموح", "field": ""})
+                return self._reject(413, {"error": "الطلب أكبر من الحد المسموح", "field": ""})
             if rate and not request_rate.allow():
-                return self._json(429, {"error": "عدد الطلبات تجاوز الحد في الساعة", "field": ""})
+                return self._reject(429, {"error": "عدد الطلبات تجاوز الحد في الساعة", "field": ""})
             try:
                 params = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
                 if not isinstance(params, dict):
@@ -227,10 +246,10 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
         def _post_upload(self):
             """رفع المرفقات إلى مجلد مؤقت: المصدر نفسه، multipart فقط، الطول إلزامي وسقفه قبل القراءة، ثم فحص كل ملف."""
             if not self._origin_strict_ok():
-                return self._json(403, {"error": "مصدر الطلب غير مسموح", "name": ""})
+                return self._reject(403, {"error": "مصدر الطلب غير مسموح", "name": ""})
             ctype = self.headers.get("Content-Type") or ""
             if not ctype.lower().startswith("multipart/form-data"):
-                return self._json(415, {"error": "نوع المحتوى يجب أن يكون multipart/form-data", "name": ""})
+                return self._reject(415, {"error": "نوع المحتوى يجب أن يكون multipart/form-data", "name": ""})
             raw_len = self.headers.get("Content-Length")
             if raw_len is None:
                 return self._json(411, {"error": "طول المحتوى مطلوب", "name": ""})
@@ -239,9 +258,9 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             except ValueError:
                 return self._json(400, {"error": "طول المحتوى غير صالح", "name": ""})
             if n > request_files.MAX_BODY:
-                return self._json(413, {"error": "المرفقات أكبر من 25MB", "name": ""})
+                return self._reject(413, {"error": "المرفقات أكبر من 25MB", "name": ""})
             if not upload_rate.allow():
-                return self._json(429, {"error": "عدد مرات الرفع تجاوز الحد في الساعة", "name": ""})
+                return self._reject(429, {"error": "عدد مرات الرفع تجاوز الحد في الساعة", "name": ""})
             try:
                 fields, files = request_files.parse_multipart(ctype, self.rfile.read(n))
                 return self._json(200, request_files.stage(fields, files, request_page.pii_pattern()))

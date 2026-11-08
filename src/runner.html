@@ -48,7 +48,13 @@ __SHELL_OPEN__
   </section>
 
     <section class="card" data-fold aria-labelledby="ahc">
-      <div class="cardhead"><h3 id="ahc">البطاقات</h3><span class="sub"><span id="ahShown">–</span> · عبر المشغّل، تتجدّد حيّةً</span></div>
+      <div class="cardhead"><h3 id="ahc">البطاقات</h3><span class="sub"><span id="ahShown">–</span> · عبر المشغّل، تتجدّد حيّةً</span>
+      <div class="seg" role="group" aria-label="النطاق" id="ahEra">
+      <button type="button" data-era="auto" aria-pressed="true">المشغّل</button>
+      <button type="button" data-era="all" aria-pressed="false">الكلّ</button>
+      <button type="button" data-era="manual" aria-pressed="false">قبل المشغّل</button>
+    </div>
+    </div>
       <div class="filters2">
         <input type="search" id="ahQ" placeholder="ابحث بالمعرّف أو العنوان أو رقم الطلب" aria-label="بحث في البطاقات">
         <select id="ahState" aria-label="الحالة"><option value="">كلّ الحالات</option></select>

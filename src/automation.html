@@ -14,11 +14,7 @@ __SHELL_OPEN__
 <!--@sec automation--><section class="ah" id="ahRoot" aria-labelledby="ahh">
   <div class="ah-bar">
     <h2 id="ahh">تاريخ الأتمتة</h2>
-    <div class="seg" role="group" aria-label="النطاق" id="ahEra">
-      <button type="button" data-era="auto" aria-pressed="true">المشغّل</button>
-      <button type="button" data-era="all" aria-pressed="false">الكلّ</button>
-      <button type="button" data-era="manual" aria-pressed="false">قبل المشغّل</button>
-    </div>
+    <span class="sub" id="ahEraNote">النطاق: المشغّل (يُغيَّر من لوحة البطاقات)</span>
     <span class="sub" id="ahSync" role="status">بانتظار الدفتر…</span>
   </div>
 
@@ -312,7 +308,7 @@ function openCard(id){
 
 $i("ahEra").addEventListener("click",function(ev){
   var b=ev.target.closest("button");if(!b)return;
-  era=b.getAttribute("data-era");limit=PAGE;
+  era=b.getAttribute("data-era");limit=PAGE;$i("ahEraNote").textContent="النطاق: "+b.textContent.trim()+" (يُغيَّر من لوحة البطاقات)";
   [].forEach.call(this.querySelectorAll("button"),function(x){x.setAttribute("aria-pressed",String(x===b))});
   load();
 });
