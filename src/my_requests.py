@@ -175,6 +175,11 @@ def retry_fields(name, ledger=None):
     card = _match(f, f.get("مقدَّم في", ""), _cards(ledger)) if p.suffix == ".done" else None
     ids = [int(x) for x in re.split(r"[،,\s]+", f.get("معايير مرقّمة", "")) if x.isdigit()]
     lib = request_page.criteria_lib()["by_id"]
+    by_text = {v["text"]: i for i, v in lib.items()}
+    for a in (x.strip() for x in f.get("معايير القبول", "").split("؛")):  # طلبٌ كُتب بلا أرقام: يُستردّ رقمُ كلّ معيارٍ نصُّه من القائمة
+        if a in by_text and by_text[a] not in ids:
+            ids.append(by_text[a])
+    ids = ids or [1, 3]  # prepush ونطاق: لا بدّ من فحصٍ آليّ واحدٍ على الأقل فلا ترفض الاستمارةُ الإعادة
     texts = {lib[i]["text"] for i in ids if i in lib}
     extra = [a.strip() for a in f.get("معايير القبول", "").split("؛") if a.strip() and a.strip() not in texts]
     ask = f.get("المطلوب", "").replace(" / ", "\n")
