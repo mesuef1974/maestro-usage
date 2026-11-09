@@ -139,7 +139,8 @@ def needs_decision(path=None, pending=None):
             continue
         notes = [(e.get("data") or {}).get("text", "") for e in events if e.get("kind") == "note"]
         cost = sum(float(m[3]) for m in map(ah.RUN_NOTE.match, notes) if m)
-        out.append(dict(card_id=cid, title=ah.title_of(events), reason=ah.mask(reason)[:300], cost=round(cost, 2)))
+        can_resume = any(e.get("kind") == "update" and (e.get("data") or {}).get("runner_resume") for e in events)  # طلبٌ سُجّل لها: قد يكون ما زال مفتوحاً
+        out.append(dict(card_id=cid, title=ah.title_of(events), reason=ah.mask(reason)[:300], cost=round(cost, 2), can_resume=can_resume))
     return sorted(out, key=lambda x: x["card_id"])
 
 
@@ -188,6 +189,16 @@ def dismiss(params, run=subprocess.run, needs=None):
             encoding="utf-8", errors="replace", timeout=60)
     if p.returncode:
         raise request_page.ValidationError((p.stderr or "تعذّر التسجيل").strip()[-200:], "")
+    return dict(ok=True, message=(p.stdout or "").strip()[-200:])
+
+
+def reopen(params, run=subprocess.run, needs=None):
+    """استئنافٌ بزرّ على الطلب المفتوح نفسه (بلا بناءٍ جديد)؛ يرفضه المشغّلُ إن كان الطلب دُمج أو أُغلق."""
+    cid = _need(params, needs)
+    p = run([sys.executable, str(ROOT / "tools" / "runner.py"), "--reopen", cid], cwd=str(ROOT), capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=120)
+    if p.returncode:
+        raise request_page.ValidationError(((p.stdout or "") + (p.stderr or "") or "تعذّر الاستئناف").strip()[-200:], "")
     return dict(ok=True, message=(p.stdout or "").strip()[-200:])
 
 

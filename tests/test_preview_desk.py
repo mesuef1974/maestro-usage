@@ -185,3 +185,18 @@ def test_live_cards_show_stage_and_since(tmp_path):
     path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
     out = pd.live(path)
     assert out[0]["stage"] == "ينتظر فحوص CI على الطلب" and out[0]["since"] == 100 and out[0]["pr"] == 7
+
+
+def test_reopen_runs_the_runner_flag_and_surfaces_its_refusal():
+    calls = []
+
+    def ok(cmd, **kw):
+        calls.append(cmd)
+        return SimpleNamespace(returncode=0, stdout="استؤنفت", stderr="")
+
+    need = [{"card_id": "W-20261109-013"}]
+    assert pd.reopen({"card": "W-20261109-013"}, run=ok, needs=need)["message"] == "استؤنفت"
+    assert "--reopen" in calls[0] and "W-20261109-013" in calls[0]
+    bad = lambda cmd, **kw: SimpleNamespace(returncode=1, stdout="الطلب 9 حالته MERGED", stderr="")  # noqa: E731
+    with unittest.TestCase().assertRaises(request_page.ValidationError):
+        pd.reopen({"card": "W-20261109-013"}, run=bad, needs=need)

@@ -279,6 +279,8 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._post_request(preview_desk.decide, rate=False)
             if path == "/preview/retry":
                 return self._post_request(preview_desk.retry, rate=False)
+            if path == "/preview/reopen":
+                return self._post_request(preview_desk.reopen, rate=False)
             if path == "/preview/dismiss":
                 return self._post_request(preview_desk.dismiss, rate=False)
             if path == "/preview/password":
