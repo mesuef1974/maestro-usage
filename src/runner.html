@@ -139,8 +139,9 @@ function render(){
   var hv=document.getElementById("hero-run");
   if(hv){var cur=state.current;hv.textContent=r.lock?"يعمل":"خامل";hv.className="v"+(r.lock?" ok":"");
     document.getElementById("hero-run-d").textContent=r.lock&&cur?"على "+cur.id+(cur.problem?" · "+String(cur.problem).slice(0,40):""):(k.started_today||0)+" بدأت اليوم · "+(k.published_today||0)+" نُشرت"}
-  $i("rlRunner").className="rl-runner"+(r.lock?" run":"");
-  $i("rlRunnerTxt").textContent=r.lock?"المشغّل يعمل الآن · القفل منذ "+dur((r.lock_age_s||0)*1000):"المشغّل خامل · الدورة القادمة خلال 5 دقائق على الأكثر";
+  $i("rlRunner").className="rl-runner"+(r.lock?" run":"")+(r.beat_age_s!=null&&r.beat_age_s>900&&!r.lock?" off":"");
+  var stale=r.beat_age_s!=null&&r.beat_age_s>900&&!r.lock;
+  $i("rlRunnerTxt").textContent=stale?"المشغّل متوقّف منذ "+dur(r.beat_age_s*1000)+" — المهمة المجدولة لا تعمل":r.lock?"المشغّل يعمل الآن · القفل منذ "+dur((r.lock_age_s||0)*1000):"المشغّل خامل · الدورة القادمة خلال 5 دقائق على الأكثر";
 
   var c=state.current;
   if(!c)return;

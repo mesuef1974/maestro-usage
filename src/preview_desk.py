@@ -140,9 +140,27 @@ def retry(params, needs=None, path=None):
     """إعادة بزرّ: الطلب الأصلي نفسه مع سبب الفشل، ويلتقطه المشغّل في دورته."""
     cid = _need(params, needs)
     made = next(e.get("data") or {} for e in ah.read_events(Path(path or ah.ledger_path()))[0][cid] if e.get("kind") == "created")
+    twin = _live_twin(cid, made.get("problem"), path)
+    if twin:  # حاجز التكرار: نسخةٌ جاريةٌ لهذا الطلب بعدُ؛ لا ننشئ بطاقةً ثانية (031 و032 و033)
+        raise request_page.ValidationError("للطلب نسخةٌ جاريةٌ الآن: " + twin + " — انتظر نتيجتها قبل إعادةٍ جديدة", "card")
     fields = my_requests.retry_fields(made["request_file"])
     fields.pop("card", None)
     return request_page.submit(fields)
+
+
+def _live_twin(cid, title, path=None):
+    """معرّفُ بطاقةٍ أخرى بالعنوان نفسه لم تنتهِ بعد (وليست هذه)؛ وإلا سلسلةٌ فارغة."""
+    by_card = ah.read_events(Path(path or ah.ledger_path()))[0]
+    for other, evs in by_card.items():
+        if other == cid:
+            continue
+        made = next((e.get("data") or {} for e in evs if e.get("kind") == "created"), None)
+        if not made or made.get("problem") != title:
+            continue
+        state = next(((e.get("data") or {}).get("state") for e in reversed(evs) if e.get("kind") == "state"), "")
+        if state not in ah.TERMINAL:
+            return other
+    return ""
 
 
 def dismiss(params, run=subprocess.run, needs=None):

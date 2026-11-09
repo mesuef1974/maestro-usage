@@ -147,6 +147,15 @@ class Desk(unittest.TestCase):
             with self.assertRaises(request_page.ValidationError):
                 fn(dict(card="W-20261107-005"), needs=[])
 
+    def test_a_live_twin_card_blocks_a_new_retry_but_a_finished_one_does_not(self):
+        live = card_events("W-20261107-031", state="in_progress")
+        old = card_events("W-20261107-030", state="closed")
+        path = ledger_file(self.tmp.name, *old, *live)
+        self.assertEqual(pd._live_twin("W-20261107-030", "عنوان البطاقة", path), "W-20261107-031")
+        self.assertEqual(pd._live_twin("W-20261107-031", "عنوان البطاقة", path), "")
+        done = ledger_file(self.tmp.name, *old, *card_events("W-20261107-031", state="published"))
+        self.assertEqual(pd._live_twin("W-20261107-030", "عنوان البطاقة", done), "")
+
     def test_password_read_from_env_file(self):
         env = Path(self.tmp.name) / "a.env"
         env.write_text("PREVIEW_ACCOUNTS_PASSWORD=x1" + chr(10), encoding="utf-8")
