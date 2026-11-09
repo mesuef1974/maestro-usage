@@ -181,6 +181,12 @@ function mergeCard(c){
     '<p class="sub">الطلب #'+esc(c.pr)+' أخضر ويحتاج دمجًا بيدك: '+esc(c.reason)+' بعد دمجه تُكمل الأتمتة النشر والصحة بلا يد.</p>'+
     '<div class="ah-deskact"><a class="ah-go" href="'+esc(c.pr_url)+'" target="_blank" rel="noopener">افتح الطلب #'+esc(c.pr)+'</a></div></div>';
 }
+function liveCard(c){
+  var m=c.since?Math.max(0,Math.round((Date.now()/1000-c.since)/60)):0;
+  return '<div class="ah-deskitem" data-live="'+esc(c.card_id)+'"><div class="ah-mono sub">'+esc(c.card_id)+' · جارية</div><b>'+esc(c.title)+'</b>'+
+    '<p class="sub">'+esc(c.stage)+(m?' منذ '+num(m)+' دقيقة':'')+' — الطلب #'+esc(c.pr)+'.</p>'+
+    '<div class="ah-deskact"><a class="ah-go" href="'+esc(c.pr_url)+'" target="_blank" rel="noopener">افتح الطلب #'+esc(c.pr)+'</a></div></div>';
+}
 function needCard(c){
   return '<div class="ah-deskitem" data-need="'+esc(c.card_id)+'"><div class="ah-mono sub">'+esc(c.card_id)+' · تحتاج قرارك · '+esc(money(c.cost))+'</div><b>'+esc(c.title)+'</b>'+
     '<p class="sub">'+esc(c.reason)+'</p><div class="ah-deskact"><button type="button" class="ah-go" data-retry="1">أعد المحاولة</button>'+
@@ -192,7 +198,8 @@ function loadDesk(){
     var badge=$i("navBadge-today"),wait=ready+o.needs.length+o.merges.length;badge.textContent=wait;badge.hidden=!wait;
     $i("ahDeskD").textContent=!o.up?"خادم المعاينة 8500 متوقّف":(o.cards.length||o.needs.length||o.merges.length)?num(o.merges.length)+" تنتظر دمجك، "+num(ready)+" جاهزة، "+num(o.cards.length-ready)+" تنتظر دورها، "+num(o.needs.length)+" تحتاج قرارك":"لا بطاقات تنتظرك";
     var box=$i("ahDeskList"),typing=box.contains(document.activeElement)&&document.activeElement.tagName==="INPUT";
-    if(!typing)box.innerHTML=o.merges.map(mergeCard).concat(o.cards.map(deskCard)).concat(o.needs.map(needCard)).join("");
+    var shown=o.cards.map(function(c){return c.card_id}),live=(o.live||[]).filter(function(c){return shown.indexOf(c.card_id)<0});
+    if(!typing)box.innerHTML=o.merges.map(mergeCard).concat(o.cards.map(deskCard)).concat(live.map(liveCard)).concat(o.needs.map(needCard)).join("");
   }).catch(function(){$i("ahDeskD").textContent="تعذّرت قراءة المعاينة"});
 }
 function deskPost(url,body){

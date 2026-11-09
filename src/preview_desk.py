@@ -37,7 +37,7 @@ def served_commit(url=HEALTH_URL):
 
 def fold(events):
     """حالة البطاقة وحقول المعاينة من أحداثها."""
-    c = {"state": "", "approval": "", "resume": None, "seen": "", "info": None, "approved": False, "rejected": "", "visual": [], "action": None}
+    c = {"state": "", "approval": "", "resume": None, "seen": "", "info": None, "approved": False, "rejected": "", "visual": [], "action": None, "waiting": None}
     for e in events:
         d = e.get("data") or {}
         if e.get("kind") == "created":
@@ -48,7 +48,7 @@ def fold(events):
             if d.get("approval"):  # المشغّل يرفع «مباشر» إلى «معاينة» حين يغيّر الطلبُ واجهةً (require_preview): بغير هذا لا تظهر البطاقةُ للمالك
                 c["approval"] = d["approval"]
             for src, dst in (("runner_resume", "resume"), ("preview_seen", "seen"), ("preview_info", "info"),
-                             ("preview_approved", "approved"), ("preview_rejected", "rejected"), ("visual_pages", "visual"), ("owner_action", "action")):
+                             ("preview_approved", "approved"), ("preview_rejected", "rejected"), ("visual_pages", "visual"), ("owner_action", "action"), ("waiting", "waiting")):
                 if src in d:
                     c[dst] = d[src]
     return c
@@ -95,6 +95,23 @@ def merges(path=None):
     return sorted(out, key=lambda x: x["card_id"])
 
 
+def live(path=None):
+    """بطاقاتٌ حيّةٌ فتحت طلبها ولم تبلغ المعاينة: المرحلةُ وما تنتظره ومنذ متى، ليجيب المكتبُ عن «لماذا لا يتحرّك؟» بلا فحصٍ يدويّ."""
+    path = Path(path or ah.ledger_path())
+    if not path.is_file():
+        return []
+    out = []
+    for cid, events in ah.read_events(path)[0].items():
+        c = fold(events)
+        pr = (c["resume"] or {}).get("pr")
+        if c["state"] != "in_progress" or not pr or c["action"]:
+            continue
+        w = c["waiting"] or {}
+        out.append(dict(card_id=cid, title=ah.title_of(events), pr=pr, pr_url=PR_URL + str(pr),
+                        stage=w.get("text") or "يعمل المشغّل عليها", since=w.get("since") or 0))
+    return sorted(out, key=lambda x: x["card_id"])
+
+
 def pending_retries(folder=None):
     """طلبات إعادة لم يلتقطها المشغّل بعد: بلا هذا تبقى البطاقة بزرّها دقائق فتتكرّر الإعادة (W-011 وW-012)."""
     folder = Path(folder or ROOT / "requests")
@@ -128,7 +145,7 @@ def needs_decision(path=None, pending=None):
 
 def payload(path=None):
     served = served_commit()
-    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served), needs=needs_decision(path), merges=merges(path))
+    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served), needs=needs_decision(path), merges=merges(path), live=live(path))
 
 
 def _need(params, needs=None):

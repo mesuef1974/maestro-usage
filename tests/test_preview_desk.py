@@ -171,3 +171,17 @@ class Desk(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_live_cards_show_stage_and_since(tmp_path):
+    """بطاقةٌ فتحت طلبها ولم تبلغ المعاينة تظهر بمرحلتها ومنذ متى (013، 2026-11-09)."""
+    path = tmp_path / "events.jsonl"
+    rows = [
+        {"id": "W-20261109-013", "kind": "created", "data": {"problem": "ع", "approval": "معاينة"}},
+        {"id": "W-20261109-013", "kind": "state", "data": {"state": "in_progress"}},
+        {"id": "W-20261109-013", "kind": "update", "data": {"runner_resume": {"pr": 7, "head": "abc"}}},
+        {"id": "W-20261109-013", "kind": "update", "data": {"waiting": {"stage": "waiting_ci", "text": "ينتظر فحوص CI على الطلب", "since": 100}}},
+    ]
+    path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
+    out = pd.live(path)
+    assert out[0]["stage"] == "ينتظر فحوص CI على الطلب" and out[0]["since"] == 100 and out[0]["pr"] == 7
