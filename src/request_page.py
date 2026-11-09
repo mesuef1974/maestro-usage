@@ -68,7 +68,7 @@ class ValidationError(ValueError):
         self.field = field
 
 
-ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval", "type", "criteria", "page", "files", "out_of_scope", "attachments", "retry_of"})
+ALLOWED_KEYS = frozenset({"title", "ask", "accept", "size", "priority", "touches", "approval", "type", "criteria", "page", "files", "out_of_scope", "attachments", "retry_of", "depends_on"})
 _PII = None
 PII_SOURCE = None  # "ledger" حين يُحمَّل من سجلّ المايسترو، أو "fallback" حين يغيب (نسخة مطابقة هنا)
 # نسخةٌ مطابقة لتعبير سجلّ المايسترو (tools/ledger.py: _PII) تُستعمل إن غاب السجلّ، فلا تتعطّل صفحة الطلب ولا اختباراتها خارج جهاز المالك
@@ -198,10 +198,13 @@ def validate(params):
     retry_of = str(params.get("retry_of") or "")
     if retry_of and not re.fullmatch(r"web-\d{8}-\d{6}(?:-\d+)?", retry_of):
         raise ValidationError("مرجع إعادة المحاولة غير صالح", "retry_of")
+    deps = [d for d in re.split(r"[\s,،]+", str(params.get("depends_on") or "")) if d]
+    if any(not re.fullmatch(r"W-\d{8}-\d{3}", d) for d in deps) or len(deps) > 5:
+        raise ValidationError("اعتماد البطاقة: معرّفات بصيغة W-YYYYMMDD-NNN وحدّ أقصى خمسة", "depends_on")
     att = params.get("attachments") or ""
     if att and not re.fullmatch(r"[0-9a-f]{16}", str(att)):
         raise ValidationError("رمز المرفقات غير صالح", "attachments")
-    return dict(retry_of=retry_of, attachments=att, title=title, ask=ask, accept=" ؛ ".join(accept_list), accept_list=accept_list, size=size, priority=prio, touches=touches,
+    return dict(depends_on=deps, retry_of=retry_of, attachments=att, title=title, ask=ask, accept=" ؛ ".join(accept_list), accept_list=accept_list, size=size, priority=prio, touches=touches,
                 auto_touches=auto, approval=approval, type=rtype, criteria=ids, checks=checks, page=page, files=files, out_of_scope=out_of_scope)
 
 
@@ -223,6 +226,8 @@ def render_body(fields):
         body += "الملفات: %s\n" % "، ".join(fields["files"])
     if fields["out_of_scope"]:
         body += "خارج النطاق: %s\n" % fields["out_of_scope"]
+    if fields.get("depends_on"):
+        body += "يعتمد على: %s\n" % "، ".join(fields["depends_on"])
     if fields.get("retry_of"):
         body += "إعادة لـ: %s\n" % fields["retry_of"]
     if fields.get("attachments_dir"):

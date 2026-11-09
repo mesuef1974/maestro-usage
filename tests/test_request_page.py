@@ -340,3 +340,11 @@ def test_recently_closed_with_report_counts_as_similar(tmp_path):
     p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows), encoding="utf-8")
     hits = request_page.similar("ملف PDF الزيارة الصفية", request_page.open_cards(p))
     assert [h["id"] for h in hits] == ["W-9"] and hits[0]["report"].startswith("فشل النموذج")
+
+
+def test_depends_on_is_validated_and_written_for_the_runner(reqdir):
+    out = request_page.submit({**OK, "depends_on": "W-20261109-001، W-20261109-002"})
+    assert "يعتمد على: W-20261109-001، W-20261109-002" in (reqdir / out["file"]).read_text(encoding="utf-8")
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.validate({**OK, "depends_on": "001"})
+    assert e.value.field == "depends_on"
