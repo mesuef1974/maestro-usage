@@ -156,6 +156,13 @@ class Desk(unittest.TestCase):
         done = ledger_file(self.tmp.name, *old, *card_events("W-20261107-031", state="published"))
         self.assertEqual(pd._live_twin("W-20261107-030", "عنوان البطاقة", done), "")
 
+    def test_a_card_upgraded_to_preview_by_the_runner_reaches_the_desk(self):
+        ev = card_events("W-20261109-001", approval="مباشر")
+        ev.append(dict(ts="2026-11-09T15:22:51+03:00", id="W-20261109-001", kind="update", data=dict(approval="معاينة")))
+        path = ledger_file(self.tmp.name, *ev)
+        ah._PARSED.clear()
+        self.assertEqual([c["card_id"] for c in pd.waiting(path, served="abcdef1")], ["W-20261109-001"])
+
     def test_password_read_from_env_file(self):
         env = Path(self.tmp.name) / "a.env"
         env.write_text("PREVIEW_ACCOUNTS_PASSWORD=x1" + chr(10), encoding="utf-8")

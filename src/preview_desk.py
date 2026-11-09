@@ -45,6 +45,8 @@ def fold(events):
         elif e.get("kind") == "state":
             c["state"] = d.get("state") or c["state"]
         elif e.get("kind") == "update":
+            if d.get("approval"):  # المشغّل يرفع «مباشر» إلى «معاينة» حين يغيّر الطلبُ واجهةً (require_preview): بغير هذا لا تظهر البطاقةُ للمالك
+                c["approval"] = d["approval"]
             for src, dst in (("runner_resume", "resume"), ("preview_seen", "seen"), ("preview_info", "info"),
                              ("preview_approved", "approved"), ("preview_rejected", "rejected"), ("visual_pages", "visual"), ("owner_action", "action")):
                 if src in d:
