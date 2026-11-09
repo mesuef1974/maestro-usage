@@ -200,3 +200,14 @@ def test_reopen_runs_the_runner_flag_and_surfaces_its_refusal():
     bad = lambda cmd, **kw: SimpleNamespace(returncode=1, stdout="الطلب 9 حالته MERGED", stderr="")  # noqa: E731
     with unittest.TestCase().assertRaises(request_page.ValidationError):
         pd.reopen({"card": "W-20261109-013"}, run=bad, needs=need)
+
+
+def test_decide_passes_its_source_to_the_runner():
+    seen = []
+
+    def run(cmd, **kw):
+        seen.append(cmd)
+        return SimpleNamespace(returncode=0, stdout="تم", stderr="")
+
+    pd.decide(dict(card="W-20261107-001", approve=True, _via="mizan ip=127.0.0.1 ua=X"), cards=[dict(card_id="W-20261107-001", ready=True)], run=run)
+    assert seen[0][-2:] == ["--via", "mizan ip=127.0.0.1 ua=X"]

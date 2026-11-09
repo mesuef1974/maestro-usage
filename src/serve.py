@@ -237,6 +237,8 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 params = json.loads(self.rfile.read(n).decode("utf-8") or "{}")
                 if not isinstance(params, dict):
                     raise request_page.ValidationError("جسم غير صالح", "")
+                if fn is preview_desk.decide:  # مصدرُ القرار يُكتب في الدفتر للتدقيق: عنوان العميل والمتصفح والصفحة المرسِلة
+                    params["_via"] = "mizan ip=%s ua=%s origin=%s" % (self.client_address[0], (self.headers.get("User-Agent") or "")[:70], self.headers.get("Origin") or "")
                 return self._json(200, fn(params))
             except request_page.ValidationError as exc:
                 return self._json(400, {"error": str(exc)[:200], "field": exc.field})

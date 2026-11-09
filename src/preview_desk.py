@@ -227,6 +227,7 @@ def decide(params, run=subprocess.run, cards=None):
     if not approve and not reason:
         raise request_page.ValidationError("الرفض يحتاج سببًا", "reason")
     cmd = [sys.executable, str(ROOT / "tools" / "runner.py")] + (["--approve", cid] if approve else ["--reject", cid, "--reason", reason])
+    cmd += ["--via", " ".join(str(params.get("_via") or "mizan").split())[:160]]
     p = run(cmd, cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     text = (p.stdout or p.stderr or "").strip()[-300:]
     if p.returncode:
