@@ -44,6 +44,10 @@ __SHELL_OPEN__
       <div class="rq-field"><label for="rqOut">خارج النطاق</label>
         <input id="rqOut" name="out_of_scope" maxlength="500" placeholder="ما لا يجب أن يُمسّ" aria-describedby="rqOutErr">
         <p class="rq-err" id="rqOutErr" role="alert" hidden></p></div>
+      <div class="rq-field"><label for="rqDeps">يعتمد على (اختياري)</label>
+        <input id="rqDeps" name="depends_on" maxlength="120" placeholder="W-20261109-006، W-20261109-007" aria-describedby="rqDepsHint rqDepsErr" dir="ltr">
+        <p class="sub" id="rqDepsHint">معرّفات بطاقاتٍ لا يبدأ هذا الطلب قبل نشرها (حتى خمس).</p>
+        <p class="rq-err" id="rqDepsErr" role="alert" hidden></p></div>
     </fieldset>
     <fieldset class="rq-att" aria-describedby="rqAttHint rqAttErr"><legend>المرفقات (اختياري)</legend>
       <div class="rq-drop" id="rqDrop" tabindex="0" role="button" aria-describedby="rqAttHint">
@@ -81,8 +85,8 @@ __SHELL_CLOSE__
 __LIB__
 (function(){
 var cfg=JSON.parse(document.getElementById("data").textContent).request;
-var FIELDS={attachments:"rqDrop",title:"rqTitle",ask:"rqAsk",type:"rqType",criteria:"rqCrit",accept:"rqAccept",size:"rqSize",priority:"rqPrio",page:"rqPage",files:"rqFileIn",out_of_scope:"rqOut"};
-var ERR={attachments:"rqAttErr",title:"rqTitleErr",ask:"rqAskErr",type:"rqTypeErr",criteria:"rqCritErr",accept:"rqCritErr",size:"rqSizeErr",priority:"rqPrioErr",page:"rqPageErr",files:"rqFilesErr",out_of_scope:"rqOutErr"};
+var FIELDS={attachments:"rqDrop",title:"rqTitle",ask:"rqAsk",type:"rqType",criteria:"rqCrit",accept:"rqAccept",size:"rqSize",priority:"rqPrio",page:"rqPage",files:"rqFileIn",out_of_scope:"rqOut",depends_on:"rqDeps"};
+var ERR={attachments:"rqAttErr",title:"rqTitleErr",ask:"rqAskErr",type:"rqTypeErr",criteria:"rqCritErr",accept:"rqCritErr",size:"rqSizeErr",priority:"rqPrioErr",page:"rqPageErr",files:"rqFilesErr",out_of_scope:"rqOutErr",depends_on:"rqDepsErr"};
 var DRAFT="mu_rq_draft",files=[],critTouched=false,lastType="",atts=[],attToken="",retryOf="";
 function $(i){return document.getElementById(i);}
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
@@ -212,7 +216,7 @@ function body(){
     criteria:critBoxes().filter(function(b){return b.checked;}).map(function(b){return Number(b.value);}),
     accept:$("rqAccept").value,size:$("rqSize").value,priority:$("rqPrio").value,approval:$("rqApproval").value,
     touches:touchBoxes().filter(function(b){return b.checked;}).map(function(b){return b.value;}),
-    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value,attachments:attToken,retry_of:retryOf};
+    page:$("rqPage").value,files:files.slice(),out_of_scope:$("rqOut").value,depends_on:$("rqDeps").value,attachments:attToken,retry_of:retryOf};
 }
 /* مقياس الجاهزية: القواعد نفسها في request_page.readiness؛ لا يمنع الإرسال */
 function readiness(b){
@@ -246,7 +250,7 @@ function fillForm(d){
   retryOf=d.retry_of||"";
   $("rqTitle").value=d.title||"";$("rqAsk").value=d.ask||"";$("rqType").value=d.type||"";lastType=d.type||"";
   $("rqAccept").value=d.accept||"";$("rqSize").value=d.size||"";$("rqPrio").value=d.priority||"";$("rqApproval").value=d.approval||"";
-  $("rqPage").value=d.page||"";$("rqOut").value=d.out_of_scope||"";files=(d.files||[]).slice(0,cfg.max_files);
+  $("rqPage").value=d.page||"";$("rqOut").value=d.out_of_scope||"";$("rqDeps").value=(d.depends_on||[]).join?(d.depends_on||[]).join("، "):(d.depends_on||"");files=(d.files||[]).slice(0,cfg.max_files);
   if(d.criteria){critTouched=true;critBoxes().forEach(function(b){b.checked=d.criteria.indexOf(Number(b.value))>=0;});}
   touchBoxes().forEach(function(b){b.checked=(d.touches||[]).indexOf(b.value)>=0;});
   renderFiles();

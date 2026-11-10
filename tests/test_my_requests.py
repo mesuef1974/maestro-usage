@@ -185,7 +185,7 @@ def test_retry_falls_back_to_minimum_automatic_criteria(env):
 
 def test_retry_legacy_request_passes_the_form_validation(env):
     reqdir, _ = env
-    (reqdir / "web-20260101-000002.md").write_text(
+    (reqdir / "web-20260101-000002.done").write_text(
         "العنوان: عنوان طويل كفاية\nالمطلوب: طلب فيه تفاصيل كافية للتحقق\nالنوع: ميزة\nالوسم: كبير\nالأولوية: P2\nمعايير القبول: سطر حرّ\n", encoding="utf-8")
     f = my_requests.retry_fields("web-20260101-000002")
     sub = {k: v for k, v in f.items() if k in request_page.ALLOWED_KEYS}
@@ -202,3 +202,14 @@ def test_submit_cli_accepts_valid_and_rejects_bad_type_and_criteria(env):
     code, msg = submit_cli.run(json.dumps({**OK, "criteria": []}))
     assert code == 2 and "معيار" in msg
     assert submit_cli.run("{")[0] == 2
+
+
+def test_submit_refuses_a_title_that_is_still_pending_or_live(env):
+    """حاجزُ التكرار في submit نفسه: ملفُّ طلبٍ لم يُلتقط بالعنوان نفسه يمنع نسخةً ثانية من أيّ مسار."""
+    reqdir, _ = env
+    first = request_page.submit(OK)
+    assert first["ok"]
+    with pytest.raises(request_page.ValidationError):
+        request_page.submit(OK)
+    (reqdir / first["file"]).rename(reqdir / first["file"].replace(".md", ".done"))  # التُقط: يُسمح بطلبٍ جديد ما دامت بطاقته منتهيةً أو غائبة
+    assert request_page.submit(OK)["ok"]

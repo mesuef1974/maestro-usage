@@ -244,9 +244,39 @@ def preview(params):
     return dict(ok=True, body=render_body(f), readiness=readiness(f), auto_touches=f["auto_touches"])
 
 
+def live_twin(title, exclude=""):
+    """طلبٌ أو بطاقةٌ بالعنوان نفسه لم تنتهِ بعد (ملفُّ طلبٍ لم يُلتقط، أو بطاقةٌ غيرُ منتهية)؛ وإلا سلسلةٌ فارغة.
+    الحاجزُ هنا لا في زرّ الإعادة وحدَه: كلُّ مسارٍ يصل إلى submit يمرّ به (014 أُنشئت مكرَّرةً بنداءٍ مباشر، 2026-11-09)."""
+    head = "العنوان: " + title
+    for f in sorted(requests_dir().glob("*.md")):
+        try:
+            first = f.read_text(encoding="utf-8").splitlines()[:1]
+        except OSError:
+            continue
+        if first and first[0].strip() == head and f.stem != exclude:
+            return f.stem
+    import automation_history as ah  # noqa: PLC0415 — يستورد هذه الوحدة، فالاستيرادُ عند النداء
+    ledger = Path(LEDGER_EVENTS)
+    if not ledger.is_file():
+        return ""
+    for cid, evs in ah.read_events(ledger)[0].items():
+        if cid == exclude:
+            continue
+        made = next((e.get("data") or {} for e in evs if e.get("kind") == "created"), None)
+        if not made or made.get("problem") != title:
+            continue
+        state = next(((e.get("data") or {}).get("state") for e in reversed(evs) if e.get("kind") == "state"), "")
+        if state not in ah.TERMINAL:
+            return cid
+    return ""
+
+
 def submit(params, now=None):
     """يكتب الطلب ذرّياً (ملف مؤقت في .incoming ثم os.replace) ويعيد {ok, file}؛ ValidationError عند الرفض ولا ملفَّ جزئياً يراه المشغّل."""
     fields = validate(params)
+    twin = live_twin(fields["title"])
+    if twin:
+        raise ValidationError("لهذا العنوان نسخةٌ لم تنتهِ بعد: %s — انتظر نتيجتها أو غيّر العنوان" % twin, "title")
     d = requests_dir()
     (d / ".incoming").mkdir(parents=True, exist_ok=True)
     t = now or time.localtime()

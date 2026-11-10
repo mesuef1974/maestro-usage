@@ -108,7 +108,7 @@ def test_submit_binds_attachments_and_writes_lines(adir):
     assert "ملفات المرفقات: a.png|" + out["files"][0]["sha256"] in text
     assert (adir / stem / "a.png").read_bytes() == PNG and not (adir / ".staging" / out["token"]).exists()
     with pytest.raises(request_page.ValidationError) as e:  # الرمز يُستعمل مرة واحدة
-        request_page.submit(full)
+        request_page.submit({**full, "title": full["title"] + " مرّة ثانية"})
     assert e.value.field == "attachments"
 
 

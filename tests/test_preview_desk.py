@@ -226,3 +226,27 @@ def test_a_ready_card_leaves_the_live_list(tmp_path, monkeypatch):
     monkeypatch.setattr(pd, "served_commit", lambda *a: "abc1234")
     out = pd.payload(path)
     assert out["cards"][0]["ready"] and out["live"] == []
+
+
+def test_queued_cards_say_why_they_wait(tmp_path):
+    """بطاقةٌ موجَّهةٌ تظهر بسبب انتظارها: اعتمادٌ لم يُنشر، أو حجز، أو دورُها (006 و007، 2026-11-10)."""
+    path = tmp_path / "events.jsonl"
+    rows = [
+        {"id": "W-20261109-006", "kind": "created", "data": {"problem": "أ"}},
+        {"id": "W-20261109-006", "kind": "state", "data": {"state": "in_progress"}},
+        {"id": "W-20261109-007", "kind": "created", "data": {"problem": "ب"}},
+        {"id": "W-20261109-007", "kind": "state", "data": {"state": "routed"}},
+        {"id": "W-20261109-007", "kind": "update", "data": {"runner_hold": False, "depends_on": ["W-20261109-006"]}},
+        {"id": "W-20261109-008", "kind": "created", "data": {"problem": "ج"}},
+        {"id": "W-20261109-008", "kind": "state", "data": {"state": "routed"}},
+        {"id": "W-20261109-008", "kind": "update", "data": {"runner_hold": True}},
+        {"id": "W-20261109-009", "kind": "created", "data": {"problem": "د"}},
+        {"id": "W-20261109-009", "kind": "state", "data": {"state": "routed"}},
+    ]
+    path.write_text(chr(10).join(json.dumps(r, ensure_ascii=False) for r in rows) + chr(10), encoding="utf-8")
+    out = {q["card_id"][-3:]: q for q in pd.queued(path)}
+    assert set(out) == {"007", "008", "009"}
+    assert out["007"]["reason"] == "تنتظر نشر W-20261109-006" and out["008"]["held"] and "دور" in out["009"]["reason"]
+    rows.append({"id": "W-20261109-006", "kind": "state", "data": {"state": "published"}})
+    path.write_text(chr(10).join(json.dumps(r, ensure_ascii=False) for r in rows) + chr(10), encoding="utf-8")
+    assert "دور" in {q["card_id"][-3:]: q for q in pd.queued(path)}["007"]["reason"]

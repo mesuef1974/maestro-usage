@@ -112,6 +112,34 @@ def live(path=None):
     return sorted(out, key=lambda x: x["card_id"])
 
 
+def queued(path=None):
+    """بطاقاتٌ موجَّهةٌ لم يبدأها المشغّل بعد وسببُ انتظار كلٍّ منها: حجزٌ، أو اعتمادٌ على بطاقةٍ لم تُنشر، أو دورُها في الطابور.
+    بغيرها لا يرى المالك إلا ما فتح طلبه، فيسأل «أين البطاقة؟» عن بطاقةٍ سليمةٍ تنتظر (006 و007، 2026-11-10)."""
+    path = Path(path or ah.ledger_path())
+    if not path.is_file():
+        return []
+    by_card = ah.read_events(path)[0]
+    state, rows = {}, []
+    for cid, events in by_card.items():
+        st, hold, deps = "", False, []
+        for e in events:
+            d = e.get("data") or {}
+            if e.get("kind") == "state":
+                st = d.get("state") or st
+            elif e.get("kind") in ("created", "update"):
+                hold = d["runner_hold"] if "runner_hold" in d else hold
+                deps = d["depends_on"] if "depends_on" in d else deps
+        state[cid] = st
+        if st == "routed":
+            rows.append((cid, events, hold, deps or []))
+    out = []
+    for cid, events, hold, deps in rows:
+        unmet = [d for d in deps if state.get(d) != "published"]
+        reason = "محجوزة حتى تفكّ حجزها" if hold else ("تنتظر نشر " + "، ".join(unmet)) if unmet else "في الطابور بانتظار دور المشغّل"
+        out.append(dict(card_id=cid, title=ah.title_of(events), reason=reason, held=bool(hold)))
+    return sorted(out, key=lambda x: x["card_id"])
+
+
 def pending_retries(folder=None):
     """طلبات إعادة لم يلتقطها المشغّل بعد: بلا هذا تبقى البطاقة بزرّها دقائق فتتكرّر الإعادة (W-011 وW-012)."""
     folder = Path(folder or ROOT / "requests")
@@ -149,7 +177,7 @@ def payload(path=None):
     cards = waiting(path, served)
     ready = {c["card_id"] for c in cards if c.get("ready")}  # الجاهزةُ للمعاينة معروضةٌ ببطاقتها: لا تبقى في «الجارية» بنصّ «يجهّز المعاينة»
     return dict(ok=True, up=bool(served), served=served, cards=cards, needs=needs_decision(path), merges=merges(path),
-                live=[c for c in live(path) if c["card_id"] not in ready])
+                live=[c for c in live(path) if c["card_id"] not in ready], queued=queued(path))
 
 
 def _need(params, needs=None):

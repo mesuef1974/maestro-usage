@@ -57,7 +57,7 @@ def test_personal_data_is_rejected(reqdir):
 def test_two_requests_in_the_same_second_do_not_overwrite(reqdir):
     import time
     t = time.localtime()
-    assert request_page.submit(OK, t)["file"] != request_page.submit(OK, t)["file"]
+    assert request_page.submit(OK, t)["file"] != request_page.submit({**OK, "title": OK["title"] + " ثانٍ"}, t)["file"]
 
 
 def test_rate_limit_window():
@@ -126,15 +126,15 @@ def test_post_field_error_returns_arabic_message_and_field(server):
 
 
 def test_post_rate_limit_is_429(server):
-    codes = [_post(server, OK)[0] for _ in range(request_page.RATE_PER_HOUR + 1)]
+    codes = [_post(server, {**OK, "title": "%s %d" % (OK["title"], i)})[0] for i in range(request_page.RATE_PER_HOUR + 1)]  # عنوانٌ لكلّ طلب: حاجزُ التكرار يرفض المكرَّر قبل الحدّ
     assert codes[:-1] == [200] * request_page.RATE_PER_HOUR and codes[-1] == 429
 
 
 def test_approval_defaults_by_size_and_is_written(reqdir):
     t = lambda p: (reqdir / request_page.submit(p)["file"]).read_text(encoding="utf-8")  # noqa: E731
     assert "الاعتماد: مباشر" in t(OK)
-    assert "الاعتماد: معاينة" in t({**OK, "size": "تصميم"})
-    assert "الاعتماد: معاينة" in t({**OK, "approval": "معاينة"})
+    assert "الاعتماد: معاينة" in t({**OK, "title": OK["title"] + " تصميم", "size": "تصميم"})
+    assert "الاعتماد: معاينة" in t({**OK, "title": OK["title"] + " معاينة", "approval": "معاينة"})
 
 
 def test_invalid_approval_is_rejected(reqdir):
@@ -208,7 +208,7 @@ def test_touch_globs_match_the_merge_gate():
 def test_legacy_design_size_still_accepted_and_defaults_to_preview(reqdir):
     text = (reqdir / request_page.submit({**FULL, "size": "تصميم"})["file"]).read_text(encoding="utf-8")
     assert "الوسم: تصميم" in text and "الاعتماد: معاينة" in text
-    text = (reqdir / request_page.submit({**FULL, "type": "تحسين واجهة"})["file"]).read_text(encoding="utf-8")
+    text = (reqdir / request_page.submit({**FULL, "title": FULL["title"] + " واجهة", "type": "تحسين واجهة"})["file"]).read_text(encoding="utf-8")
     assert "الاعتماد: معاينة" in text  # افتراضي النوع
 
 
