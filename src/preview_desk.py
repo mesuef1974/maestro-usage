@@ -146,7 +146,10 @@ def needs_decision(path=None, pending=None):
 
 def payload(path=None):
     served = served_commit()
-    return dict(ok=True, up=bool(served), served=served, cards=waiting(path, served), needs=needs_decision(path), merges=merges(path), live=live(path))
+    cards = waiting(path, served)
+    ready = {c["card_id"] for c in cards if c.get("ready")}  # الجاهزةُ للمعاينة معروضةٌ ببطاقتها: لا تبقى في «الجارية» بنصّ «يجهّز المعاينة»
+    return dict(ok=True, up=bool(served), served=served, cards=cards, needs=needs_decision(path), merges=merges(path),
+                live=[c for c in live(path) if c["card_id"] not in ready])
 
 
 def _need(params, needs=None):

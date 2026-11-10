@@ -211,3 +211,18 @@ def test_decide_passes_its_source_to_the_runner():
 
     pd.decide(dict(card="W-20261107-001", approve=True, _via="mizan ip=127.0.0.1 ua=X"), cards=[dict(card_id="W-20261107-001", ready=True)], run=run)
     assert seen[0][-2:] == ["--via", "mizan ip=127.0.0.1 ua=X"]
+
+
+def test_a_ready_card_leaves_the_live_list(tmp_path, monkeypatch):
+    """بطاقةٌ جاهزةٌ للمعاينة لا تبقى في «الجارية» بنصّ «يجهّز المعاينة» (003، 2026-11-10)."""
+    path = tmp_path / "events.jsonl"
+    rows = [
+        {"id": "W-20261110-003", "kind": "created", "data": {"problem": "ع", "approval": "معاينة"}},
+        {"id": "W-20261110-003", "kind": "state", "data": {"state": "in_progress"}},
+        {"id": "W-20261110-003", "kind": "update", "data": {"runner_resume": {"pr": 7, "head": "abc12345"}, "waiting": {"stage": "waiting_preview", "text": "يجهّز المعاينة", "since": 1}}},
+        {"id": "W-20261110-003", "kind": "update", "data": {"preview_seen": "abc12345", "preview_info": {"url": "http://localhost:8500/x"}}},
+    ]
+    path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
+    monkeypatch.setattr(pd, "served_commit", lambda *a: "abc1234")
+    out = pd.payload(path)
+    assert out["cards"][0]["ready"] and out["live"] == []
