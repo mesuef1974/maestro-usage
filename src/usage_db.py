@@ -25,6 +25,7 @@ REPO_SEEDS = [
     ("mesuef1974/shschool-docs", "private", "docs", r"D:\shschool-docs"),
     ("mesuef1974/maestro-v2", "public", "automation", r"C:\Users\mesue\delivery_manager_work"),
     ("mesuef1974/claude-backup", "private", "backup", None),
+    ("mesuef1974/maestro-usage", "public", "automation", r"C:\Users\mesue\maestro_usage"),
 ]
 
 
