@@ -104,9 +104,12 @@ def live(path=None):
     for cid, events in ah.read_events(path)[0].items():
         c = fold(events)
         pr = (c["resume"] or {}).get("pr")
-        if c["state"] != "in_progress" or not pr or c["action"]:
+        if c["state"] != "in_progress" or c["action"]:
             continue
         w = c["waiting"] or {}
+        if not pr:  # تُبنى الآن ولم يُفتح طلبها: كانت تغيب عن كلّ قائمةٍ حتى يُفتح الطلب (006، 2026-11-10)
+            out.append(dict(card_id=cid, title=ah.title_of(events), pr=0, pr_url="", stage="يبنيها المشغّل الآن (لم يُفتح طلبها بعد)", since=0))
+            continue
         out.append(dict(card_id=cid, title=ah.title_of(events), pr=pr, pr_url=PR_URL + str(pr),
                         stage=w.get("text") or "يعمل المشغّل عليها", since=w.get("since") or 0))
     return sorted(out, key=lambda x: x["card_id"])

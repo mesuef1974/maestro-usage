@@ -184,8 +184,8 @@ function mergeCard(c){
 function liveCard(c){
   var m=c.since?Math.max(0,Math.round((Date.now()/1000-c.since)/60)):0;
   return '<div class="ah-deskitem" data-live="'+esc(c.card_id)+'"><div class="ah-mono sub">'+esc(c.card_id)+' · جارية</div><b>'+esc(c.title)+'</b>'+
-    '<p class="sub">'+esc(c.stage)+(m?' منذ '+num(m)+' دقيقة':'')+' — الطلب #'+esc(c.pr)+'.</p>'+
-    '<div class="ah-deskact"><a class="ah-go" href="'+esc(c.pr_url)+'" target="_blank" rel="noopener">افتح الطلب #'+esc(c.pr)+'</a></div></div>';
+    '<p class="sub">'+esc(c.stage)+(m?' منذ '+num(m)+' دقيقة':'')+(c.pr?' — الطلب #'+esc(c.pr):'')+'.</p>'+(!c.pr?'</div>':
+    '<div class="ah-deskact"><a class="ah-go" href="'+esc(c.pr_url)+'" target="_blank" rel="noopener">افتح الطلب #'+esc(c.pr)+'</a></div></div>');
 }
 function queueCard(c){
   return '<div class="ah-deskitem" data-queue="'+esc(c.card_id)+'"><div class="ah-mono sub">'+esc(c.card_id)+' · في الطابور</div><b>'+esc(c.title)+'</b><p class="sub">'+esc(c.reason)+'.</p></div>';
