@@ -67,6 +67,8 @@ def _cards(path=None):
                     c["pr"] = d["pr"]
                 if "runner_hold" in d:
                     c["hold"] = bool(d["runner_hold"])
+                if d.get("owner_cancelled"):  # ألغاها المالك (runner.py --cancel): ليست فشلًا يُعاد
+                    c["cancelled"] = str(d["owner_cancelled"])
                 text = str(d.get("text") or "")
                 if e.get("kind") == "note" and text.startswith("[مشغّل]"):
                     if " تشغيل " in text or "مراجعة القبول" in text:
@@ -100,6 +102,8 @@ def status_of(kind, card):
         return "rejected", "رُفض عند الالتقاط (حقل ناقص أو حجم مجهول)"
     if not card:
         return "picked", "التُقط، والبطاقة لم تظهر في الدفتر بعد"
+    if card.get("cancelled"):
+        return "owner_cancelled", "أُلغي بقرارك: " + card["cancelled"]
     st = card.get("state", "")
     if st == "closed" and card.get("report"):
         return "failed", "أُغلق بتقرير: " + card["report"]

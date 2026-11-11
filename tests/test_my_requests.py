@@ -213,3 +213,16 @@ def test_submit_refuses_a_title_that_is_still_pending_or_live(env):
         request_page.submit(OK)
     (reqdir / first["file"]).rename(reqdir / first["file"].replace(".md", ".done"))  # التُقط: يُسمح بطلبٍ جديد ما دامت بطاقته منتهيةً أو غائبة
     assert request_page.submit(OK)["ok"]
+
+
+def test_owner_cancelled_card_is_not_offered_for_retry(env):
+    """بطاقةٌ ألغاها المالك (runner.py --cancel) ليست فشلًا: لا «أعد المحاولة» (أُعيدت الملغاةُ بزرّ، 2026-11-11)."""
+    reqdir, ledger = env
+    name = request_page.submit(OK)["file"][:-3]
+    _pick(reqdir, name)
+    _ledger(ledger, "W-1", OK["title"], "2999-01-01T00:00:00",
+            ("note", {"text": "[مشغّل] أُغلقت بتقرير: فشل حارس"}),
+            ("state", {"state": "closed"}),
+            ("update", {"owner_cancelled": "لا حاجة للميزة", "owner_dismissed": True}))
+    [x] = my_requests.list_requests()
+    assert x["status"] == "owner_cancelled" and "لا حاجة للميزة" in x["label"] and not x["can_retry"]
