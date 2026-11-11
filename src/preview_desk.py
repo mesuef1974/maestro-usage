@@ -122,7 +122,7 @@ def queued(path=None):
     if not path.is_file():
         return []
     by_card = ah.read_events(path)[0]
-    state, rows = {}, []
+    state, rows, files, opened = {}, [], {}, set()
     for cid, events in by_card.items():
         st, hold, deps = "", False, []
         for e in events:
@@ -132,13 +132,20 @@ def queued(path=None):
             elif e.get("kind") in ("created", "update"):
                 hold = d["runner_hold"] if "runner_hold" in d else hold
                 deps = d["depends_on"] if "depends_on" in d else deps
+                if "scope_files" in d:
+                    files[cid] = set(d["scope_files"] or [])
+                if d.get("runner_resume"):
+                    opened.add(cid)
         state[cid] = st
         if st == "routed":
             rows.append((cid, events, hold, deps or []))
+    busy = [c for c in opened if state.get(c) in ("in_progress", "merged")]  # فتحت طلبها ولم تنتهِ: المشغّل لا يبدأ بجانبها ما يشاركها ملفًّا
     out = []
     for cid, events, hold, deps in rows:
         unmet = [d for d in deps if state.get(d) != "published"]
-        reason = "محجوزة حتى تفكّ حجزها" if hold else ("تنتظر نشر " + "، ".join(unmet)) if unmet else "في الطابور بانتظار دور المشغّل"
+        shared = sorted(c for c in busy if files.get(cid, set()) & files.get(c, set()))
+        reason = ("محجوزة حتى تفكّ حجزها" if hold else ("تنتظر نشر " + "، ".join(unmet)) if unmet
+                  else ("تنتظر انتهاء " + "، ".join(shared) + " (ملفات مشتركة)") if shared else "في الطابور بانتظار دور المشغّل")
         out.append(dict(card_id=cid, title=ah.title_of(events), reason=reason, held=bool(hold)))
     return sorted(out, key=lambda x: x["card_id"])
 

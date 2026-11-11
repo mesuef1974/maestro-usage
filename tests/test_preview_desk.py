@@ -250,3 +250,20 @@ def test_queued_cards_say_why_they_wait(tmp_path):
     rows.append({"id": "W-20261109-006", "kind": "state", "data": {"state": "published"}})
     path.write_text(chr(10).join(json.dumps(r, ensure_ascii=False) for r in rows) + chr(10), encoding="utf-8")
     assert "دور" in {q["card_id"][-3:]: q for q in pd.queued(path)}["007"]["reason"]
+
+
+def test_queued_card_names_the_open_card_it_shares_files_with(tmp_path):
+    """بطاقةٌ لا تبدأ لأنّ بطاقةً فتحت طلبها تشاركها ملفًّا: يُذكر اسمُها، لا «في الطابور» وحده (005 خلف 004، 2026-11-11)."""
+    path = tmp_path / "events.jsonl"
+    rows = [
+        {"id": "W-20261111-004", "kind": "created", "data": {"problem": "أ", "scope_files": ["behavior/views.py", "a.html"]}},
+        {"id": "W-20261111-004", "kind": "state", "data": {"state": "in_progress"}},
+        {"id": "W-20261111-004", "kind": "update", "data": {"runner_resume": {"pr": 1}}},
+        {"id": "W-20261111-005", "kind": "created", "data": {"problem": "ب", "scope_files": ["behavior/views.py"]}},
+        {"id": "W-20261111-005", "kind": "state", "data": {"state": "routed"}},
+        {"id": "W-20261111-006", "kind": "created", "data": {"problem": "ج", "scope_files": ["clinic/views.py"]}},
+        {"id": "W-20261111-006", "kind": "state", "data": {"state": "routed"}},
+    ]
+    path.write_text(chr(10).join(json.dumps(r, ensure_ascii=False) for r in rows) + chr(10), encoding="utf-8")
+    out = {q["card_id"][-3:]: q["reason"] for q in pd.queued(path)}
+    assert out["005"] == "تنتظر انتهاء W-20261111-004 (ملفات مشتركة)" and "دور" in out["006"]
