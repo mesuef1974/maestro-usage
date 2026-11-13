@@ -226,3 +226,15 @@ def test_owner_cancelled_card_is_not_offered_for_retry(env):
             ("update", {"owner_cancelled": "لا حاجة للميزة", "owner_dismissed": True}))
     [x] = my_requests.list_requests()
     assert x["status"] == "owner_cancelled" and "لا حاجة للميزة" in x["label"] and not x["can_retry"]
+
+
+def test_retry_survives_a_failure_report_that_carries_a_long_number(env):
+    """تقريرُ فشلٍ فيه مسارُ سجلٍّ برقمٍ طويل كان يُسقط الإعادة بحارس البيانات الشخصية (W-20261113-002)."""
+    reqdir, ledger = env
+    name = request_page.submit(OK)["file"][:-3]
+    _pick(reqdir, name)
+    _ledger(ledger, "W-3", OK["title"], "2999-01-01T00:00:00",
+            ("note", {"text": "[مشغّل] أُغلقت بتقرير: بيئةٌ: السجلّ الكامل: runner-w-1113083625-r1-1794548606.log"}), ("state", {"state": "closed"}))
+    f = my_requests.retry_fields(name)
+    assert "1794548606" not in f["ask"] and "بيئةٌ" in f["ask"]
+    assert request_page.submit({k: v for k, v in f.items() if k in request_page.ALLOWED_KEYS})["ok"]

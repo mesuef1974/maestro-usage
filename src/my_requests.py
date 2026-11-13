@@ -192,7 +192,8 @@ def retry_fields(name, ledger=None):
         head = "\nسبب فشل المحاولة السابقة (%s): " % card["id"]
         room = request_page.MAX["ask"] - len(ask) - len(head) - len(tail)  # لا يتجاوز سقف الحقل فترفضه الاستمارة
         if room > 40:
-            ask += head + card["report"][:room] + tail
+            report = request_page.pii_pattern().sub("…", card["report"])  # مسارُ سجلٍّ فيه رقمٌ طويل كان يُسقط الإعادةَ بحارس البيانات الشخصية (W-20261113-002)
+            ask += head + report[:room] + tail
     return dict(title=f.get("العنوان", ""), ask=ask, type=_known_type(f.get("النوع", "")), criteria=ids, accept="\n".join(extra),
                 size=f.get("الوسم", "") if f.get("الوسم") in request_page.SIZES else "", priority=f.get("الأولوية", ""),
                 approval=f.get("الاعتماد", ""), page=f.get("الصفحة", ""), out_of_scope=f.get("خارج النطاق", ""),
