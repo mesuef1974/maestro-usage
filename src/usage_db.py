@@ -26,6 +26,8 @@ REPO_SEEDS = [
     ("mesuef1974/maestro-v2", "public", "automation", r"C:\Users\mesue\delivery_manager_work"),
     ("mesuef1974/claude-backup", "private", "backup", None),
     ("mesuef1974/maestro-usage", "public", "automation", r"C:\Users\mesue\maestro_usage"),
+    # سِمة: مشروع مستقلّ للمالك خارج المنصّة (طلبه 2026-11-20)، فدوره product
+    ("mesuef1974/sima", "public", "product", r"D:\sima"),
 ]
 
 

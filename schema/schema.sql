@@ -286,6 +286,6 @@ CREATE TABLE IF NOT EXISTS auto_sync (
 CREATE TABLE IF NOT EXISTS project_repos (
     repo TEXT PRIMARY KEY,
     visibility TEXT NOT NULL CHECK (visibility IN ('public', 'private')),
-    role TEXT NOT NULL,          -- platform|docs|automation|backup
+    role TEXT NOT NULL,          -- platform|docs|automation|backup|product
     local_dir TEXT
 );

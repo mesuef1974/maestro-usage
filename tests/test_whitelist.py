@@ -84,7 +84,7 @@ WHITELIST = {
     ("config_fingerprints", "sha"): r"[0-9a-f]{64}",
     ("project_repos", "repo"): r"[A-Za-z0-9_.\-]{1,60}/[A-Za-z0-9_.\-]{1,60}",
     ("project_repos", "visibility"): r"public|private",
-    ("project_repos", "role"): r"platform|docs|automation|backup",
+    ("project_repos", "role"): r"platform|docs|automation|backup|product",
     ("project_repos", "local_dir"): PATH,
     ("config_changes", "ts"): r"[\d\-T:.Z]+",
     ("config_changes", "key"): r"[A-Za-z0-9_]{1,80}",
