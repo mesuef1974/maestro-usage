@@ -208,6 +208,24 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
             elif n:
                 self.close_connection = True
 
+        def _reject_unsized(self, code, out):
+            """رفضٌ بلا طولٍ صالح (411 و400): لا يُعرف حجم الجسم فيُقرأ ما يصل خلال مهلة قصيرة (حتى سقفٍ صغير) ثم يُغلق الاتصال؛ وإلا بقي الجسم غير مقروء فقطع ويندوز الاتصالَ على العميل قبل قراءة الردّ (WinError 10053)."""
+            self.close_connection = True
+            old = self.connection.gettimeout()
+            try:
+                self.connection.settimeout(0.2)
+                got = 0
+                while got <= 1 << 20:
+                    chunk = self.rfile.read1(65536)
+                    if not chunk:
+                        break
+                    got += len(chunk)
+            except OSError:
+                pass
+            finally:
+                self.connection.settimeout(old)
+            return self._json(code, out)
+
         def _origin_strict_ok(self):
             """كلّ POST: Host وOrigin معاً من القائمة البيضاء؛ غيابُ Origin يُرفض (المتصفّح يرسله دائماً مع POST)."""
             origin = self.headers.get("Origin")
@@ -224,11 +242,11 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._reject(415, {"error": "نوع المحتوى يجب أن يكون application/json", "field": ""})
             raw_len = self.headers.get("Content-Length")
             if raw_len is None:
-                return self._json(411, {"error": "طول المحتوى مطلوب", "field": ""})
+                return self._reject_unsized(411, {"error": "طول المحتوى مطلوب", "field": ""})
             try:
                 n = int(raw_len)
             except ValueError:
-                return self._json(400, {"error": "طول المحتوى غير صالح", "field": ""})
+                return self._reject_unsized(400, {"error": "طول المحتوى غير صالح", "field": ""})
             if n > request_page.MAX_BODY:
                 return self._reject(413, {"error": "الطلب أكبر من الحد المسموح", "field": ""})
             if rate and not request_rate.allow():
@@ -254,11 +272,11 @@ def make_server(port, reports_dir=None, refresh_fn=None, plan_fn=None, storage_f
                 return self._reject(415, {"error": "نوع المحتوى يجب أن يكون multipart/form-data", "name": ""})
             raw_len = self.headers.get("Content-Length")
             if raw_len is None:
-                return self._json(411, {"error": "طول المحتوى مطلوب", "name": ""})
+                return self._reject_unsized(411, {"error": "طول المحتوى مطلوب", "name": ""})
             try:
                 n = int(raw_len)
             except ValueError:
-                return self._json(400, {"error": "طول المحتوى غير صالح", "name": ""})
+                return self._reject_unsized(400, {"error": "طول المحتوى غير صالح", "name": ""})
             if n > request_files.MAX_BODY:
                 return self._reject(413, {"error": "المرفقات أكبر من 25MB", "name": ""})
             if not upload_rate.allow():
