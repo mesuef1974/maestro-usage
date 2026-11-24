@@ -19,6 +19,7 @@ bdi,.ltr{unicode-bidi:isolate}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input[type=date]:focus,input[type=date]:focus-within{outline:2px solid var(--focus);outline-offset:2px}  /* حقل التاريخ يركّز مقطعه الداخلي فلا يطابق :focus-visible */
 input:not([type=checkbox]):not([type=radio]),select{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:.25rem .6rem;min-block-size:32px}
 input[type=checkbox],input[type=radio]{flex:none;inline-size:1.25rem;block-size:1.25rem;accent-color:var(--brand)}
 /* نص لقارئ الشاشة وحده (caption الجداول) */
