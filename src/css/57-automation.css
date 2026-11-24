@@ -13,7 +13,7 @@
 .ah-val{color:var(--ink);font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:var(--t-sm);text-align:end}
 .ah-note{grid-column:2/-1;color:var(--ink2);font-size:var(--t-xs)}
 .ah-list{display:flex;flex-direction:column;gap:var(--sp-2)}
-.ah-item{display:flex;flex-direction:column;gap:2px;text-align:start;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:var(--r-1,4px);padding:var(--sp-2) var(--sp-3);cursor:pointer}
+.ah-item{display:flex;flex-direction:column;gap:2px;text-align:start;background:transparent;color:var(--ink);border:1px solid var(--line-strong);border-radius:var(--r-1,4px);padding:var(--sp-2) var(--sp-3);cursor:pointer}
 .ah-item:hover{background:var(--hover)}
 .ah-legend i{display:inline-block;inline-size:.7rem;block-size:.7rem;border-radius:2px;margin-inline:var(--sp-2) 4px;vertical-align:-1px}
 .ah-legend i.good,.ah-day i.good{background:var(--good)}

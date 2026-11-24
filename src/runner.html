@@ -214,6 +214,10 @@ function poll(){
     $i("rlUpd").textContent=new Date(nowMs()).toLocaleTimeString("en-GB",{hour12:false});
   }).catch(function(){setLive(false);});
 }
-poll();setInterval(poll,2000);setInterval(tick,1000);
+/* لا استطلاع والقسم مخفيّ أو التبويب في الخلفية (كان 478 طلبًا بعد جولتين): يُستأنف فورًا عند الظهور */
+function shown(){var v=$i("rlLive").closest(".view");return !document.hidden&&!(v&&v.hidden)}
+function pollIfShown(){if(shown())poll()}
+pollIfShown();setInterval(pollIfShown,2000);setInterval(function(){if(shown())tick()},1000);
+document.addEventListener("visibilitychange",pollIfShown);window.addEventListener("hashchange",function(){setTimeout(pollIfShown,60)});
 })();
 </script>
