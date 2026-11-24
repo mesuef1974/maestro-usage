@@ -26,5 +26,13 @@
     if(!name){var v=t.closest(".view"),g=v&&v.querySelector(".gh"),th=t.querySelector("th");name=((g&&g.textContent.trim())||"جدول")+(th?" — "+th.textContent.trim():"")}
     if(name)t.setAttribute("aria-label",name.replace(/\s+/g," ").slice(0,80));
   });}
-  nameTables();setTimeout(nameTables,800);setTimeout(nameTables,3000);window.addEventListener("hashchange",function(){setTimeout(nameTables,100)});
+  /* منطقة تمرير بلا محتوى قابل للتركيز: تُنال بلوحة المفاتيح (axe: scrollable-region-focusable) */
+  function scrollables(){[].forEach.call(document.querySelectorAll(".wrap,.rl-log"),function(w){
+    var over=(w.scrollWidth>w.clientWidth+1||w.scrollHeight>w.clientHeight+1)&&w.offsetParent!==null;
+    if(over&&!w.hasAttribute("tabindex")&&!w.querySelector("a[href],button,input,select,textarea,[tabindex]")){
+      var tb=w.querySelector("table"),n=tb&&tb.getAttribute("aria-label");
+      w.setAttribute("tabindex","0");if(!w.classList.contains("rl-log"))w.setAttribute("role","group");w.setAttribute("aria-label",n||(w.classList.contains("rl-log")?"سجل التشغيل":"منطقة قابلة للتمرير"));
+    }})}
+  function all(){nameTables();scrollables()}
+  all();setTimeout(all,800);setTimeout(all,3000);window.addEventListener("hashchange",function(){setTimeout(all,150)});window.addEventListener("resize",function(){setTimeout(scrollables,150)});document.addEventListener("toggle",function(){setTimeout(scrollables,50)},true);
 })();
