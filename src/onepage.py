@@ -58,7 +58,7 @@ def build(parts, stamp):
     top, bottom = ui.shell()
     head = (ui.SRC / "ui_theme_head.js").read_text(encoding="utf-8").strip()
     preload = "".join('<link rel="preload" as="font" type="font/ttf" crossorigin href="assets/fonts/%s.ttf">' % f for f in ui.PRELOAD_FONTS)
-    assets = ui.FAVICON_LINK + preload + '<link rel="stylesheet" href="%s?v=%s">' % (ui.ASSET_URL, ui.css_hash())
+    assets = ui.FAVICON_LINK + ui.APPLE_ICON_LINK + preload + '<link rel="stylesheet" href="%s?v=%s">' % (ui.ASSET_URL, ui.css_hash())
     defs = '<details class="card defs" id="defs"><summary>التعريفات والتحفظات</summary>%s</details>' % metrics.defs_html()
     rail = "\n".join((ui.SRC / n).read_text(encoding="utf-8") for n in ("rail.js", "fold.js", "fit.js"))
     shared = ui.lib_split()[0]  # المكتبة المشتركة مرة واحدة قبل الأجزاء (كانت تُضمَّن داخل كل جزء فتضخّم الصفحة)
