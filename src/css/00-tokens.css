@@ -10,18 +10,18 @@
   --line:#d6cfc2;--line-strong:#857b6e;--grid:#e6e0d5;
   --brand:#a8541a;--brand-ink:#7b3c13;--brand-soft:#f5e9de;--on-brand:#fff;
   --accent:#775200;--accent-soft:#f6ecd2;
-  --focus:#1f6fd0;--warn:#955700;--bad:#b3261e;--good:#18794e;--good-soft:#e3f2ea;--warn-soft:#faeedb;--bad-soft:#f9e3e1;
+  --focus:#1f6fd0;--warn:#6d6018;--bad:#9d353b;--good:#3f624d;--good-soft:#e3f2ea;--warn-soft:#faeedb;--bad-soft:#f9e3e1;
   --s1:#2a78d6;--s2:#eb6834;--s3:#15a070;--s4:#b87800;--s5:#d0507f;--s6:#008300;--s7:#6250d6;--s8:#e34948;--oth:#8f8e88;
   --m1:#9a4a14;--m2:#1f6aa8;
   /* النص: نسخ عربي؛ العناوين: كوفي بوزن 700 بلون العلامة؛ الأرقام: Inter. الخطوط الثلاثة لا تُحمَّل من الشبكة: تُستعمل إن كانت مثبّتة أو مضمَّنة محليًّا، وإلا تسقط البدائل */
-  --font:"Noto Naskh Arabic","Dubai","Segoe UI Variable Text","Segoe UI",Tahoma,sans-serif;
-  --font-head:"Noto Kufi Arabic","Dubai","Segoe UI Variable Display","Segoe UI",Tahoma,sans-serif;
+  --font:"IBM Plex Sans Arabic","Dubai","Segoe UI Variable Text","Segoe UI",Tahoma,sans-serif;
+  --font-head:"Cairo","Dubai","Segoe UI Variable Display","Segoe UI",Tahoma,sans-serif;
   --font-num:"Inter","Segoe UI Variable Text","Segoe UI","Dubai",Tahoma,sans-serif;
   --head-ink:var(--brand-ink);
   --t-xs:.875rem;/* يساوي t-sm عمدًا: لا نص دون 14px؛ تمييز الثانوي بالدرجة (ink3) لا بالحجم */--t-sm:.875rem;--t-base:1.0625rem;--t-md:1.1875rem;--t-lg:1.375rem;--t-xl:1.75rem;--t-2xl:2.25rem;
   --lh-body:1.7;--lh-tight:1.3;--lh-num:1.15;
   --sp-1:.25rem;--sp-2:.5rem;--sp-3:.75rem;--sp-4:1rem;--sp-5:1.5rem;--sp-6:2rem;--sp-7:3rem;
-  --r-sm:12px;--r-md:16px;--r-pill:999px;
+  --r-sm:4px;--r-md:4px;--r-pill:999px;
   --side-w:15.5rem;--page-w:1200px;--tap:44px;
   --ease:cubic-bezier(.2,0,0,1);--dur:150ms;
 }

@@ -34,7 +34,7 @@ PAGES = {"/": "index.html", "/index.html": "index.html"}
 # روابط الصفحات القديمة تحوَّل إلى قسمها في الصفحة الواحدة (محفوظات المتصفح والإشارات المرجعية لا تنكسر)
 LEGACY = {"plan.html": "quota", "hourly.html": "usage", "cache.html": "usage", "origins.html": "usage", "summary.html": "usage", "skills.html": "skills",
           "data.html": "data", "storage.html": "data", "flow.html": "auto", "runner.html": "auto", "automation.html": "auto", "request.html": "auto"}
-FONT_RE = re.compile(r"^/assets/fonts/[A-Za-z]+\.ttf$")
+FONT_RE = re.compile(r"^/assets/fonts/[A-Za-z-]+\.ttf$")
 CSV_RE = re.compile(r"^/(report\d_[a-z_]+\.csv)$")
 
 

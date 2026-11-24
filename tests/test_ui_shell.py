@@ -77,7 +77,7 @@ class UiShellTest(unittest.TestCase):
             css = re.sub(r"/\*.*?\*/", "", open(path, encoding="utf-8").read(), flags=re.S)  # بلا التعليقات
             self.assertIn("--brand:", css)
             self.assertLess(css.index("--brand:"), css.index(".app{"))  # التوكنات قبل الغلاف
-            for f in ("NotoKufiArabic.ttf", "NotoNaskhArabic.ttf", "Inter.ttf"):  # الخطوط تُنسخ بجانب الأسلوب ويشير إليها @font-face
+            for f in ("Cairo.ttf", "IBMPlexSansArabic-Regular.ttf", "Inter.ttf"):  # الخطوط تُنسخ بجانب الأسلوب ويشير إليها @font-face
                 self.assertTrue((Path(d) / "assets" / "fonts" / f).is_file(), f)
                 self.assertIn("fonts/" + f, css)
         self.assertNotIn("letter-spacing", css)

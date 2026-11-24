@@ -14,19 +14,19 @@ SRC = Path(__file__).resolve().parent
 CSS_DIR = SRC / "css"
 FONT_DIR = SRC / "fonts"
 ASSET_URL = "assets/platform.css"
-PRELOAD_FONTS = ("NotoNaskhArabic", "NotoKufiArabic", "Inter")  # تُحمَّل مبكرًا لئلا يرمش النص عند الانتقال بين الصفحات
+PRELOAD_FONTS = ("IBMPlexSansArabic-Regular", "Cairo", "Inter")  # تُحمَّل مبكرًا لئلا يرمش النص عند الانتقال بين الصفحات
 VIEW_MARK = "<!--view %s-->"
 SEC_RE = re.compile(r"<!--@sec (\w+)-->(.*?)<!--@/sec-->", re.S)
 
-# علامة «ميزان»: تميمة مبنية بالبكسل (أصلية، مستوحاة من فكرة تميمة المساعد لا نسخة منها): جسم نحاسي بعينين وذراعين وأربع أرجل،
-# وإبرة صغيرة فوق الرأس ترمز إلى المقياس. الألوان من توكنات الهوية؛ نسخة الأيقونة تحمل ألوانًا ثابتة لأنها صورة مستقلة.
-_MASCOT = ('<path d="M16 9L21 3" stroke="%(a)s" stroke-width="2.4" stroke-linecap="round" fill="none"/>'
-           '<rect x="4" y="9" width="24" height="14" rx="2.5" fill="%(b)s"/>'
-           '<rect x="1" y="13" width="4" height="5" rx="1" fill="%(b)s"/><rect x="27" y="13" width="4" height="5" rx="1" fill="%(b)s"/>'
-           '<rect x="8" y="23" width="4" height="5" rx="1" fill="%(b)s"/><rect x="20" y="23" width="4" height="5" rx="1" fill="%(b)s"/>'
-           '<rect x="10" y="13" width="2.6" height="5" rx="1.3" fill="%(e)s"/><rect x="19.4" y="13" width="2.6" height="5" rx="1.3" fill="%(e)s"/>')
-LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">%s</svg>' % (_MASCOT % dict(b="var(--brand)", a="var(--accent)", e="var(--surface)"))
-FAVICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#f6f3ee"/>%s</svg>' % (_MASCOT % dict(b="#a8541a", a="#9a6b00", e="#f6f3ee"))
+# علامة «ميزان» (هوية v3 من سِمة، قرار المالك 2026-11-24): «إبرة متصلة»، تنساب الحافة العليا المائلة للتميمة إلى إبرة القياس.
+# مسار واحد بلون واحد (لا لون تمييز للرمز)؛ الشعار يأخذ لون العلامة من التوكنات، والأيقونة لونًا ثابتًا لأنها صورة مستقلة.
+_MARK = ("M24 58C26 48 32 44 40 42L88 32C100 29.5 112 24 121.6 11.2A8 8 0 0 1 134.4 20.8L120 40C117.6 43.2 118.4 44 122.4 45.6"
+         "C130.4 48.8 134.4 52.4 136 58H144A8 8 0 0 1 152 66V74A8 8 0 0 1 144 82H136V88C136 96 132 102 124 102V112A8 8 0 0 1 116 120"
+         "H108A8 8 0 0 1 100 112V102H64V112A8 8 0 0 1 56 120H48A8 8 0 0 1 40 112V102C30 102 24 96 24 88V82H16A8 8 0 0 1 8 74V66"
+         "A8 8 0 0 1 16 58ZM51 64A8 8 0 0 1 67 64V76A8 8 0 0 1 51 76ZM97 64A8 8 0 0 1 113 64V76A8 8 0 0 1 97 76Z")
+_MASCOT = '<path transform="translate(0 16)" fill-rule="evenodd" fill="%(b)s" d="%(d)s"/>'
+LOGO = '<svg viewBox="0 0 160 160" aria-hidden="true" focusable="false">%s</svg>' % (_MASCOT % dict(b="var(--brand)", d=_MARK))
+FAVICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" rx="32" fill="#f6f3ee"/><g transform="translate(16 16) scale(.8)">%s</g></svg>' % (_MASCOT % dict(b="#a8541a", d=_MARK))
 FAVICON_LINK = '<link rel="icon" href="data:image/svg+xml,%s">' % FAVICON.replace("<", "%3C").replace(">", "%3E").replace("#", "%23").replace('"', "'")
 
 
