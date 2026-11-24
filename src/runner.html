@@ -36,7 +36,7 @@ __SHELL_OPEN__
     <div class="rl-cols">
       <div>
         <h3 class="rl-h3">التشغيلات <span class="sub">هذه المحاولة</span></h3>
-        <table class="rl-runs"><thead><tr><th>#</th><th>الأدوار</th><th>الكلفة</th><th>الوقت</th></tr></thead>
+        <table class="rl-runs" aria-label="آخر التشغيلات"><thead><tr><th>#</th><th>الأدوار</th><th>الكلفة</th><th>الوقت</th></tr></thead>
           <tbody id="runs"></tbody><tfoot><tr><td>المجموع</td><td class="rl-num" id="rTurns">–</td><td class="rl-num" id="rCost">–</td><td></td></tr></tfoot></table>
         <ul class="rl-facts" id="facts"></ul>
       </div>
@@ -60,7 +60,7 @@ __SHELL_OPEN__
         <select id="ahState" aria-label="الحالة"><option value="">كلّ الحالات</option></select>
         <select id="ahWhy" aria-label="سبب التوقّف"><option value="">كلّ الأسباب</option></select>
       </div>
-      <div class="wrap ah-wrap"><table class="ah-table" data-min="720">
+      <div class="wrap ah-wrap"><table class="ah-table" data-min="720" aria-label="سجل بطاقات الأتمتة">
         <thead><tr><th>البطاقة</th><th>العنوان</th><th>الحالة</th><th class="num">آخر حركة</th><th class="num">المدّة</th><th class="num">الكلفة</th></tr></thead>
         <tbody id="ahRows"></tbody>
       </table></div>

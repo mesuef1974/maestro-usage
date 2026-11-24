@@ -261,6 +261,7 @@ var pt=null;
 function preview(){
   clearTimeout(pt);pt=setTimeout(function(){
     if(location.protocol==="file:"){$("rqPreviewBody").textContent="المعاينة تحتاج الخادم المحلي";return;}
+    if(!$("rqTitle").value.trim()&&!$("rqAsk").value.trim()){$("rqPreviewBody").textContent="لا معاينة بعد: اكتب العنوان أو الطلب أولًا";return;}
     fetch(cfg.api+"/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body())})
       .then(function(r){return r.json();}).then(function(j){$("rqPreviewBody").textContent=j.ok?j.body:"لا معاينة بعد: "+(j.error||"");})
       .catch(function(){$("rqPreviewBody").textContent="تعذّر الوصول إلى الخادم";});},300);

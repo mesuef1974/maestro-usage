@@ -98,10 +98,11 @@ def write_csv(path, header, rows):
         w.writerows(rows)
 
 
-def table(headers, rows):
+def table(headers, rows, caption=""):
     h = "".join("<th>%s</th>" % html.escape(x) for x in headers)
     b = "".join("<tr>%s</tr>" % "".join("<td>%s</td>" % html.escape(str(c)) for c in r) for r in rows)
-    return "<table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (h, b)
+    cap = '<caption class="sr-only">%s</caption>' % html.escape(caption) if caption else ""
+    return "<table>%s<thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (cap, h, b)
 
 
 def source(text, stamp):
@@ -151,7 +152,7 @@ def build(con, out_dir=REPORTS_DIR):
             rws.append((label, fmt(w["active_days"]), fmt(w["sessions"]), fmt(w["turns"]), fmt(w["total"]),
                         fmt(w["total"] / d if d else None), fmt(w["avg_context"]), fmt(w["read_per_output"])))
         parts.append('<div class="wrap">%s</div>' % table(
-            ["الفترة", "أيام فعّالة", "جلسات", "ردود", "إجمالي توكن", "توكن لكل يوم فعّال", "متوسط السياق للردّ", "قراءة ÷ مخرجات"], rws))
+            ["الفترة", "أيام فعّالة", "جلسات", "ردود", "إجمالي توكن", "توكن لكل يوم فعّال", "متوسط السياق للردّ", "قراءة ÷ مخرجات"], rws, "ملخص الاستهلاك حسب الفترة"))
     parts.append(source("جداول usage_turns وconfig_changes", stamp))
 
     h4, rows4 = report4(con)
@@ -159,7 +160,7 @@ def build(con, out_dir=REPORTS_DIR):
     parts.append("<h2>2. نسبة الحصة الأسبوعية حسب اليوم</h2>")
     if rows4:
         parts.append('<div class="wrap">%s</div>' % table(["اليوم", "المصدر", "عيّنات", "أعلى نسبة أسبوعية %", "أعلى نسبة 5 ساعات %"],
-                                                          [(d, sr, fmt(n), fmt(w, 1), fmt(f, 1)) for d, sr, n, w, f in rows4]))
+                                                          [(d, sr, fmt(n), fmt(w, 1), fmt(f, 1)) for d, sr, n, w, f in rows4], "نسبة الحصة الأسبوعية حسب اليوم"))
     else:
         parts.append('<p class="warn">لا عيّنات حصة بعد: تصل من statusLine بعد أول ردّ في جلسة جديدة منذ التثبيت. السجلات القديمة لا تحمل نسبة الحصة، فلا تاريخ قبل التثبيت.</p>')
     parts.append(source("جدول plan_snapshots", stamp))

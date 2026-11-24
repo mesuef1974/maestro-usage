@@ -74,7 +74,8 @@
 .ah-table th:nth-child(6){inline-size:6.5rem}
 .ah-table .ah-nw{white-space:nowrap}
 .ah-id{white-space:nowrap}
-.ah-pr{display:block;font-family:var(--font-num);font-size:var(--t-xs)}
+.ah-lnk{display:inline-block;min-block-size:24px}
+.ah-pr{display:block;min-block-size:24px;font-family:var(--font-num);font-size:var(--t-xs)}
 .ah-sub{display:block;margin-block-start:2px;font-size:var(--t-xs);color:var(--ink3)}
 .ah-sts .rl-st{white-space:normal}
 .ah-cost .rl-cap{display:block}

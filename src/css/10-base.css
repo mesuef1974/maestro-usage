@@ -20,7 +20,9 @@ button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 input:not([type=checkbox]):not([type=radio]),select{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:.25rem .6rem;min-block-size:32px}
-input[type=checkbox],input[type=radio]{inline-size:1.25rem;block-size:1.25rem;accent-color:var(--brand)}
+input[type=checkbox],input[type=radio]{flex:none;inline-size:1.25rem;block-size:1.25rem;accent-color:var(--brand)}
+/* نص لقارئ الشاشة وحده (caption الجداول) */
+.sr-only{position:absolute;inline-size:1px;block-size:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 details{margin-block-start:var(--sp-3)}
 summary{cursor:pointer;color:var(--ink2);font-size:var(--t-sm);min-block-size:28px;display:list-item}
 .empty{color:var(--ink3);padding:var(--sp-5) 0;text-align:center}

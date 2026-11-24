@@ -165,7 +165,7 @@ function paintRemaining(r){
 function deskCard(c){
   var checks=c.checks.map(function(x){return '<li>'+esc(x)+'</li>'}).join("");
   var seen=c.visual.length?'<p class="sub">تغيّر شكل: '+esc(c.visual.join("، "))+'</p>':"";
-  var head='<div class="ah-mono sub">'+esc(c.card_id)+(c.pr?' · <a href="'+esc(c.pr_url)+'/files" target="_blank" rel="noopener">فرق #'+esc(c.pr)+'</a>':"")+'</div><b>'+esc(c.title)+'</b>';
+  var head='<div class="ah-mono sub">'+esc(c.card_id)+(c.pr?' · <a class="ah-lnk" href="'+esc(c.pr_url)+'/files" target="_blank" rel="noopener">فرق #'+esc(c.pr)+'</a>':"")+'</div><b>'+esc(c.title)+'</b>';
   if(!c.ready)return '<div class="ah-deskitem">'+head+'<p class="sub">تنتظر دورها على خادم المعاينة، وتظهر هنا تلقائيًا حين تجهز.</p></div>';
   return '<div class="ah-deskitem" data-desk="'+esc(c.card_id)+'">'+head+seen+
     '<div class="ah-deskact"><a class="ah-go" href="'+esc(c.url)+'" target="_blank" rel="noopener">افتح المعاينة</a>'+
