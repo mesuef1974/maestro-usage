@@ -348,3 +348,19 @@ def test_depends_on_is_validated_and_written_for_the_runner(reqdir):
     with pytest.raises(request_page.ValidationError) as e:
         request_page.validate({**OK, "depends_on": "001"})
     assert e.value.field == "depends_on"
+
+
+@pytest.mark.parametrize("field,limit", [("title", 120), ("ask", 1500), ("page", 200), ("out_of_scope", 500)])
+def test_text_over_the_limit_is_rejected_not_clipped(reqdir, field, limit):
+    """نصٌّ أطول من الحدّ يُرفض باسم حقله وطوله، ولا يُكتب طلبٌ مقصوص (W-20261125-001 أُغلقت بنصٍّ قُصّ بصمت)."""
+    with pytest.raises(request_page.ValidationError) as e:
+        request_page.submit(dict(OK, **{field: "/" + "م" * limit}))
+    assert e.value.field == field and str(limit) in str(e.value) and str(limit + 1) in str(e.value)
+    assert not list(reqdir.glob("*.md"))
+
+
+def test_multiline_ask_at_the_limit_keeps_its_last_line(reqdir):
+    ask = chr(10).join(["ڤ" * 99] * 15)  # 1499 حرفًا خامًا؛ فواصل « / » تزيده فوق 1500 بعد التڤطير
+    text = (reqdir / request_page.submit(dict(OK, ask=ask))["file"]).read_text(encoding="utf-8")
+    assert text.count("ڤ") == 99 * 15
+

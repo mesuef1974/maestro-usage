@@ -138,8 +138,13 @@ def validate(params):
     unknown = sorted(set(params) - ALLOWED_KEYS)
     if unknown:
         raise ValidationError("حقلٌ غير معروف: " + "، ".join(unknown), unknown[0])
+    # الزائد عن الحدّ يُرفض ولا يُقصّ: طلبٌ قُصّ بصمت عند 1500 أُغلقت بطاقتاه بلا تغيير (W-20261125-001 و002)
+    for field, label in (("title", "العنوان"), ("ask", "المطلوب"), ("page", "الصفحة"), ("out_of_scope", "خارج النطاق")):
+        n = len(str(params.get(field) or "").strip())
+        if n > MAX[field]:
+            raise ValidationError("%s أطول من الحدّ: %d حرفًا والحدّ %d؛ اختصره وضع التفصيل في مرفق" % (label, n, MAX[field]), field)
     lib = criteria_lib()
-    title, ask = _clean(params.get("title"), MAX["title"]), _clean_multiline(params.get("ask"), MAX["ask"])
+    title, ask = _clean(params.get("title"), MAX["title"]), _clean_multiline(params.get("ask"), None)  # الحدّ فُحص على النصّ الخام؛ فواصل الأسطر لا تقصّ آخره
     size, prio = str(params.get("size") or ""), str(params.get("priority") or "")
     rtype = str(params.get("type") or "")
     if rtype not in lib["types"]:
