@@ -339,7 +339,7 @@ $("rqMine").addEventListener("click",function(e){
       $("rqAsk").focus();var v=$("rqAsk").value;$("rqAsk").setSelectionRange(v.length,v.length);$("rqAsk").scrollIntoView({block:"center"});});}
 });
 $("rqMineRefresh").addEventListener("click",loadMine);
-var nr=$("newreq");if(nr)nr.addEventListener("click",function(e){e.preventDefault();history.replaceState(null,"","#rqh");
+var nr=$("newreq");if(nr)nr.addEventListener("click",function(e){e.preventDefault();history.replaceState(null,"","#rqh");window.dispatchEvent(new Event("hashchange"));  /* replaceState لا يطلقه، فتبقى شاشة الطلب مخفية */
   $("rqh").scrollIntoView({block:"start"});$("rqTitle").focus({preventScroll:true});});
 setInterval(function(){if(!document.hidden&&$("rqMine").offsetParent)loadMine();},30000);
 $("rqForm").addEventListener("submit",function(e){e.preventDefault();send();});

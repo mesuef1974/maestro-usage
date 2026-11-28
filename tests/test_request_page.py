@@ -372,3 +372,11 @@ def test_multiline_ask_at_the_limit_keeps_its_last_line(reqdir):
     text = (reqdir / request_page.submit(dict(OK, ask=ask))["file"]).read_text(encoding="utf-8")
     assert text.count("ڤ") == 99 * 15
 
+
+
+def test_new_request_button_opens_its_screen():
+    """replaceState لا يطلق hashchange، ومحوّل الشاشات لا يعمل بدونه."""
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "request.html")
+    with open(src, encoding="utf-8") as f:
+        handler = f.read().split('var nr=$("newreq")', 1)[1].split("setInterval", 1)[0]
+    assert 'dispatchEvent(new Event("hashchange"))' in handler
