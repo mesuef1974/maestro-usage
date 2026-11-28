@@ -60,6 +60,14 @@ def test_two_requests_in_the_same_second_do_not_overwrite(reqdir):
     assert request_page.submit(OK, t)["file"] != request_page.submit({**OK, "title": OK["title"] + " ثانٍ"}, t)["file"]
 
 
+def test_name_of_picked_up_request_is_not_reused(reqdir):
+    import time
+    now = time.localtime()
+    first = request_page.submit({**OK, "title": "أول"}, now)["file"]
+    (reqdir / first).rename((reqdir / first).with_suffix(".done"))
+    assert request_page.submit({**OK, "title": "ثان"}, now)["file"] != first
+
+
 def test_rate_limit_window():
     now = [0.0]
     rl = request_page.RateLimit(2, clock=lambda: now[0])

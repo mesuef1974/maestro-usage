@@ -288,7 +288,7 @@ def submit(params, now=None):
     stamp = time.strftime("%Y%m%d-%H%M%S", t)
     path = d / ("web-%s.md" % stamp)
     n = 1
-    while path.exists():
+    while path.exists() or path.with_suffix(".done").exists():  # الملتقَط يُسمّى .done ويبقى اسمُه محجوزاً
         n += 1
         path = d / ("web-%s-%d.md" % (stamp, n))
     if fields["attachments"]:  # الرفع المؤقت يُنقل إلى مجلد باسم الطلب قبل كتابة الطلب نفسه: لا طلب يشير إلى مرفقات غائبة
